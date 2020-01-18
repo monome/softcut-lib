@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.7)
+
+set(CMAKE_CXX_STANDARD 14)
+
+project(softcut_jack_osc)
+
+set(SRC src/main.cpp src/JackClient.cpp src/OscServer.cpp)
+
+add_executable(softcut_jack_osc ${SRC})
+
+include_directories(../../softcut-lib/include)
+
+target_link_libraries(softcut_jack_osc softcut_lib jack lo)
+
+target_compile_options(softcut_jack_osc PRIVATE -Wall -Wextra -pedantic)
+
