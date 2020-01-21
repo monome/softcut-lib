@@ -7,7 +7,7 @@
 #include <thread>
 #include <memory>
 
-#include "SoftCutClient.h"
+#include "SoftcutClient.h"
 #include "OscInterface.h"
 #include "BufDiskWorker.h"
 
@@ -20,8 +20,8 @@ int main() {
     using std::cout;
     using std::endl;
 
-    std::unique_ptr<SoftCutClient> sc;
-    sc = std::make_unique<SoftCutClient>();
+    std::unique_ptr<SoftcutClient> sc;
+    sc = std::make_unique<SoftcutClient>();
 
     sc->setup();
     sc->start();
@@ -29,7 +29,7 @@ int main() {
     sc->connectAdcPorts();
     sc->connectDacPorts();
 
-    OscInterface::init();
+    OscInterface::init(sc.get());
 
     cout << "entering main loop..." << endl;
     while(!OscInterface::shouldQuit())  {

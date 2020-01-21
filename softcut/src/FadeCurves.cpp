@@ -8,8 +8,8 @@
 #include <boost/assert.hpp>
 #include <cstring>
 
-#include "Interpolate.h"
-#include "FadeCurves.h"
+#include "softcut/Interpolate.h"
+#include "softcut/FadeCurves.h"
 
 using namespace softcut;
 

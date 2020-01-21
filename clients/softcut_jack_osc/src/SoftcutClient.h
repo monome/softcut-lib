@@ -11,12 +11,12 @@
 #include "Bus.h"
 #include "JackClient.h"
 #include "Utilities.h"
-#include "softcut/SoftCut.h"
+#include "softcut/Softcut.h"
 #include "softcut/Types.h"
 
 
 namespace softcut_jack_osc {
-    class SoftCutClient: public JackClient<2, 2> {
+    class SoftcutClient: public JackClient<2, 2> {
     public:
         enum { MaxBlockFrames = 2048};
         enum { BufFrames = 16777216 };
@@ -25,11 +25,11 @@ namespace softcut_jack_osc {
         typedef Bus<2, MaxBlockFrames> StereoBus;
         typedef Bus<1, MaxBlockFrames> MonoBus;
     public:
-        SoftCutClient();
+        SoftcutClient();
 
     private:
         // processors
-        softcut::SoftCut<NumVoices> cut;
+        softcut::Softcut<NumVoices> cut;
         // main buffer
         float buf[2][BufFrames];
         // buffer index for use with BufDiskWorker

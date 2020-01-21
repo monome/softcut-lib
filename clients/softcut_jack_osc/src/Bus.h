@@ -8,7 +8,7 @@
 #include <boost/assert.hpp>
 #include "Utilities.h"
 
-namespace  crone {
+namespace softcut_jack_osc {
 
     template<size_t NumChannels, size_t BlockSize>
     class Bus {

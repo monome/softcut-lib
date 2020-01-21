@@ -9,16 +9,16 @@
 #include <memory>
 #include <thread>
 #include "Types.h"
+#include "Voice.h"
 
 namespace softcut {
 
-    class SoftcutVoice;
+    //class SoftcutVoice;
 
+    template <int numVoices>
     class Softcut {
 
     public:
-        void init(int numVoices);
-
         void reset();
 
         // assumption: channel count is equal to voice count!
@@ -96,6 +96,8 @@ namespace softcut {
 
         void setVoiceBuffer(int id, float *buf, size_t bufFrames);
 
+        void setRecOffset(int i, float d);
+
 #if 0 // disabled for now
         void setPreFadeWindow(float x);
 
@@ -104,14 +106,12 @@ namespace softcut {
         void setPreFadeShape(float x);
 
         void setRecFadeShape(float x);
-
-        void setRecOffset(int i, float d);
 #endif
 
 
     private:
-        std::unique_ptr<SoftcutVoice[]> scv;
-        int numVoices;
+        Voice scv[numVoices];
+        //int numVoices;
 
     };
 }

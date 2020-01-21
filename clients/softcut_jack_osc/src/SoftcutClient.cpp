@@ -6,7 +6,7 @@
 
 #include "BufDiskWorker.h"
 #include "Commands.h"
-#include "SoftCutClient.h"
+#include "SoftcutClient.h"
 
 using namespace softcut_jack_osc;
 
@@ -15,7 +15,7 @@ static inline void clamp(size_t &x, const size_t a) {
     if (x > a) { x = a; }
 }
 
-SoftCutClient::SoftCutClient() : JackClient<2, 2>("softcut") {
+SoftcutClient::SoftcutClient() : JackClient<2, 2>("softcut") {
 
     for (unsigned int i = 0; i < NumVoices; ++i) {
         cut.setVoiceBuffer(i, buf[i & 1], BufFrames);
@@ -25,7 +25,7 @@ SoftCutClient::SoftCutClient() : JackClient<2, 2>("softcut") {
 
 }
 
-void SoftCutClient::process(jack_nframes_t numFrames) {
+void SoftcutClient::process(jack_nframes_t numFrames) {
     Commands::softcutCommands.handlePending(this);
     clearBusses(numFrames);
     mixInput(numFrames);
@@ -39,17 +39,17 @@ void SoftCutClient::process(jack_nframes_t numFrames) {
     mix.copyTo(sink[0], numFrames);
 }
 
-void SoftCutClient::setSampleRate(jack_nframes_t sr) {
+void SoftcutClient::setSampleRate(jack_nframes_t sr) {
     cut.setSampleRate(sr);
 }
 
 
-void SoftCutClient::clearBusses(size_t numFrames) {
+void SoftcutClient::clearBusses(size_t numFrames) {
     mix.clear(numFrames);
     for (auto &b : input) { b.clear(numFrames); }
 }
 
-void SoftCutClient::mixInput(size_t numFrames) {
+void SoftcutClient::mixInput(size_t numFrames) {
     for (int dst = 0; dst < NumVoices; ++dst) {
         if (cut.getRecFlag(dst)) {
             for (int ch = 0; ch < 2; ++ch) {
@@ -64,7 +64,7 @@ void SoftCutClient::mixInput(size_t numFrames) {
     }
 }
 
-void SoftCutClient::mixOutput(size_t numFrames) {
+void SoftcutClient::mixOutput(size_t numFrames) {
     for (int v = 0; v < NumVoices; ++v) {
         if (cut.getPlayFlag(v)) {
             mix.panMixEpFrom(output[v], numFrames, outLevel[v], outPan[v]);
@@ -72,7 +72,7 @@ void SoftCutClient::mixOutput(size_t numFrames) {
     }
 }
 
-void SoftCutClient::handleCommand(Commands::CommandPacket *p) {
+void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
     switch (p->id) {
         //-- softcut routing
         case Commands::Id::SET_ENABLED_CUT:
@@ -194,7 +194,7 @@ void SoftCutClient::handleCommand(Commands::CommandPacket *p) {
     }
 }
 
-void SoftCutClient::reset() {
+void SoftcutClient::reset() {
 
     for (int v = 0; v < NumVoices; ++v) {
         cut.setVoiceBuffer(v, buf[v%2], BufFrames);

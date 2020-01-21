@@ -1,4 +1,4 @@
-#include "Softcut.h"
+#include "softcut/Softcut.h"
 using namespace softcut;
 
 void Softcut::init(int nv) {

@@ -5,9 +5,9 @@
 #include <string.h>
 #include <limits>
 
-#include "Interpolate.h"
-#include "FadeCurves.h"
-#include "SubHead.h"
+#include "softcut/Interpolate.h"
+#include "softcut/FadeCurves.h"
+#include "softcut/SubHead.h"
 
 using namespace softcut;
 
@@ -91,7 +91,7 @@ void SubHead::updateFade(float inc) {
 
 #if 0
 /// test: no resampling
-void SubHead::poke(float in, float pre, float rec, int numFades) {
+void Subhead::poke(float in, float pre, float rec, int numFades) {
     sample_t* p = &buf_[static_cast<unsigned int>(phase_)&bufMask_];
     *p *= pre;
     *p += (in * rec);

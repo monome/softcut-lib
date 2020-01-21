@@ -12,10 +12,10 @@
 
 namespace softcut{
 
-    class SoftcutHead {
+    class ReadWriteHead {
     public:
 
-        SoftcutHead();
+        ReadWriteHead();
         void init();
 
         // per-sample update functions

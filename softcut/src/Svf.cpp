@@ -3,7 +3,7 @@
 //
 
 #include <math.h>
-#include "Svf.h"
+#include "softcut/Svf.h"
 
 Svf::Svf() = default;
 

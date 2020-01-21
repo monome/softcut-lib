@@ -8,14 +8,14 @@
 #include <array>
 #include <atomic>
 
-#include "SoftcutHead.h"
+#include "ReadWriteHead.h"
 #include "Svf.h"
 #include "Utilities.h"
 
 namespace softcut {
-    class SoftcutVoice {
+    class Voice {
     public:
-        SoftcutVoice();
+        Voice();
         void setBuffer(float* buf, unsigned int numFrames);
 
         void setSampleRate(float hz);
@@ -78,7 +78,7 @@ namespace softcut {
         float sampleRate;
 
         // xfaded read/write head
-        SoftcutHead sch;
+        ReadWriteHead sch;
         // input filter
         Svf svfPre;
         // output filter

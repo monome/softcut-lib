@@ -14,8 +14,7 @@
 #include <lo/lo.h>
 #include <array>
 
-#include "MixerClient.h"
-#include "SoftCutClient.h"
+#include "SoftcutClient.h"
 #include "Poll.h"
 
 // FIXME: didn't realize that liblo has a perfectly ok-looking cpp interface already. this could be cleaner.
@@ -28,7 +27,7 @@ namespace softcut_jack_osc {
 
     private:
         static lo_server_thread st;
-        static lo_address matronAddress;
+        static lo_address clientAddress;
 
         static bool quitFlag;
         static string port;
@@ -49,8 +48,7 @@ namespace softcut_jack_osc {
         static std::array<OscMethod, MaxNumMethods> methods;
         static std::unique_ptr<Poll> vuPoll;
         static std::unique_ptr<Poll> phasePoll;
-        static MixerClient *mixerClient;
-        static SoftCutClient *softCutClient;
+        static SoftcutClient *softCutClient;
 
     private:
         typedef void(*Handler)(lo_arg **argv, int argc);
@@ -64,7 +62,7 @@ namespace softcut_jack_osc {
 
 
     public:
-        static void init(MixerClient *m, SoftCutClient *sc);
+        static void init(SoftcutClient *sc);
         static void deinit();
         static void printServerMethods();
 

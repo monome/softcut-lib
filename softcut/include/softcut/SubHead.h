@@ -22,7 +22,7 @@ namespace softcut {
     typedef enum { None, Stop, LoopPos, LoopNeg } Action ;
 
     class SubHead {
-        friend class SoftcutHead;
+        friend class ReadWriteHead;
     public:
         SubHead();
         void init();
