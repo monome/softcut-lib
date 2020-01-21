@@ -17,6 +17,7 @@ recRamp(48000, 0.1)
 }
 
 void Voice::reset() {
+    fadeCurves.init();
     svfPre.setLpMix(1.0);
     svfPre.setHpMix(0.0);
     svfPre.setBpMix(0.0);
@@ -40,8 +41,7 @@ void Voice::reset() {
     recFlag = false;
     playFlag = false;
 
-    sch.init();
-
+    sch.init(&fadeCurves);
 }
 
 void Voice:: processBlockMono(const float *in, float *out, int numFrames) {

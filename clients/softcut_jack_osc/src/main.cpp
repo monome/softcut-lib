@@ -21,6 +21,8 @@ int main() {
     using std::endl;
 
     std::unique_ptr<SoftcutClient> sc;
+    //sc->init();
+
     sc = std::make_unique<SoftcutClient>();
 
     sc->setup();

@@ -14,21 +14,24 @@ namespace softcut {
     class FadeCurves {
     public:
         typedef enum { Linear=0, Sine=1, Raised=2 } Shape;
-        static void setRecDelayRatio(float x);
-        static void setPreWindowRatio(float x);
-        static void setMinRecDelayFrames(unsigned int x);
-        static void setMinPreWindowFrames(unsigned int x);
-        // set curve shape
-        static void setPreShape(Shape x);
-        static void setRecShape(Shape x);
-        // x is assumed to be in [0,1]
-        static float getRecFadeValue(float x);
 
-        static float getPreFadeValue(float x);
+        // initialize with defaults
+        void init();
+         void setRecDelayRatio(float x);
+         void setPreWindowRatio(float x);
+         void setMinRecDelayFrames(unsigned int x);
+         void setMinPreWindowFrames(unsigned int x);
+        // set curve shape
+         void setPreShape(Shape x);
+         void setRecShape(Shape x);
+        // x is assumed to be in [0,1]
+         float getRecFadeValue(float x);
+
+         float getPreFadeValue(float x);
 
     private:
-        static void calcPreFade();
-        static void calcRecFade();
+         void calcPreFade();
+         void calcRecFade();
 
     private:
 
@@ -36,15 +39,15 @@ namespace softcut {
         static constexpr unsigned int fadeBufSize = 1001;
 
         // record delay and pre window in fade, as proportion of fade time
-        static float recDelayRatio;
-        static float preWindowRatio;
+         float recDelayRatio;
+         float preWindowRatio;
         // minimum record delay/pre window, in frames
-        static unsigned int recDelayMinFrames;
-        static unsigned int preWindowMinFrames;
-        static float recFadeBuf[fadeBufSize];
-        static float preFadeBuf[fadeBufSize];
-        static Shape recShape;
-        static Shape preShape;
+         unsigned int recDelayMinFrames;
+         unsigned int preWindowMinFrames;
+         float recFadeBuf[fadeBufSize];
+         float preFadeBuf[fadeBufSize];
+         Shape recShape;
+         Shape preShape;
     };
 }
 

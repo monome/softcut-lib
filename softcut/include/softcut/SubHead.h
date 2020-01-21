@@ -15,6 +15,7 @@
 #include "LowpassBrickwall.h"
 #include "SoftClip.h"
 #include "Types.h"
+#include "FadeCurves.h"
 
 namespace softcut {
 
@@ -24,8 +25,7 @@ namespace softcut {
     class SubHead {
         friend class ReadWriteHead;
     public:
-        SubHead();
-        void init();
+        void init(FadeCurves *fc);
         void setSampleRate(float sr);
     private:
         sample_t peek4();
@@ -50,14 +50,13 @@ namespace softcut {
         
         // setters
         void setState(State state);
-        void setTrig(float trig);
         void setPhase(phase_t phase);
 
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // **NB** buffer size must be a power of two!!!!
         void setBuffer(sample_t *buf, unsigned int frames);
         void setRate(rate_t rate);
-
+        FadeCurves *fadeCurves;
 
     private:
         Resampler resamp_;

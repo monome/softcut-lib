@@ -12,107 +12,208 @@
 #include "Voice.h"
 
 namespace softcut {
-
-    //class SoftcutVoice;
-
     template <int numVoices>
     class Softcut {
 
     public:
-        void reset();
 
-        // assumption: channel count is equal to voice count!
-        void processBlock(int v, const float *in, float *out, int numFrames);
+        Softcut() {
+            this->reset();
+        }
 
-        void setSampleRate(unsigned int hz);
+        void reset() {
+            for (int v = 0; v < numVoices; ++v) {
+                scv[v].reset();
+            };
+        }
 
-        void setRate(int voice, float rate);
+// assumption: channel count is equal to voice count!
+        void processBlock(int v, const float *in, float *out, int numFrames) {
+            scv[v].processBlockMono(in, out, numFrames);
+        }
 
-        void setLoopStart(int voice, float sec);
+        void setSampleRate(unsigned int hz) {
+            for (auto &v : scv) {
+                v.setSampleRate(hz);
+            }
+        }
 
-        void setLoopEnd(int voice, float sec);
+        void setRate(int voice, float rate) {
+            scv[voice].setRate(rate);
+        }
 
-        void setLoopFlag(int voice, bool val);
+        void setLoopStart(int voice, float sec) {
+            scv[voice].setLoopStart(sec);
+        }
 
-        void setFadeTime(int voice, float sec);
+        void setLoopEnd(int voice, float sec) {
+            scv[voice].setLoopEnd(sec);
+        }
 
-        void setRecLevel(int voice, float amp);
+        void setLoopFlag(int voice, bool val) {
+            scv[voice].setLoopFlag(val);
+        }
 
-        void setPreLevel(int voice, float amp);
+        void setFadeTime(int voice, float sec) {
+            scv[voice].setFadeTime(sec);
+        }
 
-        void setRecFlag(int voice, bool val);
+        void setRecLevel(int voice, float amp) {
+            scv[voice].setRecLevel(amp);
+        }
 
-        void setPlayFlag(int voice, bool val);
+        void setPreLevel(int voice, float amp) {
+            scv[voice].setPreLevel(amp);
+        }
 
-        void cutToPos(int voice, float sec);
+        void setRecFlag(int voice, bool val) {
+            scv[voice].setRecFlag(val);
+        }
 
-        void setPreFilterFc(int voice, float x);
+        void setPlayFlag(int voice, bool val) {
+            scv[voice].setPlayFlag(val);
+        }
 
-        void setPreFilterRq(int voice, float x);
+        void cutToPos(int voice, float sec) {
+            scv[voice].cutToPos(sec);
+        }
 
-        void setPreFilterLp(int voice, float x);
+        void setPreFilterFc(int voice, float x) {
+            scv[voice].setPreFilterFc(x);
+        }
 
-        void setPreFilterHp(int voice, float x);
+        void setPreFilterRq(int voice, float x) {
+            scv[voice].setPreFilterRq(x);
+        }
 
-        void setPreFilterBp(int voice, float x);
+        void setPreFilterLp(int voice, float x) {
+            scv[voice].setPreFilterLp(x);
+        }
 
-        void setPreFilterBr(int voice, float x);
+        void setPreFilterHp(int voice, float x) {
+            scv[voice].setPreFilterHp(x);
+        }
 
-        void setPreFilterDry(int voice, float x);
+        void setPreFilterBp(int voice, float x) {
+            scv[voice].setPreFilterBp(x);
+        }
 
-        void setPreFilterFcMod(int voice, float x);
+        void setPreFilterBr(int voice, float x) {
+            scv[voice].setPreFilterBr(x);
+        }
 
-        void setPostFilterFc(int voice, float x);
+        void setPreFilterDry(int voice, float x) {
+            scv[voice].setPreFilterDry(x);
+        }
 
-        void setPostFilterRq(int voice, float x);
+        void setPreFilterFcMod(int voice, float x) {
+            scv[voice].setPreFilterFcMod(x);
+        }
 
-        void setPostFilterLp(int voice, float x);
+        void setPostFilterFc(int voice, float x) {
+            scv[voice].setPostFilterFc(x);
+        }
 
-        void setPostFilterHp(int voice, float x);
+        void setPostFilterRq(int voice, float x) {
+            scv[voice].setPostFilterRq(x);
+        }
 
-        void setPostFilterBp(int voice, float x);
+        void setPostFilterLp(int voice, float x) {
+            scv[voice].setPostFilterLp(x);
+        }
 
-        void setPostFilterBr(int voice, float x);
+        void setPostFilterHp(int voice, float x) {
+            scv[voice].setPostFilterHp(x);
+        }
 
-        void setPostFilterDry(int voice, float x);
+        void setPostFilterBp(int voice, float x) {
+            scv[voice].setPostFilterBp(x);
+        }
 
-        void setLevelSlewTime(int i, float d);
+        void setPostFilterBr(int voice, float x) {
+            scv[voice].setPostFilterBr(x);
+        }
 
-        void setRecPreSlewTime(int i, float d);
+        void setPostFilterDry(int voice, float x) {
+            scv[voice].setPostFilterDry(x);
+        }
 
-        void setRateSlewTime(int i, float d);
+#if 0 // not allowing realtime manipulation of fade logic params
+        void setPreFadeWindow(float x) {
+    auto t = std::thread([x] {
+	    FadeCurves::setPreWindowRatio(x);
+	});
+    t.detach();
+}
 
-        phase_t getQuantPhase(int i);
+void setRecFadeDelay(float x) {
+    auto t = std::thread([x] {
+	    FadeCurves::setRecDelayRatio(x);
+	});
+    t.detach();
+}
 
-        void setPhaseQuant(int i, phase_t q);
+void setPreFadeShape(float x) {
+    auto t = std::thread([x] {
+	    FadeCurves::setPreShape(static_cast<FadeCurves::Shape>(x));
+	});
+    t.detach();
+}
 
-        void setPhaseOffset(int i, float sec);
-
-        bool getRecFlag(int i);
-
-        bool getPlayFlag(int i);
-
-        void syncVoice(int follow, int lead, float offset);
-
-        void setVoiceBuffer(int id, float *buf, size_t bufFrames);
-
-        void setRecOffset(int i, float d);
-
-#if 0 // disabled for now
-        void setPreFadeWindow(float x);
-
-        void setRecFadeDelay(float x);
-
-        void setPreFadeShape(float x);
-
-        void setRecFadeShape(float x);
+void setRecFadeShape(float x) {
+    auto t = std::thread([x] {
+	    FadeCurves::setRecShape(static_cast<FadeCurves::Shape>(x));
+	});
+    t.detach();
+}
 #endif
 
+        void setRecOffset(int i, float d) {
+            scv[i].setRecOffset(d);
+        }
+
+        void setLevelSlewTime(int i, float d) {
+            scv[i].setLevelSlewTime(d);
+        }
+
+        void setRecPreSlewTime(int i, float d) {
+            scv[i].setRecPreSlewTime(d);
+        }
+
+        void setRateSlewTime(int i, float d) {
+            scv[i].setRateSlewTime(d);
+        }
+
+        phase_t getQuantPhase(int i) {
+            return scv[i].getQuantPhase();
+        }
+
+        void setPhaseQuant(int i, phase_t q) {
+            scv[i].setPhaseQuant(q);
+        }
+
+        void setPhaseOffset(int i, float sec) {
+            scv[i].setPhaseOffset(sec);
+        }
+
+        bool getRecFlag(int i) {
+            return scv[i].getRecFlag();
+        }
+
+        bool getPlayFlag(int i) {
+            return scv[i].getPlayFlag();
+        }
+
+        void syncVoice(int follow, int lead, float offset) {
+            scv[follow].cutToPos(scv[lead].getPos() + offset);
+        }
+
+        void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
+            scv[id].setBuffer(buf, bufFrames);
+        }
 
     private:
         Voice scv[numVoices];
-        //int numVoices;
-
     };
 }
 

@@ -11,11 +11,8 @@
 
 using namespace softcut;
 
-SubHead::SubHead() {
-    this->init();
-}
-
-void SubHead::init() {
+void SubHead::init(FadeCurves *fc) {
+    fadeCurves = fc;
     phase_ = 0;
     fade_ = 0;
     trig_ = 0;
@@ -109,9 +106,9 @@ void SubHead::poke(float in, float pre, float rec, int numFades) {
 
     BOOST_ASSERT_MSG(fade_ >= 0.f && fade_ <= 1.f, "bad fade coefficient in poke()");
 
+    preFade_ = pre + (1.f-pre) * fadeCurves->getPreFadeValue(fade_);
+    recFade_ = rec * fadeCurves->getRecFadeValue(fade_);
 
-    preFade_ = pre + (1.f-pre) * FadeCurves::getPreFadeValue(fade_);
-    recFade_ = rec * FadeCurves::getRecFadeValue(fade_);
     sample_t y; // write value
     const sample_t* src = resamp_.output();
 

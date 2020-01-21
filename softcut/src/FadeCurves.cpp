@@ -2,9 +2,8 @@
 // Created by ezra on 11/15/18.
 //
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
-#include <iostream>
 #include <boost/assert.hpp>
 #include <cstring>
 
@@ -14,7 +13,7 @@
 using namespace softcut;
 
 static constexpr float fpi = 3.1415926535898f;
-
+/*
 float FadeCurves::recDelayRatio;
 float FadeCurves::preWindowRatio;
 unsigned int FadeCurves::recDelayMinFrames;
@@ -23,6 +22,16 @@ float FadeCurves::recFadeBuf[fadeBufSize];
 float FadeCurves::preFadeBuf[fadeBufSize];
 FadeCurves::Shape FadeCurves::recShape = Linear;
 FadeCurves::Shape FadeCurves::preShape = Linear;
+*/
+
+void FadeCurves::init() {
+    setPreShape(FadeCurves::Shape::Linear);
+    setRecShape(FadeCurves::Shape::Raised);
+    setMinPreWindowFrames(0);
+    setMinRecDelayFrames(0);
+    setPreWindowRatio(1.f / 8);
+    setRecDelayRatio(1.f / (8 * 16));
+}
 
 void FadeCurves::calcRecFade() {
     float buf[fadeBufSize];
@@ -87,20 +96,20 @@ void FadeCurves::calcPreFade() {
     unsigned int i = 0;
     float x = 0.f;
     if(preShape == Sine) {
-        const float phi = fpi / nwp;
+        const float phi = fpi / static_cast<float>(nwp);
         while (i < nwp) {
             buf[i++] = cosf(x) * 0.5f + 0.5f;
             x += phi;
         }
     } else if (preShape == Linear){
-        const float phi = 1.f / nwp;
+        const float phi = 1.f /  static_cast<float>(nwp);
         while (i < nwp) {
             buf[i++] = 1.f - x;
             x += phi;
         }
     } else if (recShape == Raised) {
         BOOST_ASSERT(preShape == Raised);
-        const float phi = fpi / (nwp*2);
+        const float phi = fpi / ( static_cast<float>(nwp*2));
         while (i < nwp) {
             buf[i++] = cosf(x);
             x += phi;

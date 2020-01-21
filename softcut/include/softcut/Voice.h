@@ -11,72 +11,104 @@
 #include "ReadWriteHead.h"
 #include "Svf.h"
 #include "Utilities.h"
+#include "FadeCurves.h"
 
 namespace softcut {
     class Voice {
     public:
         Voice();
-        void setBuffer(float* buf, unsigned int numFrames);
+
+        void init(FadeCurves *fc);
+
+        void setBuffer(float *buf, unsigned int numFrames);
 
         void setSampleRate(float hz);
+
         void setRate(float rate);
+
         void setLoopStart(float sec);
+
         void setLoopEnd(float sec);
+
         void setLoopFlag(bool val);
 
         void setFadeTime(float sec);
 
         void setRecLevel(float amp);
+
         void setPreLevel(float amp);
+
         void setRecFlag(bool val);
+
         void setPlayFlag(bool val);
 
         void setPreFilterFc(float);
+
         void setPreFilterRq(float);
+
         void setPreFilterLp(float);
+
         void setPreFilterHp(float);
+
         void setPreFilterBp(float);
+
         void setPreFilterBr(float);
+
         void setPreFilterDry(float);
+
         void setPreFilterFcMod(float x);
 
-	void setPostFilterFc(float);
+        void setPostFilterFc(float);
+
         void setPostFilterRq(float);
+
         void setPostFilterLp(float);
+
         void setPostFilterHp(float);
+
         void setPostFilterBp(float);
+
         void setPostFilterBr(float);
+
         void setPostFilterDry(float);
 
         void cutToPos(float sec);
 
         // process a single channel
-        void processBlockMono(const float* in, float* out, int numFrames);
+        void processBlockMono(const float *in, float *out, int numFrames);
 
         void setRecOffset(float d);
+
         void setRecPreSlewTime(float d);
+
         void setRateSlewTime(float d);
+
         void setPhaseQuant(float x);
+
         void setPhaseOffset(float x);
 
         phase_t getQuantPhase();
 
         bool getPlayFlag();
+
         bool getRecFlag();
 
         float getPos();
 
-	void reset();
-	
+        void reset();
+
     private:
         void updatePreSvfFc();
+
         void updateQuantPhase();
 
     private:
-        float* buf;
+        float *buf;
         int bufFrames;
         float sampleRate;
 
+        // fade curve data
+        FadeCurves fadeCurves;
         // xfaded read/write head
         ReadWriteHead sch;
         // input filter
@@ -89,6 +121,7 @@ namespace softcut {
         LogRamp preRamp;
         // record-level ramp
         LogRamp recRamp;
+
 
         // default frequency for SVF
         // reduced automatically when setting rate

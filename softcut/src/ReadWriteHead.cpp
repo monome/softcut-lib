@@ -13,11 +13,7 @@
 using namespace softcut;
 using namespace std;
 
-ReadWriteHead::ReadWriteHead() {
-    this->init();
-}
-
-void ReadWriteHead::init() {
+void ReadWriteHead::init(FadeCurves *fc) {
     start = 0.f;
     end = 0.f;
     active = 0;
@@ -26,8 +22,8 @@ void ReadWriteHead::init() {
     testBuf.init();
     queuedCrossfade = 0;
     queuedCrossfadeFlag = false;
-    head[0].init();
-    head[1].init();
+    head[0].init(fc);
+    head[1].init(fc);
 }
 
 void ReadWriteHead::processSample(sample_t in, sample_t *out) {

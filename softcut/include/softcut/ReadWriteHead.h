@@ -9,44 +9,59 @@
 #include "SubHead.h"
 #include "Types.h"
 #include "TestBuffers.h"
+#include "FadeCurves.h"
 
-namespace softcut{
+namespace softcut {
 
     class ReadWriteHead {
     public:
 
-        ReadWriteHead();
-        void init();
+        void init(FadeCurves *fc);
 
         // per-sample update functions
         void processSample(sample_t in, sample_t *out);
 
         void processSampleNoRead(sample_t in, sample_t *out);
+
         void processSampleNoWrite(sample_t in, sample_t *out);
 
         void setSampleRate(float sr);
+
         void setBuffer(sample_t *buf, uint32_t size);
+
         void setRate(rate_t x);              // set the playback rate (as a ratio)
         void setLoopStartSeconds(float x);  // set the loop end point in seconds
         void setLoopEndSeconds(float x);    // set the loop start point in seconds
         void setFadeTime(float secs);
+
         void setLoopFlag(bool val);
+
         void setRec(float x);
+
         void setPre(float x);
+
         void cutToPos(float seconds);
 
         phase_t getActivePhase();
+
         rate_t getRate();
 
-
         void setRecOffsetSamples(int d);
+
+    protected:
+        friend class SubHead;
+
     private:
         // fade in to new position (given in samples)
         // assumption: phase is in range!
         void cutToPhase(phase_t newPhase);
+
         void enqueueCrossfade(phase_t newPhase);
+
         void dequeueCrossfade();
+
         void takeAction(Action act);
+
         sample_t mixFade(sample_t x, sample_t y, float a, float b); // mix two inputs with phases
         void calcFadeInc();
 
