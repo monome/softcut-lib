@@ -6,22 +6,18 @@
 #define Softcut_Softcut_H
 
 
+#include <memory>
 #include <thread>
-
-#include "../src/SoftcutVoice.h"
+#include "Types.h"
 
 namespace softcut {
 
-    template<int numVoices>
+    class SoftcutVoice;
+
     class Softcut {
 
-    private:
-        SoftcutVoice scv[numVoices];
-
-        void init();
-
     public:
-        Softcut();
+        void init(int numVoices);
 
         void reset();
 
@@ -80,19 +76,6 @@ namespace softcut {
 
         void setPostFilterDry(int voice, float x);
 
-#if 0 // not allowing realtime manipulation of fade logic params
-        void setPreFadeWindow(float x);
-
-        void setRecFadeDelay(float x);
-
-        void setPreFadeShape(float x);
-        }
-
-        void setRecFadeShape(float x);
-#endif
-
-        void setRecOffset(int i, float d);
-
         void setLevelSlewTime(int i, float d);
 
         void setRecPreSlewTime(int i, float d);
@@ -112,6 +95,24 @@ namespace softcut {
         void syncVoice(int follow, int lead, float offset);
 
         void setVoiceBuffer(int id, float *buf, size_t bufFrames);
+
+#if 0 // disabled for now
+        void setPreFadeWindow(float x);
+
+        void setRecFadeDelay(float x);
+
+        void setPreFadeShape(float x);
+
+        void setRecFadeShape(float x);
+
+        void setRecOffset(int i, float d);
+#endif
+
+
+    private:
+        std::unique_ptr<SoftcutVoice[]> scv;
+        int numVoices;
+
     };
 }
 

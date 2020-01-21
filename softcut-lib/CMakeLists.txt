@@ -3,12 +3,12 @@ project(softcut_lib)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(SRC src/FadeCurves.cpp
-        src/Softcut.cpp
+set(SRC include/Softcut.h
+        src/FadeCurves.cpp
         src/SoftcutHead.cpp
         src/SoftcutVoice.cpp
-  src/SubHead.cpp
-  src/Svf.cpp)
+        src/SubHead.cpp
+        src/Svf.cpp)
 
 include_directories(include src)
 

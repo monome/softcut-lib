@@ -4,7 +4,12 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(softcut_jack_osc)
 
-set(SRC src/main.cpp src/JackClient.cpp src/OscServer.cpp)
+set(SRC src/main.cpp
+        src/SoftCutClient.cpp
+        src/Commands.cpp
+        src/OscInterface.cpp
+        src/BufDiskWorker.cpp
+        src/Window.cpp)
 
 add_executable(softcut_jack_osc ${SRC})
 

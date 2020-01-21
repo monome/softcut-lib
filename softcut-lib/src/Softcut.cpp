@@ -1,21 +1,10 @@
-//
-// Created by emb on 11/10/18.
-//
 #include "Softcut.h"
-#include "SoftcutVoice.h"
-#include "../src/FadeCurves.h"
-
 using namespace softcut;
 
-SoftcutVoice scv[numVoices];
-
-Softcut::Softcut() {
-    this->init();
-    this->reset();
-}
-
-template<int numVoices>
-Softcut::init() {
+void Softcut::init(int nv) {
+    numVoices = nv;
+    scv = std::make_unique<SoftcutVoice[]>(numVoices);
+    // FIXME: fadecurves shouldn't be static    
     FadeCurves::setPreShape(FadeCurves::Shape::Linear);
     FadeCurves::setRecShape(FadeCurves::Shape::Raised);
     FadeCurves::setMinPreWindowFrames(0);
@@ -24,12 +13,14 @@ Softcut::init() {
     FadeCurves::setRecDelayRatio(1.f / (8 * 16));
 }
 
+Softcut::Softcut() {
+    this->init();
+    this->reset();
+}
 
 void Softcut::reset() {
     for (int v = 0; v < numVoices; ++v) {
-        scv[v].reset();
-        /* scv[v].phase_quant(i, 1); */
-        /* scv[v].phase_offset(i, 0); */
+	scv[v].reset();
     };
 }
 
@@ -40,7 +31,7 @@ void Softcut::processBlock(int v, const float *in, float *out, int numFrames) {
 
 void Softcut::setSampleRate(unsigned int hz) {
     for (auto &v : scv) {
-        v.setSampleRate(hz);
+	v.setSampleRate(hz);
     }
 }
 
@@ -147,29 +138,29 @@ void Softcut::setPostFilterDry(int voice, float x) {
 #if 0 // not allowing realtime manipulation of fade logic params
 void Softcut::setPreFadeWindow(float x) {
     auto t = std::thread([x] {
-        FadeCurves::setPreWindowRatio(x);
-    });
+	    FadeCurves::setPreWindowRatio(x);
+	});
     t.detach();
 }
 
 void Softcut::setRecFadeDelay(float x) {
     auto t = std::thread([x] {
-        FadeCurves::setRecDelayRatio(x);
-    });
+	    FadeCurves::setRecDelayRatio(x);
+	});
     t.detach();
 }
 
 void Softcut::setPreFadeShape(float x) {
     auto t = std::thread([x] {
-        FadeCurves::setPreShape(static_cast<FadeCurves::Shape>(x));
-    });
+	    FadeCurves::setPreShape(static_cast<FadeCurves::Shape>(x));
+	});
     t.detach();
 }
 
 void Softcut::setRecFadeShape(float x) {
     auto t = std::thread([x] {
-        FadeCurves::setRecShape(static_cast<FadeCurves::Shape>(x));
-    });
+	    FadeCurves::setRecShape(static_cast<FadeCurves::Shape>(x));
+	});
     t.detach();
 }
 #endif

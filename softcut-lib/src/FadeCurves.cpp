@@ -34,7 +34,7 @@ void FadeCurves::calcRecFade() {
     unsigned int nr = n - ndr;
 
     unsigned int i = 0;
-    if(recShape == SINE) {
+    if(recShape == Sine) {
         const float phi = fpi / nr;
         float x = fpi;
         float y = 0.f;
@@ -86,7 +86,7 @@ void FadeCurves::calcPreFade() {
 
     unsigned int i = 0;
     float x = 0.f;
-    if(preShape == SINE) {
+    if(preShape == Sine) {
         const float phi = fpi / nwp;
         while (i < nwp) {
             buf[i++] = cosf(x) * 0.5f + 0.5f;
