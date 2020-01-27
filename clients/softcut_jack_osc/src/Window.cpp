@@ -4,8 +4,8 @@
 
 #include "Window.h"
 
-using namespace crone;
+using namespace softcut_jack_osc;
 
 const float Window::raisedCosShort[Window::raisedCosShortLen] = {
-#include "cos_win.h"
+#include "cos_win.inc"
 };

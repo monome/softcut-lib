@@ -30,13 +30,10 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 
     *out = mixFade(head[0].peek(), head[1].peek(), head[0].fade(), head[1].fade());
 
-    int numFades = (head[0].state_ == FadeIn || head[0].state_ == FadeOut)
-            + (head[1].state_ == FadeIn || head[1].state_ == FadeOut);
-
     BOOST_ASSERT_MSG(!(head[0].state_ == Active && head[1].state_ == Active), "multiple active heads");
 
-    head[0].poke(in, pre, rec, numFades);
-    head[1].poke(in, pre, rec, numFades);
+    head[0].poke(in, pre, rec);
+    head[1].poke(in, pre, rec);
 
     takeAction(head[0].updatePhase(start, end, loopFlag));
     takeAction(head[1].updatePhase(start, end, loopFlag));
@@ -49,13 +46,11 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 
 void ReadWriteHead::processSampleNoRead(sample_t in, sample_t *out) {
     (void)out;
-    int numFades = (head[0].state_ == FadeIn || head[0].state_ == FadeOut)
-                   + (head[1].state_ == FadeIn || head[1].state_ == FadeOut);
 
     BOOST_ASSERT_MSG(!(head[0].state_ == Active && head[1].state_ == Active), "multiple active heads");
 
-    head[0].poke(in, pre, rec, numFades);
-    head[1].poke(in, pre, rec, numFades);
+    head[0].poke(in, pre, rec);
+    head[1].poke(in, pre, rec);
 
     takeAction(head[0].updatePhase(start, end, loopFlag));
     takeAction(head[1].updatePhase(start, end, loopFlag));
@@ -78,7 +73,6 @@ void ReadWriteHead::processSampleNoWrite(sample_t in, sample_t *out) {
     head[1].updateFade(fadeInc);
     dequeueCrossfade();
 }
-
 
 void ReadWriteHead::setRate(rate_t x)
 {

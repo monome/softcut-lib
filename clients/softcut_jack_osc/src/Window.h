@@ -7,7 +7,7 @@
 
 #include <cstddef>
 
-namespace  crone {
+namespace  softcut_jack_osc {
 
     class Window {
     public:

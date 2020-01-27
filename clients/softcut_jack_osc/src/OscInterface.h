@@ -42,7 +42,7 @@ namespace softcut_jack_osc {
             string format;
             OscMethod() = default;
             OscMethod(string p, string f, Handler h);
-            Handler handler;
+            Handler handler{};
         };
 
         static std::array<OscMethod, MaxNumMethods> methods;

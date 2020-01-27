@@ -5,14 +5,13 @@
 #ifndef Softcut_Softcut_H
 #define Softcut_Softcut_H
 
-
 #include <memory>
 #include <thread>
 #include "Types.h"
 #include "Voice.h"
 
 namespace softcut {
-    template <int numVoices>
+    template<int numVoices>
     class Softcut {
 
     public:
@@ -27,7 +26,7 @@ namespace softcut {
             };
         }
 
-// assumption: channel count is equal to voice count!
+        // assumption: channel count is equal to voice count!
         void processBlock(int v, const float *in, float *out, int numFrames) {
             scv[v].processBlockMono(in, out, numFrames);
         }
@@ -141,29 +140,29 @@ namespace softcut {
 #if 0 // not allowing realtime manipulation of fade logic params
         void setPreFadeWindow(float x) {
     auto t = std::thread([x] {
-	    FadeCurves::setPreWindowRatio(x);
-	});
+        FadeCurves::setPreWindowRatio(x);
+    });
     t.detach();
 }
 
 void setRecFadeDelay(float x) {
     auto t = std::thread([x] {
-	    FadeCurves::setRecDelayRatio(x);
-	});
+        FadeCurves::setRecDelayRatio(x);
+    });
     t.detach();
 }
 
 void setPreFadeShape(float x) {
     auto t = std::thread([x] {
-	    FadeCurves::setPreShape(static_cast<FadeCurves::Shape>(x));
-	});
+        FadeCurves::setPreShape(static_cast<FadeCurves::Shape>(x));
+    });
     t.detach();
 }
 
 void setRecFadeShape(float x) {
     auto t = std::thread([x] {
-	    FadeCurves::setRecShape(static_cast<FadeCurves::Shape>(x));
-	});
+        FadeCurves::setRecShape(static_cast<FadeCurves::Shape>(x));
+    });
     t.detach();
 }
 #endif
