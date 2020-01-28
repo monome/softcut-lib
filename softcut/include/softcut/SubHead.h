@@ -9,8 +9,6 @@
 #ifndef SoftcutHEAD_SUBHEAD_H
 #define SoftcutHEAD_SUBHEAD_H
 
-#include <boost/math/special_functions/sign.hpp>
-
 #include "Resampler.h"
 #include "LowpassBrickwall.h"
 #include "SoftClip.h"
@@ -37,7 +35,6 @@ namespace softcut {
         //! @param in: input value
         //! @param pre: scaling level for previous buffer content
         //! @param rec: scaling level for new content
-        //! @param numFades: number of heads currently in crossfade
         void poke(sample_t in, float pre, float rec);
         Action updatePhase(phase_t start, phase_t end, bool loop);
         void updateFade(float inc);

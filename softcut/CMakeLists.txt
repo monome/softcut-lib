@@ -8,7 +8,6 @@ set(SRC
         src/ReadWriteHead.cpp
         src/SubHead.cpp
         src/FadeCurves.cpp
-        src/TestBuffers.cpp
         src/Svf.cpp)
 
 include_directories(include src)

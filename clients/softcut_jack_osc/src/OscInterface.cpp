@@ -38,12 +38,13 @@ void OscInterface::init(SoftcutClient *sc) {
     quitFlag = false;
     // FIXME: should get port configs from program args or elsewhere
     port = "9999";
-#if 1
+#if 0
     clientAddress = lo_address_new("127.0.0.1", "8888");
 #else  // testing with SC
     clientAddress = lo_address_new("127.0.0.1", "57120");
 #endif
 
+    std::cout << "OSC server listening on port " << port << std::endl;
     st = lo_server_thread_new(port.c_str(), handleLoError);
     addServerMethods();
 
@@ -59,7 +60,6 @@ void OscInterface::init(SoftcutClient *sc) {
         }
     });
     phasePoll->setPeriod(1);
-
 
     //--- TODO: softcut trigger poll?
 
