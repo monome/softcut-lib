@@ -154,7 +154,7 @@ unsigned int SubHead::wrapBufIndex(int x) {
 }
 
 void SubHead::setSampleRate(float sr) {
-    lpf_.init(static_cast<int>(sr));
+    //... nothing to do
 }
 
 void SubHead::setPhase(phase_t phase) {

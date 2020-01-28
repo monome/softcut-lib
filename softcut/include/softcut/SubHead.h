@@ -6,11 +6,10 @@
  * this class implements one half of a crossfaded read/write sch.
  */
 
-#ifndef SoftcutHEAD_SUBHEAD_H
-#define SoftcutHEAD_SUBHEAD_H
+#ifndef Softcut_SUBHEAD_H
+#define Softcut_SUBHEAD_H
 
 #include "Resampler.h"
-#include "LowpassBrickwall.h"
 #include "SoftClip.h"
 #include "Types.h"
 #include "FadeCurves.h"
@@ -22,14 +21,17 @@ namespace softcut {
 
     class SubHead {
         friend class ReadWriteHead;
+
     public:
         void init(FadeCurves *fc);
         void setSampleRate(float sr);
+
     private:
         sample_t peek4();
         unsigned int wrapBufIndex(int x);
 
     protected:
+        static constexpr int blockSize = 2048;
         sample_t peek();
         //! poke
         //! @param in: input value
@@ -57,7 +59,6 @@ namespace softcut {
 
     private:
         Resampler resamp_;
-        LowpassBrickwall lpf_;
         SoftClip clip_;
 
         sample_t* buf_; // output buffer
@@ -83,4 +84,4 @@ namespace softcut {
 }
 
 
-#endif //SoftcutHEAD_SUBHEAD_H
+#endif //Softcut_SUBHEAD_H

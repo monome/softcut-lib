@@ -11,7 +11,7 @@ it provides a relatively low-level but robust interface for commonly needed func
 - crossfaded overdub behavior
 - input and output multimode filters
 
-this library was developed at the behest of [monome](), originally for use with the [norns]() sound computer.
+this library was developed at the behest of [monome](https://monome.org), originally for use with the [norns](https://monome.org/norns/) sound computer.
 
 
 ### project structure
@@ -41,7 +41,7 @@ cd softcut/softcut
 mkdir build-release
 cd build-release
 cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build.
+cmake --build .
 ```
 
 this creates a static library at `build-release/libsoftcut.a`

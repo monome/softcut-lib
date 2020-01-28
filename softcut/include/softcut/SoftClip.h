@@ -42,7 +42,7 @@ namespace softcut {
 
         float processSample(float x) {
             float ax = fabs(x);
-            const float sx = boost::math::sign(x);
+            const float sx = static_cast<float>(boost::math::sign(x));
 
             if (ax > 1.f) {
                 ax = 1.f;
