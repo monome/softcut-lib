@@ -2,8 +2,10 @@
 // Created by ezra on 11/3/18.
 //
 
-#include "softcut/Voice.h"
 #include <functional>
+
+#include "softcut/Voice.h"
+#include "softcut/Resampler.h"
 
 using namespace softcut;
 
@@ -92,7 +94,7 @@ void Voice::setSampleRate(float hz) {
     svfPost.setSampleRate(hz);
 }
 
-void Voice::setRate(float rate) {
+void Voice::setRate(float rate) {    
     rateRamp.setTarget(rate);
     updatePreSvfFc();
 }
