@@ -16,7 +16,7 @@ void SubHead::init(FadeCurves *fc) {
     phase_ = 0;
     fade_ = 0;
     trig_ = 0;
-    state_ = Inactive;
+    state_ = Stopped;
     resamp_.setPhase(0);
     inc_dir_ = 1;
     recOffset_ = -8;
@@ -29,7 +29,7 @@ Action SubHead::updatePhase(phase_t start, phase_t end, bool loop) {
     switch(state_) {
         case FadeIn:
         case FadeOut:
-        case Active:
+        case Playing:
             p = phase_ + rate_;
             if(active_) {
                 // FIXME: should refactor this a bit.
@@ -57,7 +57,7 @@ Action SubHead::updatePhase(phase_t start, phase_t end, bool loop) {
             } // /active check
             phase_ = p;
             break;
-        case Inactive:
+        case Stopped:
         default:
             ;; // nothing to do
     }
@@ -70,18 +70,18 @@ void SubHead::updateFade(float inc) {
             fade_ += inc;
             if (fade_ > 1.f) {
                 fade_ = 1.f;
-                state_ = Active;
+                state_ = Playing;
             }
             break;
         case FadeOut:
             fade_ -= inc;
             if (fade_ < 0.f) {
                 fade_ = 0.f;
-                state_ = Inactive;
+                state_ = Stopped;
             }
             break;
-        case Active:
-        case Inactive:
+        case Playing:
+        case Stopped:
         default:;; // nothing to do
     }
 }
@@ -99,7 +99,7 @@ void SubHead::poke(float in, float pre, float rec) {
     // it follows that all resamplers could share an input ringbuf
     int nframes = resamp_.processFrame(in);
 
-    if(state_ == Inactive) {
+    if(state_ == Stopped) {
         return;
     }
 

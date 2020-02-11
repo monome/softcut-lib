@@ -16,7 +16,7 @@
 
 namespace softcut {
 
-    typedef enum { Active=0, Inactive=1, FadeIn=2, FadeOut=3 } State;
+    typedef enum { Playing=0, Stopped=1, FadeIn=2, FadeOut=3 } State;
     typedef enum { None, Stop, LoopPos, LoopNeg } Action ;
 
     class SubHead {
