@@ -12,7 +12,6 @@
 #include "Types.h"
 #include "Interpolate.h"
 
-
 // ultra-simple resampling class
 // works on mono output buffer and processes one input sample at a time
 

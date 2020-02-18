@@ -11,7 +11,6 @@
 
 #include "softcut/ReadWriteHead.h"
 
-
 using namespace softcut;
 using namespace std;
 
