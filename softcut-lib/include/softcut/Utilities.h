@@ -20,6 +20,12 @@ namespace softcut {
     }
 #endif
 
+    // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+    template <typename T>
+    static int sign(T val) {
+        return (T(0) < val) - (val < T(0));
+    }
+
     // convert a time-to-convergence to a pole coefficient
     // "ref" argument defines the amount of convergence
     // target ratio is e^ref.
@@ -229,7 +235,7 @@ namespace softcut {
         }
     };
 
-    
+
 
     // simple lookup table class
     template<typename T>
@@ -252,5 +258,5 @@ namespace softcut {
 	}
     };
 
- 
+
 }

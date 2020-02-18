@@ -1,0 +1,4 @@
+# cmake out of source build directories
+
+build/
+build-*/
