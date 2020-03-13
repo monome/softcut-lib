@@ -17,6 +17,7 @@ namespace softcut {
 
     protected:
         friend class SubHead;
+        friend class TestBuffers;
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
         template<typename T>
         using StateBuffer = SubHead::StateBuffer<T>;
@@ -32,7 +33,7 @@ namespace softcut {
             enqueuedPosition = pos;
         }
 
-        int dequeuePositionChange(SubHead::FramePositionData &a, SubHead::FramePositionData &b);
+        int dequeuePositionChange(size_t fr); //SubHead::FramePositionData &a, SubHead::FramePositionData &b);
         void handleLoopAction(SubHead::OpAction action);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {

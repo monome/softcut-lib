@@ -34,7 +34,7 @@ namespace softcut {
         using StateBuffer = std::array<T, maxBlockSize>;
 
         friend class ReadWriteHead;
-
+        friend class TestBuffers;
     public:
         // operational state and action descriptors
         typedef enum {
@@ -46,7 +46,6 @@ namespace softcut {
 
 
     protected:
-
 
         //--- buffered state variables, owned:
         // is operating
@@ -68,16 +67,6 @@ namespace softcut {
         // final record level, post-fade
         StateBuffer<float> rec{0.f};
 
-        // updating position and state data is a per-frame operation.
-        // structure contains all state variables required for each frame update.
-        // (targets and sources)
-        struct FramePositionData {
-            phase_t phase;
-            OpState opState;
-            OpAction opAction;
-            float fade;
-        };
-
         // structure containing all parameters required for a single-frame position update,
         // (not unique to / stored by the subhead.)
         struct FramePositionParameters {
@@ -86,17 +75,7 @@ namespace softcut {
             phase_t start;
             phase_t end;
             bool loop;
-            size_t wrIdx;
         };
-        // structure containing all data required for a single-frame level update,
-        // (targets and sources)
-//        struct FrameLevelData {
-//            phase_t phase;
-//            OpState opState;
-//            float fade;
-//            float rec;
-//            float pre;
-//        };
 
         struct FrameLevelParameters {
             float rate;
@@ -105,55 +84,7 @@ namespace softcut {
             FadeCurves *fadeCurves;
         };
 
-        // structure containing all source and target data involved in single-frame write
-//        struct FrameWriteData {
-//            size_t wrIdx;
-//        };
-
     protected:
-        //-------------
-        // --- helpers
-        // update relevant buffers with single frame of position data.
-        void storeFramePositionData(size_t idx, const FramePositionData &data) {
-            phase[idx] = data.phase;
-            opState[idx] = data.opState;
-            opAction[idx] = data.opAction;
-            fade[idx] = data.fade;
-        }
-
-        // initialize a frame position data structure from buffered values
-        void loadFramePositionData(size_t idx, FramePositionData &data) {
-            data.phase = phase[idx];
-            data.opState = opState[idx];
-            data.opAction = opAction[idx];
-            data.fade = fade[idx];
-        }
-
-//        // update relevant buffers with single frame of level data.
-//        void storeFrameLevelData(size_t idx, FrameLevelData &data) {
-//            phase[idx] = data.phase;
-//            opState[idx] = data.opState;
-//            fade[idx] = data.fade;
-//            rec[idx] = data.rec;
-//            pre[idx] = data.pre;
-//        }
-//
-//        // initialize a frame level data structure from buffered values
-//        void loadFrameLevelData(size_t idx, FrameLevelData &data) {
-//            data.phase = phase[idx];
-//            data.opState = opState[idx];
-//            data.fade = fade[idx];
-//            data.rec = rec[idx];
-//            data.pre = pre[idx];
-//        }
-//
-//        void loadFrameWriteData(size_t idx, FrameWriteData &data) {
-//            data.wrIdx = wrIdx[idx];
-//        }
-//
-//        void storeFrameWriteData(size_t idx, const FrameWriteData &data) {
-//            wrIdx[idx] = data.wrIdx;
-//        }
 
         void updateWrIdx(size_t idx, float rate, int offset) {
             size_t w = static_cast<size_t>(phase[idx]);
@@ -165,14 +96,9 @@ namespace softcut {
             wrIdx[idx] = w;
         }
 
-        // -- because ReadWriteHead may manipulate the data between load and store,
-        // we'll break apart the update procedure into explicit load, store and calc.
-        // so this calc function can be static
-        // update frame position data from parameters
-        static OpAction calcPositionUpdate(FramePositionData &x, const FramePositionParameters &a);
-
-        //--- these update methods can alter data in place, so we make them mutating
-        // update frame level data from parameters
+        // update phase, opState, and opAction
+        OpAction calcPositionUpdate(size_t idx_1, size_t idx, const FramePositionParameters &a);
+        // update frame level data
         void calcLevelUpdate(size_t idx,  const FrameLevelParameters &a);
         // perform single frame write
         void performFrameWrite(size_t idx_1, size_t idx, float input);
@@ -195,8 +121,6 @@ namespace softcut {
         Resampler resamp;   // resampler
         float *buf{};         // current audio buffer
         size_t bufFrames{};   // total buffer size
-
-        void updateWrIdx();
     };
 }
 

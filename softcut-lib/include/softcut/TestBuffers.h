@@ -11,6 +11,9 @@
 namespace softcut {
 class TestBuffers {
 public:
+
+
+
     typedef enum { Read, Write, Fade, State, Pre, Rec, numChannels } Channel;
     enum { numFrames = 131072, frameMask = 131071 };
 

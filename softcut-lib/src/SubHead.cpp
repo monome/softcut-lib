@@ -6,69 +6,131 @@
 
 using namespace softcut;
 
-SubHead::OpAction SubHead::calcPositionUpdate(
-        FramePositionData &x,
-        const FramePositionParameters &a) {
-    switch (x.opState) {
+SubHead::OpAction SubHead::calcPositionUpdate(size_t idx_1, size_t idx,
+                                     const SubHead::FramePositionParameters &a) {
+    switch (opState[idx_1]) {
         case FadeIn:
-            x.phase = x.phase + a.rate;
-            x.fade = x.fade + a.fadeInc;
-            if (x.fade > 1.f) {
-                x.fade = 1.f;
-                x.opState = Playing;
-                x.opAction = DoneFadeIn;
+            phase[idx] = phase[idx_1] + a.rate;
+            fade[idx] = fade[idx_1] + a.fadeInc;
+            if (fade[idx] > 1.f) {
+                fade[idx] = 1.f;
+                opState[idx] = Playing;
+                opAction[idx] = DoneFadeIn;
             } else {
-                x.opState = FadeIn;
-                x.opAction = None;
+                opState[idx] = FadeIn;
+                opAction[idx] = None;
             }
             break;
         case FadeOut:
-            x.phase = x.phase + a.rate;
-            x.fade = x.fade - a.fadeInc;
-            if (x.fade < 0.f) {
-                x.fade = 0.f;
-                x.opState = Stopped;
-                x.opAction = DoneFadeOut;
+            phase[idx] = phase[idx_1] + a.rate;
+            fade[idx] = fade[idx] - a.fadeInc;
+            if (fade[idx] < 0.f) {
+                fade[idx] = 0.f;
+                opState[idx] = Stopped;
+                opAction[idx] = DoneFadeOut;
             } else { // still fading
-                x.opState = FadeOut;
-                x.opAction = None;
+                opState[idx] = FadeOut;
+                opAction[idx] = None;
             }
             break;
         case Playing:
-            x.phase = x.phase + a.rate;
+            phase[idx] = phase[idx_1] + a.rate;
             if (a.rate > 0.f) { // positive rage
-                if (x.phase > a.end) { // out of loop bounds
-                    x.opState = FadeOut;
+                if (phase[idx] > a.end) { // out of loop bounds
+                    opState[idx] = FadeOut;
                     if (a.loop) {
-                        x.opAction = LoopPositive;
+                        opAction[idx] = LoopPositive;
                     } else {
-                        x.opAction = Stop;
+                        opAction[idx] = Stop;
                     }
                 } else { // in loop bounds
-                    x.opAction = None;
-                    x.opState = Playing;
+                    opAction[idx] = None;
+                    opState[idx] = Playing;
                 }
             } else { // negative rate
-                if (x.phase < a.start) { // out of loop bounds
-                    x.opState = FadeOut;
+                if (phase[idx] < a.start) { // out of loop bounds
+                    opState[idx] = FadeOut;
                     if (a.loop) {
-                        x.opAction = LoopNegative;
+                        opAction[idx] = LoopNegative;
                     } else {
-                        x.opAction = Stop;
+                        opAction[idx] = Stop;
                     }
                 } else { // in loop bounds
-                    x.opAction = None;
-                    x.opState = Playing;
+                    opAction[idx] = None;
+                    opState[idx] = Playing;
                 }
             }
             break;
         case Stopped:
-            x.opAction = None;
-            x.opState = Stopped;
+            opAction[idx] = None;
+            opState[idx] = Stopped;
     }
 
-    return x.opAction;
+    return opAction[idx];
 }
+//SubHead::OpAction SubHead::calcPositionUpdate(
+//        FramePositionData &x,
+//        const FramePositionParameters &a) {
+//    switch (x.opState) {
+//        case FadeIn:
+//            x.phase = x.phase + a.rate;
+//            x.fade = x.fade + a.fadeInc;
+//            if (x.fade > 1.f) {
+//                x.fade = 1.f;
+//                x.opState = Playing;
+//                x.opAction = DoneFadeIn;
+//            } else {
+//                x.opState = FadeIn;
+//                x.opAction = None;
+//            }
+//            break;
+//        case FadeOut:
+//            x.phase = x.phase + a.rate;
+//            x.fade = x.fade - a.fadeInc;
+//            if (x.fade < 0.f) {
+//                x.fade = 0.f;
+//                x.opState = Stopped;
+//                x.opAction = DoneFadeOut;
+//            } else { // still fading
+//                x.opState = FadeOut;
+//                x.opAction = None;
+//            }
+//            break;
+//        case Playing:
+//            x.phase = x.phase + a.rate;
+//            if (a.rate > 0.f) { // positive rage
+//                if (x.phase > a.end) { // out of loop bounds
+//                    x.opState = FadeOut;
+//                    if (a.loop) {
+//                        x.opAction = LoopPositive;
+//                    } else {
+//                        x.opAction = Stop;
+//                    }
+//                } else { // in loop bounds
+//                    x.opAction = None;
+//                    x.opState = Playing;
+//                }
+//            } else { // negative rate
+//                if (x.phase < a.start) { // out of loop bounds
+//                    x.opState = FadeOut;
+//                    if (a.loop) {
+//                        x.opAction = LoopNegative;
+//                    } else {
+//                        x.opAction = Stop;
+//                    }
+//                } else { // in loop bounds
+//                    x.opAction = None;
+//                    x.opState = Playing;
+//                }
+//            }
+//            break;
+//        case Stopped:
+//            x.opAction = None;
+//            x.opState = Stopped;
+//    }
+//
+//    return x.opAction;
+//}
 
 void SubHead::calcLevelUpdate(size_t idx, const FrameLevelParameters &a) {
     pre[idx] = a.pre + (1.f - a.pre) * a.fadeCurves->getPreFadeValue(fade[idx]);

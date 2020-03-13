@@ -13,23 +13,20 @@
 using namespace softcut;
 using namespace std;
 
-int ReadWriteHead::dequeuePositionChange(
-        SubHead::FramePositionData &a,
-        SubHead::FramePositionData &b) {
+int ReadWriteHead::dequeuePositionChange(size_t fr) {
+//        SubHead::FramePositionData &a,
+//        SubHead::FramePositionData &b) {
     if (enqueuedPosition < 0) {
         return -1;
     }
-    if (a.opState == SubHead::Stopped) {
-        a.opState = SubHead::FadeIn;
-        a.phase = enqueuedPosition;
-        enqueuedPosition = -1.0;
-        return 0;
-    }
-    if (b.opState == SubHead::Stopped) {
-        b.opState = SubHead::FadeIn;
-        b.phase = enqueuedPosition;
-        enqueuedPosition = -1.0;
-        return 1;
+    for (int headIdx=0; headIdx<2; ++headIdx) {
+        if (head[headIdx].opState[fr] == SubHead::Stopped) {
+            head[headIdx].opState[fr] = SubHead::FadeIn;
+            head[headIdx].phase[fr]  = enqueuedPosition;
+            head[headIdx].updateWrIdx(fr, rate[fr], recOffsetSamples);
+            enqueuedPosition = -1.0;
+            return 0;
+        }
     }
     return -1;
 }
@@ -58,24 +55,16 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     params.loop = loopFlag;
     params.fadeInc = fadeInc;
 
-    SubHead::FramePositionData data0{};
-    SubHead::FramePositionData data1{};
-
     size_t fr = 0;
     size_t fr_1 = lastNumFrames - 1;
     while (fr < numFrames) {
-        head[0].loadFramePositionData(fr_1, data0);
-        head[1].loadFramePositionData(fr_1, data1);
         params.rate = rate[fr];
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
-        handleLoopAction(softcut::SubHead::calcPositionUpdate(data0, params));
-        handleLoopAction(softcut::SubHead::calcPositionUpdate(data1, params));
+        handleLoopAction(head[0].calcPositionUpdate(fr_1, fr, params));
+        handleLoopAction(head[1].calcPositionUpdate(fr_1, fr, params));
         // change positions if needed
-        int headMoved = dequeuePositionChange(data0, data1);
-        // store new values in subhead buffers
-        head[0].storeFramePositionData(fr, data0);
-        head[1].storeFramePositionData(fr, data1);
+        int headMoved = dequeuePositionChange(fr);
         if (headMoved == 0) { head[0].updateWrIdx(fr, rate[fr], recOffsetSamples); }
         if (headMoved == 1) { head[1].updateWrIdx(fr, rate[fr], recOffsetSamples); }
         fr_1 = fr;
