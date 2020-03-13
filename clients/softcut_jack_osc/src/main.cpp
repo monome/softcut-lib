@@ -32,6 +32,8 @@ int main() {
     sc->connectDacPorts();
 
     OscInterface::init(sc.get());
+    BufDiskWorker::init(48000);
+
 
     cout << "entering main loop..." << endl;
     while(!OscInterface::shouldQuit())  {

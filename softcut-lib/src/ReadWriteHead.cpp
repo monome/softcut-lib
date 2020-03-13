@@ -51,7 +51,7 @@ void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     // TODO: apply `follow` here, using subhead positions from other ReadWriteHead
-    /// TODO [optimize]: persist this data structure
+    /// TODO [optimize]: replace this data structure with `self`
     SubHead::FramePositionParameters params{};
     params.start = start;
     params.end = end;
@@ -84,12 +84,11 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
 }
 
 void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
-    /// TODO [optimize]: persist this data structure
+    /// TODO [optimize]: replace this data structure with `self`
     SubHead::FrameLevelParameters params{};
     params.fadeCurves = fadeCurves;
 
-    size_t fr = 0;
-    while (fr < numFrames) {
+    for (size_t fr=0; fr < numFrames; ++fr) {
         params.rate = this->rate[fr];
         params.pre = this->pre[fr];
         params.rec = this->rec[fr];
@@ -97,7 +96,6 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
         // this may result in a position change being enqueued
         head[0].calcLevelUpdate(fr, params);
         head[1].calcLevelUpdate(fr, params);
-        fr++;
     }
 }
 
