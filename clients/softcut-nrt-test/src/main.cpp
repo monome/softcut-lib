@@ -5,8 +5,10 @@
 #include <array>
 #include <iostream>
 
+#include "cnpy/cnpy.h"
+
 #include "softcut/Softcut.h"
-#include "softcut/Voice.h"
+#include "softcut/TestBuffers.h"
 
 static constexpr double twopi =  3.1415926535898;
 static constexpr int sr = 48000;
@@ -29,6 +31,7 @@ int main(int argc, const char **argv) {
     }
 
     softcut::Softcut<1> cut;
+    softcut::TestBuffers testBuffers;
     cut.reset();
 
     cut.setVoiceBuffer(0, buf.data(), bufsize);
@@ -47,6 +50,7 @@ int main(int argc, const char **argv) {
 
     while (fr < maxframes) {
         cut.processBlock(0, src, dst, blocksize);
+        testBuffers.update(cut, 0, blocksize);
         src += blocksize;
         dst += blocksize;
         fr += blocksize;
@@ -57,4 +61,22 @@ int main(int argc, const char **argv) {
         std::cout << i << ", ";
     }
     std::cout << std::endl << "} ;" << std::endl;
+
+    cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, nf}, "w");
+    cnpy::npy_save("phase0.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase0), {1, nf}, "w");
+    cnpy::npy_save("phase1.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase1), {1, nf}, "w");
+    cnpy::npy_save("state0.npy", testBuffers.getBuffer(softcut::TestBuffers::State0), {1, nf}, "w");
+    cnpy::npy_save("state1.npy", testBuffers.getBuffer(softcut::TestBuffers::State1), {1, nf}, "w");
+    cnpy::npy_save("action0.npy", testBuffers.getBuffer(softcut::TestBuffers::Action0), {1, nf}, "w");
+    cnpy::npy_save("action1.npy", testBuffers.getBuffer(softcut::TestBuffers::Action1), {1, nf}, "w");
+    cnpy::npy_save("fade0.npy", testBuffers.getBuffer(softcut::TestBuffers::Fade0), {1, nf}, "w");
+    cnpy::npy_save("fade1.npy", testBuffers.getBuffer(softcut::TestBuffers::Fade1), {1, nf}, "w");
+    cnpy::npy_save("rec0.npy", testBuffers.getBuffer(softcut::TestBuffers::Rec0), {1, nf}, "w");
+    cnpy::npy_save("rec1.npy", testBuffers.getBuffer(softcut::TestBuffers::Rec1), {1, nf}, "w");
+    cnpy::npy_save("pre0.npy", testBuffers.getBuffer(softcut::TestBuffers::Pre0), {1, nf}, "w");
+    cnpy::npy_save("pre1.npy", testBuffers.getBuffer(softcut::TestBuffers::Pre1), {1, nf}, "w");
+    cnpy::npy_save("wrIdx0.npy", testBuffers.getBuffer(softcut::TestBuffers::WrIdx0), {1, nf}, "w");
+    cnpy::npy_save("wrIdx1.npy", testBuffers.getBuffer(softcut::TestBuffers::WrIdx1), {1, nf}, "w");
+
+
 }

@@ -8,7 +8,6 @@
 #include <cstdint>
 #include "SubHead.h"
 #include "Types.h"
-#include "TestBuffers.h"
 #include "FadeCurves.h"
 
 namespace softcut {
@@ -17,7 +16,9 @@ namespace softcut {
 
     protected:
         friend class SubHead;
+
         friend class TestBuffers;
+
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
         template<typename T>
         using StateBuffer = SubHead::StateBuffer<T>;
@@ -38,7 +39,7 @@ namespace softcut {
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // TODO [efficiency]: try low-order polynomial approximation
-            return x * sinf(a * (float)M_PI_2) + y * sinf(b * (float) M_PI_2);
+            return x * sinf(a * (float) M_PI_2) + y * sinf(b * (float) M_PI_2);
         }
 
 
@@ -77,10 +78,14 @@ namespace softcut {
         void cutToPos(float seconds);
 
         // update all position, state, and action buffers for both subheads
-        void performSubheadWrites(const float* input, size_t numFrames);
-        void performSubheadReads(float* output, size_t numFrames);
+        void performSubheadWrites(const float *input, size_t numFrames);
+
+        void performSubheadReads(float *output, size_t numFrames);
+
         void updateSubheadPositions(size_t numFrames);
+
         void updateSubheadWriteLevels(size_t numFrames);
+
         void setLastNumFrames(size_t lnf) { lastNumFrames = lnf; }
 
 
@@ -90,10 +95,15 @@ namespace softcut {
 //        void processSampleNoWrite(sample_t in, sample_t *out);
 
         void setSampleRate(float sr);
+
         void setBuffer(sample_t *buf, uint32_t size);
+
         void setLoopStartSeconds(float x);
+
         void setLoopEndSeconds(float x);
+
         void setFadeTime(float secs);
+
         void setLoopFlag(bool val);
 
 //        //-- set buffered state for all frames
@@ -103,7 +113,9 @@ namespace softcut {
 
         //-- set buffered state for single frame
         void setRate(size_t idx, rate_t x);
+
         void setRec(size_t idx, float x);
+
         void setPre(size_t idx, float x);
 
         void setRecOffsetSamples(int d);

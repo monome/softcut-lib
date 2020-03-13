@@ -13,6 +13,8 @@
 namespace softcut {
     template<int numVoices>
     class Softcut {
+    protected:
+        friend class TestBuffers;
 
     public:
 

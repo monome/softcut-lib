@@ -14,18 +14,16 @@ using namespace softcut;
 using namespace std;
 
 int ReadWriteHead::dequeuePositionChange(size_t fr) {
-//        SubHead::FramePositionData &a,
-//        SubHead::FramePositionData &b) {
     if (enqueuedPosition < 0) {
         return -1;
     }
-    for (int headIdx=0; headIdx<2; ++headIdx) {
+    for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
             head[headIdx].opState[fr] = SubHead::FadeIn;
-            head[headIdx].phase[fr]  = enqueuedPosition;
+            head[headIdx].phase[fr] = enqueuedPosition;
             head[headIdx].updateWrIdx(fr, rate[fr], recOffsetSamples);
             enqueuedPosition = -1.0;
-            return 0;
+            return headIdx;
         }
     }
     return -1;
@@ -77,10 +75,11 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
     SubHead::FrameLevelParameters params{};
     params.fadeCurves = fadeCurves;
 
-    for (size_t fr=0; fr < numFrames; ++fr) {
+    for (size_t fr = 0; fr < numFrames; ++fr) {
         params.rate = this->rate[fr];
         params.pre = this->pre[fr];
         params.rec = this->rec[fr];
+        // TODO: apply `duck` here, using subhead positions/levels from other ReadWriteHead
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
         head[0].calcLevelUpdate(fr, params);
@@ -90,6 +89,7 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
 
 
 void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
+    // TODO [efficiency]: move this loop to subhead method
     size_t fr = 0;
     size_t fr_1 = lastNumFrames - 1;
     while (fr < numFrames) {
@@ -100,6 +100,7 @@ void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
 }
 
 void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
+    // TODO [efficiency]: move this loop to subhead method
     float out0;
     float out1;
     for (size_t fr = 0; fr < numFrames; ++fr) {

@@ -15,6 +15,9 @@
 
 namespace softcut {
     class Voice {
+    protected:
+        friend class TestBuffers;
+
     public:
         Voice();
 
