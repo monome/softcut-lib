@@ -2,6 +2,117 @@
 // Created by ezra on 4/21/18.
 //
 
+#include "softcut/SubHead.h"
+
+using namespace softcut;
+
+SubHead::OpAction SubHead::calcPositionUpdate(
+        FramePositionData &x,
+        const FramePositionParameters &a) {
+    switch (x.opState) {
+        case FadeIn:
+            x.fade = x.fade + a.fadeInc;
+            if (x.fade > 1.f) {
+                x.fade = 1.f;
+                x.opState = Stopped;
+                x.opAction = DoneFadeIn;
+            } else {
+                x.opState = FadeIn;
+                x.opAction = None;
+            }
+        case FadeOut:
+            x.fade = x.fade - a.fadeInc;
+            if (x.fade < 0.f) {
+                x.fade = 0.f;
+                x.opState = Stopped;
+                x.opAction = DoneFadeOut;
+            } else { // still fading
+                x.opState = FadeOut;
+                x.opAction = None;
+            }
+        case Playing:
+            x.phase = x.phase + a.rate;
+            if (x.phase > a.end || x.phase < a.start) {
+                // outside of loop bounds, always fades out
+                x.opState = FadeOut;
+                if (a.loop) {
+                    if (a.rate > 0.f) {
+                        x.opAction = LoopNegative;
+                    } else {
+                        x.opAction = LoopPositive;
+                    }
+                } else {
+                    x.opAction = Stop;
+                }
+            } else { // in loop bounds
+                x.opAction = None;
+                x.opState = Playing;
+            }
+        case Stopped:
+            x.opAction = None;
+            x.opState = Stopped;
+    }
+    return x.opAction;
+}
+
+void SubHead::calcLevelUpdate(SubHead::FrameLevelData &x, const FrameLevelParameters &a) {
+    x.pre = a.pre + (1.f-a.pre) * a.fadeCurves->getPreFadeValue(x.fade);
+    x.rec = a.rec * a.fadeCurves->getRecFadeValue(x.fade);
+    // TODO: apply rate==0 deadzone
+}
+
+
+void SubHead::performFrameWrite(SubHead::FrameWriteData &x, size_t idx, const float input) {
+    // push to resampler, even if stopped
+    // this should avoid a glitch when restarting
+    int nframes = resamp.processFrame(input);
+
+    // if we're stopped, don't touch our buffer or state vars
+    if (opState[idx] == Stopped) {
+        return;
+    }
+
+    BOOST_ASSERT_MSG(fade[idx] >= 0.f && fade[idx] <= 1.f, "bad fade coefficient in write");
+
+    sample_t y; // write value
+    const sample_t* src = resamp.output();
+
+    size_t w = x.wrIdx;
+    for(int fr=0; fr<nframes; ++fr) {
+        y = src[fr];
+        // TODO: possible further processing (e.g. softclip, filtering)
+        buf[w] *= pre[idx];
+        buf[w] += y * rec[idx];
+        w = wrapBufIndex(w+1);
+    }
+    x.wrIdx = w;
+}
+
+float SubHead::performFrameRead(size_t idx) {
+    int phase1 = static_cast<int>(phase[idx]);
+    int phase0 = phase1 - 1;
+    int phase2 = phase1 + 1;
+    int phase3 = phase1 + 2;
+
+    float y0 = buf[wrapBufIndex(phase0)];
+    float y1 = buf[wrapBufIndex(phase1)];
+    float y3 = buf[wrapBufIndex(phase3)];
+    float y2 = buf[wrapBufIndex(phase2)];
+
+    auto x = static_cast<float>(phase[idx] - (float)phase1);
+    return Interpolate::hermite<float>(x, y0, y1, y2, y3);
+}
+//
+//void SubHead::setPhase(size_t idx, phase_t phase) {
+//    phase_ = phase;
+//    wrIdx_ = wrapBufIndex(static_cast<int>(phase_) + (inc_dir_ * recOffset_));
+//
+//    // NB: not resetting the resampler here:
+//    // - it's ok to keep history of input when changing positions.
+//    // - resamp output doesn't need clearing b/c we write/read from beginning on each sample anyway
+//}
+
+/*
 #include <string.h>
 #include <limits>
 
@@ -32,7 +143,6 @@ Action SubHead::updatePhase(phase_t start, phase_t end, bool loop) {
         case Playing:
             p = phase_ + rate_;
             if(active_) {
-                // FIXME: should refactor this a bit.
                 if (rate_ > 0.f) {
                     if (p > end || p < start) {
                         if (loop) {
@@ -95,8 +205,6 @@ void Subhead::poke(float in, float pre, float rec, int numFades) {
 }
 #else
 void SubHead::poke(float in, float pre, float rec) {
-    // FIXME: since there's never really a reason to not push input, or to reset input ringbuf,
-    // it follows that all resamplers could share an input ringbuf
     int nframes = resamp_.processFrame(in);
 
     if(state_ == Stopped) {
@@ -150,7 +258,7 @@ float SubHead::peek4() {
 unsigned int SubHead::wrapBufIndex(int x) {
     x += bufFrames_;
     BOOST_ASSERT_MSG(x >= 0, "buffer index before masking is non-negative");
-    return x & bufMask_;
+    return static_cast<unsigned int>(x) & bufMask_;
 }
 
 void SubHead::setSampleRate(float sr) {
@@ -189,3 +297,4 @@ void SubHead::setState(State state) { state_ = state; }
 void SubHead::setRecOffsetSamples(int d) {
     recOffset_  = d;
 }
+*/

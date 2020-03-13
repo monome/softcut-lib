@@ -26,7 +26,7 @@ namespace softcut {
             };
         }
 
-        // assumption: channel count is equal to voice count!
+        // assumption: v is in range
         void processBlock(int v, const float *in, float *out, int numFrames) {
             scv[v].processBlockMono(in, out, numFrames);
         }

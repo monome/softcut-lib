@@ -47,6 +47,9 @@ void Voice::reset() {
 }
 
 void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
+
+    // TODO
+    /*
     std::function<void(sample_t, sample_t*)> sampleFunc;
     if(playFlag) {
         if(recFlag) {
@@ -82,6 +85,7 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
 	    out[i] = svfPost.getNextSample(y) + y*svfPostDryLevel;
         updateQuantPhase();
     }
+     */
 }
 
 void Voice::setSampleRate(float hz) {
@@ -170,11 +174,12 @@ void Voice::setPreFilterFcMod(float x) {
     svfPreFcMod = x;
 }
 
-void Voice::updatePreSvfFc() {
-    float fcMod = std::min(svfPreFcBase, svfPreFcBase * std::fabs(static_cast<float>(sch.getRate())));
-    fcMod = svfPreFcBase + svfPreFcMod * (fcMod - svfPreFcBase);
-    svfPre.setFc(fcMod);
-}
+/// FIXME: needs to be per-sample
+//void Voice::updatePreSvfFc() {
+//    float fcMod = std::min(svfPreFcBase, svfPreFcBase * std::fabs(static_cast<float>(sch.getRate())));
+//    fcMod = svfPreFcBase + svfPreFcMod * (fcMod - svfPreFcBase);
+//    svfPre.setFc(fcMod);
+//}
 
 // output filter
 void Voice::setPostFilterFc(float x) {
@@ -232,7 +237,6 @@ void Voice::setPhaseQuant(float x) {
 void Voice::setPhaseOffset(float x) {
     phaseOffset = x * sampleRate;
 }
-
 
 phase_t Voice::getQuantPhase() {
     return quantPhase;
