@@ -46,31 +46,40 @@ void Voice::reset() {
     sch.init(&fadeCurves);
 }
 
-void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
-    for(size_t fr=0; fr<numFrames; ++fr) {
-        sch.setRate(fr, rateRamp.update());
-        sch.setPre(fr, preRamp.update());
-        sch.setRec(fr, recRamp.update());
+void Voice:: processBlockMono(float *in, float *out, int numFrames) {
+    if (recFlag || playFlag) {
+        for(size_t fr=0; fr<numFrames; ++fr) {
+            sch.setRate(fr, rateRamp.update());
+        }
     }
+
     if (recFlag) {
+        for(size_t fr=0; fr<numFrames; ++fr) {
+            sch.setPre(fr, preRamp.update());
+            sch.setRec(fr, recRamp.update());
+            // FIXME: ensure that processing in-place is OK here.
+            /// i think it is because each voice has its own input bus..
+            /// pre-filter modulation could also go here
+            in[fr] = svfPre.getNextSample(in[fr]) + in[fr] * svfPreDryLevel;
+        }
         sch.performSubheadWrites(in, numFrames);
     }
+
     if (playFlag) {
         // TODO: use other voice for `duck`
         sch.performSubheadReads(out, numFrames);
+        // apply post-filter
+        for(size_t fr=0; fr<numFrames; ++fr) {
+            out[fr] = svfPost.getNextSample(out[fr]) +  out[fr]*svfPostDryLevel;
+            updateQuantPhase();
+        }
     }
 
     // TODO: use other voice for `follow`
     sch.updateSubheadPositions(numFrames);
     sch.updateSubheadWriteLevels(numFrames);
 
-    float x, y;
-    for(size_t fr=0; fr<numFrames; ++fr) {
-        x = svfPre.getNextSample(in[fr]) + in[fr]*svfPreDryLevel;
-        y =out[fr];
-        out[fr] = svfPost.getNextSample(y) + y*svfPostDryLevel;
-        updateQuantPhase();
-    }
+
 }
 
 void Voice::setSampleRate(float hz) {
@@ -85,7 +94,8 @@ void Voice::setSampleRate(float hz) {
 
 void Voice::setRate(float rate) {    
     rateRamp.setTarget(rate);
-    updatePreSvfFc();
+    // FIXME: fix pre-filter smoothing
+    //updatePreSvfFc();
 }
 
 void Voice::setLoopStart(float sec) {
@@ -128,7 +138,8 @@ void Voice::setLoopFlag(bool val) {
 // input filter
 void Voice::setPreFilterFc(float x) {
     svfPreFcBase = x;
-    updatePreSvfFc();
+    // FIXME
+    // updatePreSvfFc();
 }
 
 void Voice::setPreFilterRq(float x) {

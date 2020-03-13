@@ -27,7 +27,7 @@ namespace softcut {
         }
 
         // assumption: v is in range
-        void processBlock(int v, const float *in, float *out, int numFrames) {
+        void processBlock(int v, float *in, float *out, int numFrames) {
             scv[v].processBlockMono(in, out, numFrames);
         }
 
