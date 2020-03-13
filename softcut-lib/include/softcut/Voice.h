@@ -11,14 +11,14 @@
 #include "ReadWriteHead.h"
 #include "Svf.h"
 #include "Utilities.h"
-#include "FadeCurves.h"
 
 namespace softcut {
     class Voice {
+    protected:
+        friend class TestBuffers;
+
     public:
         Voice();
-
-        void init(FadeCurves *fc);
 
         void setBuffer(float *buf, unsigned int numFrames);
 
@@ -72,10 +72,10 @@ namespace softcut {
 
         void setPostFilterDry(float);
 
-        void cutToPos(float sec);
+        void setPosition(float sec);
 
         // process a single channel
-        void processBlockMono(const float *in, float *out, int numFrames);
+        void processBlockMono(float *in, float *out, int numFrames);
 
         void setRecOffset(float d);
 
@@ -107,8 +107,6 @@ namespace softcut {
         int bufFrames;
         float sampleRate;
 
-        // fade curve data
-        FadeCurves fadeCurves;
         // xfaded read/write head
         ReadWriteHead sch;
         // input filter

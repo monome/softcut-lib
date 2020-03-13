@@ -122,7 +122,7 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
             cut.setRecOffset(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POSITION:
-            cut.cutToPos(p->idx_0, p->value);
+            cut.setPosition(p->idx_0, p->value);
             break;
             // input filter
         case Commands::Id::SET_CUT_PRE_FILTER_FC:

@@ -13,8 +13,18 @@
 namespace softcut {
     template<int numVoices>
     class Softcut {
+    protected:
+        friend class TestBuffers;
 
     public:
+
+//        Softcut(sample_t **buffers, size_t numBuffers, size_t numFrames) {
+//
+//            for (int v = 0; v < numVoices; ++v) {
+//                scv[v].setBuffer(buffers[v % numBuffers], numFrames);
+//            };
+//            this->reset();
+//        }
 
         Softcut() {
             this->reset();
@@ -26,8 +36,8 @@ namespace softcut {
             };
         }
 
-        // assumption: channel count is equal to voice count!
-        void processBlock(int v, const float *in, float *out, int numFrames) {
+        // assumption: v is in range
+        void processBlock(int v, float *in, float *out, int numFrames) {
             scv[v].processBlockMono(in, out, numFrames);
         }
 
@@ -73,8 +83,8 @@ namespace softcut {
             scv[voice].setPlayFlag(val);
         }
 
-        void cutToPos(int voice, float sec) {
-            scv[voice].cutToPos(sec);
+        void setPosition(int voice, float sec) {
+            scv[voice].setPosition(sec);
         }
 
         void setPreFilterFc(int voice, float x) {
@@ -204,7 +214,7 @@ void setRecFadeShape(float x) {
         }
 
         void syncVoice(int follow, int lead, float offset) {
-            scv[follow].cutToPos(scv[lead].getPos() + offset);
+            scv[follow].setPosition(scv[lead].getPos() + offset);
         }
 
         void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
