@@ -47,45 +47,30 @@ void Voice::reset() {
 }
 
 void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
-
-    // TODO
-    /*
-    std::function<void(sample_t, sample_t*)> sampleFunc;
-    if(playFlag) {
-        if(recFlag) {
-            sampleFunc = [this](float in, float* out) {
-                this->sch.processSample(in, out);
-            };
-        } else {
-            sampleFunc = [this](float in, float* out) {
-                this->sch.processSampleNoWrite(in, out);
-            };
-        }
-    } else {
-        if(recFlag) {
-            sampleFunc = [this](float in, float* out) {
-                this->sch.processSampleNoRead(in, out);
-            };
-        } else {
-            // FIXME? do nothing, i guess?
-            sampleFunc = [](float in, float* out) {
-                (void)in;
-                (void)out;
-            };
-        }
+    for(size_t fr=0; fr<numFrames; ++fr) {
+        sch.setRate(fr, rateRamp.update());
+        sch.setPre(fr, preRamp.update());
+        sch.setRec(fr, recRamp.update());
     }
+    if (recFlag) {
+        sch.performSubheadWrites(in, numFrames);
+    }
+    if (playFlag) {
+        // TODO: use other voice for `duck`
+        sch.performSubheadReads(out, numFrames);
+    }
+
+    // TODO: use other voice for `follow`
+    sch.updateSubheadPositions(numFrames);
+    sch.updateSubheadWriteLevels(numFrames);
 
     float x, y;
-    for(int i=0; i<numFrames; ++i) {
-        x = svfPre.getNextSample(in[i]) + in[i]*svfPreDryLevel;
-        sch.setRate(rateRamp.update());
-        sch.setPre(preRamp.update());
-        sch.setRec(recRamp.update());
-        sampleFunc(x, &y);
-	    out[i] = svfPost.getNextSample(y) + y*svfPostDryLevel;
+    for(size_t fr=0; fr<numFrames; ++fr) {
+        x = svfPre.getNextSample(in[fr]) + in[fr]*svfPreDryLevel;
+        y =out[fr];
+        out[fr] = svfPost.getNextSample(y) + y*svfPostDryLevel;
         updateQuantPhase();
     }
-     */
 }
 
 void Voice::setSampleRate(float hz) {

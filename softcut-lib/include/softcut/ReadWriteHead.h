@@ -21,26 +21,26 @@ namespace softcut {
         template<typename T>
         using StateBuffer = SubHead::StateBuffer<T>;
 
+    public:
+
+        // update all position, state, and action buffers for both subheads
+        void performSubheadWrites(const float* input, size_t numFrames);
+        void performSubheadReads(float* output, size_t numFrames);
+        void updateSubheadPositions(size_t numFrames);
+        void updateSubheadWriteLevels(size_t numFrames);
+
     private:
         // FIXME: should use a proper queue (e.g. from dsp-kit)
         /// for now, only a single value can be queued,
         /// and a negative value indicates that the queue is empty.
         phase_t enqueuedPosition = -1.0;
 
-    private:
         void enqueuePositionChange(phase_t pos) {
             enqueuedPosition = pos;
         }
 
         int dequeuePositionChange(SubHead::FramePositionData &a, SubHead::FramePositionData &b);
         void handleLoopAction(SubHead::OpAction action);
-
-        // update all position, state, and action buffers for both subheads
-        void updateSubheadWriteLevels(size_t numFrames);
-        void performSubheadWrites(const float* input, size_t numFrames);
-        void performSubheadReads(float* output, size_t numFrames);
-        void updateSubheadPositions(size_t numFrames);
-
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // TODO [efficiency]: try low-order polynomial approximation
