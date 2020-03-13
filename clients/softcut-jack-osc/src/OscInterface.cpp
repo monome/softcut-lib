@@ -6,16 +6,12 @@
 
 #include <utility>
 #include <thread>
-//#include <boost/format.hpp>
-
-#include "softcut/FadeCurves.h"
 
 #include "BufDiskWorker.h"
 #include "Commands.h"
 #include "OscInterface.h"
 
 using namespace softcut_jack_osc;
-using softcut::FadeCurves;
 
 bool OscInterface::quitFlag;
 

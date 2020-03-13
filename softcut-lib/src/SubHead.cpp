@@ -15,7 +15,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(
             x.fade = x.fade + a.fadeInc;
             if (x.fade > 1.f) {
                 x.fade = 1.f;
-                x.opState = Stopped;
+                x.opState = Playing;
                 x.opAction = DoneFadeIn;
             } else {
                 x.opState = FadeIn;
@@ -67,8 +67,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(
             x.opState = Stopped;
     }
 
-    return x.
-            opAction;
+    return x.opAction;
 }
 
 void SubHead::calcLevelUpdate(size_t idx, const FrameLevelParameters &a) {
@@ -93,7 +92,7 @@ void SubHead::performFrameWrite(size_t idx_1, size_t idx, const float input) {
     sample_t y; // write value
     const sample_t *src = resamp.output();
 
-    size_t w =wrIdx[idx_1];
+    size_t w = wrIdx[idx_1];
     for (int fr = 0; fr < nframes; ++fr) {
         y = src[fr];
         // TODO: possible further processing (e.g. softclip, filtering)
