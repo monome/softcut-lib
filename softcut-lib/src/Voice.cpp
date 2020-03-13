@@ -109,8 +109,8 @@ void Voice::setFadeTime(float sec) {
     sch.setFadeTime(sec);
 }
 
-void Voice::cutToPos(float sec) {
-    sch.cutToPos(sec);
+void Voice::setPosition(float sec) {
+    sch.setPosition(sec);
 }
 
 void Voice::setRecLevel(float amp) {

@@ -19,7 +19,9 @@ int ReadWriteHead::dequeuePositionChange(size_t fr) {
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
+            std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
             head[headIdx].opState[fr] = SubHead::FadeIn;
+            head[headIdx].opAction[fr] = SubHead::OpAction::StartFadeIn;
             head[headIdx].phase[fr] = enqueuedPosition;
             head[headIdx].updateWrIdx(fr, rate[fr], recOffsetSamples);
             enqueuedPosition = -1.0;
@@ -63,8 +65,11 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
         handleLoopAction(head[1].calcPositionUpdate(fr_1, fr, params));
         // change positions if needed
         int headMoved = dequeuePositionChange(fr);
-        if (headMoved == 0) { head[0].updateWrIdx(fr, rate[fr], recOffsetSamples); }
-        if (headMoved == 1) { head[1].updateWrIdx(fr, rate[fr], recOffsetSamples); }
+        if (headMoved >= 0) {
+            active[fr] = headMoved;
+        } else {
+            active[fr] = active[fr_1];
+        }
         fr_1 = fr;
         ++fr;
     }
@@ -165,7 +170,7 @@ void ReadWriteHead::setPre(size_t idx, float x) {
     pre[idx] = x;
 }
 
-void ReadWriteHead::cutToPos(float seconds) {
+void ReadWriteHead::setPosition(float seconds) {
     enqueuePositionChange(seconds * sr);
 }
 

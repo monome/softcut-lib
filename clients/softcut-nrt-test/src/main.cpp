@@ -12,8 +12,8 @@
 
 static constexpr double twopi =  3.1415926535898;
 static constexpr int sr = 48000;
-static constexpr size_t nf = sr * 2;
-static constexpr size_t bufsize = sr * 10;
+static constexpr size_t nf = sr * 4;
+static constexpr size_t bufsize = sr * 2;
 
 static std::array<float, nf> input;
 static std::array<float, nf> output;
@@ -38,9 +38,11 @@ int main(int argc, const char **argv) {
     cut.setSampleRate(sr);
     cut.setRate(0, 1.0);
     cut.setFadeTime(0, 0.1);
-    cut.setLoopStart(0, 1.0);
-    cut.setLoopEnd(0, 3.0);
+    cut.setLoopStart(0, 0.25);
+    cut.setLoopEnd(0, 0.5);
+    cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
+    cut.setPosition(0, 0);
 
     size_t blocksize = 256;
     size_t maxframes = nf - blocksize;

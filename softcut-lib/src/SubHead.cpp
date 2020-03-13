@@ -14,6 +14,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t idx_1, size_t idx,
             fade[idx] = fade[idx_1] + a.fadeInc;
             if (fade[idx] > 1.f) {
                 fade[idx] = 1.f;
+                std::cerr << "done fadein" << std::endl;
                 opState[idx] = Playing;
                 opAction[idx] = DoneFadeIn;
             } else {
@@ -25,6 +26,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t idx_1, size_t idx,
             phase[idx] = phase[idx_1] + a.rate;
             fade[idx] = fade[idx] - a.fadeInc;
             if (fade[idx] < 0.f) {
+                std::cerr << "done fadeout" << std::endl;
                 fade[idx] = 0.f;
                 opState[idx] = Stopped;
                 opAction[idx] = DoneFadeOut;
@@ -39,8 +41,10 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t idx_1, size_t idx,
                 if (phase[idx] > a.end) { // out of loop bounds
                     opState[idx] = FadeOut;
                     if (a.loop) {
+                        std::cerr << "looping positive" << std::endl;
                         opAction[idx] = LoopPositive;
                     } else {
+                        std::cerr << "stopping after loop end" << std::endl;
                         opAction[idx] = Stop;
                     }
                 } else { // in loop bounds
@@ -51,8 +55,10 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t idx_1, size_t idx,
                 if (phase[idx] < a.start) { // out of loop bounds
                     opState[idx] = FadeOut;
                     if (a.loop) {
+                        std::cerr << "looping negative" << std::endl;
                         opAction[idx] = LoopNegative;
                     } else {
+                        std::cerr << "stopping after loop end" << std::endl;
                         opAction[idx] = Stop;
                     }
                 } else { // in loop bounds

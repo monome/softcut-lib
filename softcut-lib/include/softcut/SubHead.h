@@ -41,7 +41,7 @@ namespace softcut {
             Playing = 0, Stopped = 1, FadeIn = 2, FadeOut = 3
         } OpState;
         typedef enum {
-            None, Stop, LoopPositive, LoopNegative, DoneFadeIn, DoneFadeOut,
+            None, Stop, StartFadeIn, LoopPositive, LoopNegative, DoneFadeIn, DoneFadeOut,
         } OpAction;
 
 

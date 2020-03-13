@@ -34,7 +34,7 @@ namespace softcut {
             enqueuedPosition = pos;
         }
 
-        int dequeuePositionChange(size_t fr); //SubHead::FramePositionData &a, SubHead::FramePositionData &b);
+        int dequeuePositionChange(size_t fr);
         void handleLoopAction(SubHead::OpAction action);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
@@ -61,12 +61,12 @@ namespace softcut {
 
         //--- buffered state variables
         // rate, in per-sample position increment (1 == normal)
-        SubHead::StateBuffer<rate_t> rate{};
+        SubHead::StateBuffer<rate_t> rate{1.f};
         // preserve and record levels, pre-fade
-        SubHead::StateBuffer<float> pre{};
-        SubHead::StateBuffer<float> rec{};
+        SubHead::StateBuffer<float> pre{0.f};
+        SubHead::StateBuffer<float> rec{0.f};
         // index of active subhead
-        SubHead::StateBuffer<unsigned char> active{};
+        SubHead::StateBuffer<int> active{-1};
 
     public:
 
@@ -75,7 +75,7 @@ namespace softcut {
         }
 
         // queue a position change
-        void cutToPos(float seconds);
+        void setPosition(float seconds);
 
         // update all position, state, and action buffers for both subheads
         void performSubheadWrites(const float *input, size_t numFrames);
@@ -149,7 +149,7 @@ namespace softcut {
         void setLoopFlag(bool val);
         void setRec(float x);
         void setPre(float x);
-        void cutToPos(float seconds);
+        void setPosition(float seconds);
 
         void setRecOffsetSamples(int d);
 

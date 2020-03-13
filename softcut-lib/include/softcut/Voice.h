@@ -75,7 +75,7 @@ namespace softcut {
 
         void setPostFilterDry(float);
 
-        void cutToPos(float sec);
+        void setPosition(float sec);
 
         // process a single channel
         void processBlockMono(float *in, float *out, int numFrames);

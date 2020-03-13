@@ -75,8 +75,8 @@ namespace softcut {
             scv[voice].setPlayFlag(val);
         }
 
-        void cutToPos(int voice, float sec) {
-            scv[voice].cutToPos(sec);
+        void setPosition(int voice, float sec) {
+            scv[voice].setPosition(sec);
         }
 
         void setPreFilterFc(int voice, float x) {
@@ -206,7 +206,7 @@ void setRecFadeShape(float x) {
         }
 
         void syncVoice(int follow, int lead, float offset) {
-            scv[follow].cutToPos(scv[lead].getPos() + offset);
+            scv[follow].setPosition(scv[lead].getPos() + offset);
         }
 
         void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
