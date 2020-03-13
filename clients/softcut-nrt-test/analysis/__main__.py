@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 keys = [
+    'buffer', 'output', 'active',
     #'rate',
     'state0', 'state1',
     'action0', 'action1',
@@ -10,6 +11,7 @@ keys = [
     #'rec0', 'rec1',
     #'pre0', 'pre1',
     'wrIdx0', 'wrIdx1',
+    'dir0', 'dir1',
 ]
 
 nkeys = len(keys)

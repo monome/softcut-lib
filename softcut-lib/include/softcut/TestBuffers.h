@@ -19,7 +19,7 @@ namespace softcut {
 
     public:
         typedef enum {
-            Rate,
+            Rate, Active,
             State0, State1,
             Action0, Action1,
             Phase0, Phase1,
@@ -27,6 +27,7 @@ namespace softcut {
             Rec0, Rec1,
             Pre0, Pre1,
             WrIdx0, WrIdx1,
+            Dir0, Dir1,
             NumBuffers
         } BufferId;
 
@@ -46,6 +47,7 @@ namespace softcut {
             update(cut.scv[voiceId].sch, numFrames);
         }
         void update(const ReadWriteHead &rwh, size_t numFrames) {
+            appendToBuffer(Active, rwh.active.data(), numFrames);
             appendToBuffer(Rate, rwh.rate.data(), numFrames);
             appendToBuffer(State0, rwh.head[0].opState.data(), numFrames);
             appendToBuffer(State1, rwh.head[1].opState.data(), numFrames);
@@ -61,6 +63,8 @@ namespace softcut {
             appendToBuffer(Pre1, rwh.head[1].pre.data(), numFrames);
             appendToBuffer(WrIdx0, rwh.head[0].wrIdx.data(), numFrames);
             appendToBuffer(WrIdx1, rwh.head[1].wrIdx.data(), numFrames);
+            appendToBuffer(Dir0, rwh.head[0].dir.data(), numFrames);
+            appendToBuffer(Dir1, rwh.head[1].dir.data(), numFrames);
         }
         const float *getBuffer(BufferId id) { return buffers[id].data(); }
     };

@@ -2,17 +2,19 @@
 // Created by ezra on 12/6/17.
 //
 #include <cmath>
-#include <limits>
-
-
-#include "softcut/Interpolate.h"
 #include "softcut/Resampler.h"
-
 #include "softcut/ReadWriteHead.h"
 
 using namespace softcut;
 using namespace std;
 
+ReadWriteHead::ReadWriteHead() {
+    rate.fill(1.f);
+    pre.fill(0.f);
+    rec.fill(0.f);
+    active.fill(-1);
+    lastNumFrames = 0;
+}
 int ReadWriteHead::dequeuePositionChange(size_t fr) {
     if (enqueuedPosition < 0) {
         return -1;
@@ -20,10 +22,7 @@ int ReadWriteHead::dequeuePositionChange(size_t fr) {
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
             std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
-            head[headIdx].opState[fr] = SubHead::FadeIn;
-            head[headIdx].opAction[fr] = SubHead::OpAction::StartFadeIn;
-            head[headIdx].phase[fr] = enqueuedPosition;
-            head[headIdx].updateWrIdx(fr, rate[fr], recOffsetSamples);
+            head[headIdx].setPosition(fr, enqueuedPosition, this);
             enqueuedPosition = -1.0;
             return headIdx;
         }
@@ -48,21 +47,17 @@ void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     // TODO: apply `follow` here, using subhead positions from other ReadWriteHead
-    /// TODO [optimize]: replace this data structure with `self`
-    SubHead::FramePositionParameters params{};
-    params.start = start;
-    params.end = end;
-    params.loop = loopFlag;
-    params.fadeInc = fadeInc;
 
     size_t fr = 0;
     size_t fr_1 = lastNumFrames - 1;
+    SubHead::OpAction action;
     while (fr < numFrames) {
-        params.rate = rate[fr];
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
-        handleLoopAction(head[0].calcPositionUpdate(fr_1, fr, params));
-        handleLoopAction(head[1].calcPositionUpdate(fr_1, fr, params));
+        for (int i=0; i<2; ++i) {
+           action =head[i].calcPositionUpdate(fr_1, fr, this);
+           handleLoopAction(action);
+        }
         // change positions if needed
         int headMoved = dequeuePositionChange(fr);
         if (headMoved >= 0) {
@@ -76,22 +71,13 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
 }
 
 void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
-    /// TODO [optimize]: replace this data structure with `self`
-    SubHead::FrameLevelParameters params{};
-    params.fadeCurves = fadeCurves;
-
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        params.rate = this->rate[fr];
-        params.pre = this->pre[fr];
-        params.rec = this->rec[fr];
         // TODO: apply `duck` here, using subhead positions/levels from other ReadWriteHead
-        // update phase/action/state for each subhead
-        // this may result in a position change being enqueued
-        head[0].calcLevelUpdate(fr, params);
-        head[1].calcLevelUpdate(fr, params);
+        // update rec/pre level for each subhead
+        this->head[0].calcLevelUpdate(fr, this);
+        this->head[1].calcLevelUpdate(fr, this);
     }
 }
-
 
 void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
     // TODO [efficiency]: move this loop to subhead method
@@ -109,8 +95,8 @@ void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
     float out0;
     float out1;
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        out0 = head[0].performFrameRead(fr);
-        out1 = head[1].performFrameRead(fr);
+        out0 = this->head[0].performFrameRead(fr);
+        out1 = this->head[1].performFrameRead(fr);
         output[fr] = mixFade(out0, out1, head[0].fade[fr], head[1].fade[fr]);
     }
 }

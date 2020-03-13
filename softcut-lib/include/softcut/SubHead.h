@@ -24,17 +24,16 @@
 #include "FadeCurves.h"
 
 namespace softcut {
+    class ReadWriteHead;
+
     // FIXME: template would be nicer
     //template <size_t blockSizeExpected>
     class SubHead {
-
-    protected:
-        static constexpr size_t maxBlockSize = 1024;
-        template <typename T>
-        using StateBuffer = std::array<T, maxBlockSize>;
-
         friend class ReadWriteHead;
         friend class TestBuffers;
+    public:
+        SubHead();
+
     public:
         // operational state and action descriptors
         typedef enum {
@@ -44,9 +43,11 @@ namespace softcut {
             None, Stop, StartFadeIn, LoopPositive, LoopNegative, DoneFadeIn, DoneFadeOut,
         } OpAction;
 
+        static constexpr size_t maxBlockSize = 1024;
+        template <typename T>
+        using StateBuffer = std::array<T, maxBlockSize>;
 
     protected:
-
         //--- buffered state variables, owned:
         // is operating
         StateBuffer<bool> active{false};
@@ -58,8 +59,10 @@ namespace softcut {
         StateBuffer<phase_t> phase{0.0};
         // last write index in buffer
         StateBuffer<size_t> wrIdx{0};
+
         // current read/write increment direction
         StateBuffer<int> dir{1};
+
         // current fade position in [0,1]
         StateBuffer<float> fade{0.f};
         // final preserve level, post-fade
@@ -67,24 +70,8 @@ namespace softcut {
         // final record level, post-fade
         StateBuffer<float> rec{0.f};
 
-        // structure containing all parameters required for a single-frame position update,
-        // (not unique to / stored by the subhead.)
-        struct FramePositionParameters {
-            float rate;
-            float fadeInc;
-            phase_t start;
-            phase_t end;
-            bool loop;
-        };
-
-        struct FrameLevelParameters {
-            float rate;
-            float pre; // base preserve level
-            float rec; // base record level
-            FadeCurves *fadeCurves;
-        };
-
     protected:
+        void setPosition(size_t idx, phase_t position, const softcut::ReadWriteHead *rwh);
 
         void updateWrIdx(size_t idx, float rate, int offset) {
             size_t w = static_cast<size_t>(phase[idx]);
@@ -96,14 +83,17 @@ namespace softcut {
             wrIdx[idx] = w;
         }
 
-        // update phase, opState, and opAction
-        OpAction calcPositionUpdate(size_t idx_1, size_t idx, const FramePositionParameters &a);
-        // update frame level data
-        void calcLevelUpdate(size_t idx,  const FrameLevelParameters &a);
+//        // update phase, opState, and opAction
+//        OpAction calcPositionUpdate(size_t idx_1, size_t idx, const FramePositionParameters &a);
+
+        OpAction calcPositionUpdate(size_t i_1, size_t i, const softcut::ReadWriteHead *rwh);
+//        // update frame level data
+//        void calcLevelUpdate(size_t idx,  const FrameLevelParameters &a);
+        void calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh);
         // perform single frame write
-        void performFrameWrite(size_t idx_1, size_t idx, float input);
+        void performFrameWrite(size_t i_1, size_t i, float input);
         // read a single frame
-        float performFrameRead(size_t idx);
+        float performFrameRead(size_t i);
 
         void setBuffer(float *b, size_t fr) {
             this->buf = b;
@@ -116,6 +106,8 @@ namespace softcut {
             while (y > bufFrames) { y -= bufFrames; }
             return y;
         }
+
+        void updateRate(size_t idx, rate_t rate);
 
     private:
         Resampler resamp;   // resampler

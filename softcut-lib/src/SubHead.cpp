@@ -3,176 +3,142 @@
 //
 
 #include "softcut/SubHead.h"
+#include "softcut/ReadWriteHead.h"
 
 using namespace softcut;
 
-SubHead::OpAction SubHead::calcPositionUpdate(size_t idx_1, size_t idx,
-                                     const SubHead::FramePositionParameters &a) {
-    switch (opState[idx_1]) {
+SubHead::SubHead() {
+    phase.fill(0.0);
+    wrIdx.fill(0);
+    opState.fill(Stopped);
+    opAction.fill(None);
+    fade.fill(0.f);
+    pre.fill(0.f);
+    rec.fill(0.f);
+}
+
+void SubHead::updateRate(size_t idx, rate_t rate) {
+    dir[idx] = rate > 0.f ? 1 : -1;
+    resamp.setRate(std::fabs(rate));
+}
+
+void SubHead::setPosition(size_t idx, phase_t position, const softcut::ReadWriteHead *rwh) {
+    phase[idx] = position;
+
+    opState[idx] = SubHead::FadeIn;
+    opAction[idx] = SubHead::OpAction::StartFadeIn;
+    updateWrIdx(idx, rwh->rate[idx], rwh->recOffsetSamples);
+}
+
+SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
+//                                     const SubHead::FramePositionParameters &a) {
+                                              const softcut::ReadWriteHead *rwh) {
+    updateRate(i_1, rwh->rate[i]);
+
+    switch (opState[i_1]) {
         case FadeIn:
-            phase[idx] = phase[idx_1] + a.rate;
-            fade[idx] = fade[idx_1] + a.fadeInc;
-            if (fade[idx] > 1.f) {
-                fade[idx] = 1.f;
+            phase[i] = phase[i_1] + rwh->rate[i];
+            fade[i] = fade[i_1] + rwh->fadeInc;
+            if (fade[i] >= 1.f) {
+                fade[i] = 1.f;
                 std::cerr << "done fadein" << std::endl;
-                opState[idx] = Playing;
-                opAction[idx] = DoneFadeIn;
+                opState[i] = Playing;
+                opAction[i] = DoneFadeIn;
             } else {
-                opState[idx] = FadeIn;
-                opAction[idx] = None;
+                opState[i] = FadeIn;
+                opAction[i] = None;
             }
             break;
         case FadeOut:
-            phase[idx] = phase[idx_1] + a.rate;
-            fade[idx] = fade[idx] - a.fadeInc;
-            if (fade[idx] < 0.f) {
+            phase[i] = phase[i_1] + rwh->rate[i];
+            fade[i] = fade[i] - rwh->fadeInc;
+            if (fade[i] <= 0.f) {
                 std::cerr << "done fadeout" << std::endl;
-                fade[idx] = 0.f;
-                opState[idx] = Stopped;
-                opAction[idx] = DoneFadeOut;
+                fade[i] = 0.f;
+                opState[i] = Stopped;
+                opAction[i] = DoneFadeOut;
             } else { // still fading
-                opState[idx] = FadeOut;
-                opAction[idx] = None;
+                opState[i] = FadeOut;
+                opAction[i] = None;
             }
             break;
         case Playing:
-            phase[idx] = phase[idx_1] + a.rate;
-            if (a.rate > 0.f) { // positive rage
-                if (phase[idx] > a.end) { // out of loop bounds
-                    opState[idx] = FadeOut;
-                    if (a.loop) {
+            phase[i] = phase[i_1] + rwh->rate[i];
+            if (rwh->rate[i] > 0.f) { // positive rate
+                if (phase[i] > rwh->end || phase[i] < rwh->start) { // out of loop bounds
+                    opState[i] = FadeOut;
+                    if (rwh->loopFlag) {
                         std::cerr << "looping positive" << std::endl;
-                        opAction[idx] = LoopPositive;
+                        opAction[i] = LoopPositive;
                     } else {
                         std::cerr << "stopping after loop end" << std::endl;
-                        opAction[idx] = Stop;
+                        opAction[i] = Stop;
                     }
                 } else { // in loop bounds
-                    opAction[idx] = None;
-                    opState[idx] = Playing;
+                    opAction[i] = None;
+                    opState[i] = Playing;
                 }
             } else { // negative rate
-                if (phase[idx] < a.start) { // out of loop bounds
-                    opState[idx] = FadeOut;
-                    if (a.loop) {
+                if (phase[i] > rwh->end || phase[i] < rwh->start) { // out of loop bounds
+                    opState[i] = FadeOut;
+                    if (rwh->loopFlag) {
                         std::cerr << "looping negative" << std::endl;
-                        opAction[idx] = LoopNegative;
+                        opAction[i] = LoopNegative;
                     } else {
                         std::cerr << "stopping after loop end" << std::endl;
-                        opAction[idx] = Stop;
+                        opAction[i] = Stop;
                     }
                 } else { // in loop bounds
-                    opAction[idx] = None;
-                    opState[idx] = Playing;
+                    opAction[i] = None;
+                    opState[i] = Playing;
                 }
             }
             break;
         case Stopped:
-            opAction[idx] = None;
-            opState[idx] = Stopped;
+            opAction[i] = None;
+            opState[i] = Stopped;
     }
 
-    return opAction[idx];
+    return opAction[i];
 }
-//SubHead::OpAction SubHead::calcPositionUpdate(
-//        FramePositionData &x,
-//        const FramePositionParameters &a) {
-//    switch (x.opState) {
-//        case FadeIn:
-//            x.phase = x.phase + a.rate;
-//            x.fade = x.fade + a.fadeInc;
-//            if (x.fade > 1.f) {
-//                x.fade = 1.f;
-//                x.opState = Playing;
-//                x.opAction = DoneFadeIn;
-//            } else {
-//                x.opState = FadeIn;
-//                x.opAction = None;
-//            }
-//            break;
-//        case FadeOut:
-//            x.phase = x.phase + a.rate;
-//            x.fade = x.fade - a.fadeInc;
-//            if (x.fade < 0.f) {
-//                x.fade = 0.f;
-//                x.opState = Stopped;
-//                x.opAction = DoneFadeOut;
-//            } else { // still fading
-//                x.opState = FadeOut;
-//                x.opAction = None;
-//            }
-//            break;
-//        case Playing:
-//            x.phase = x.phase + a.rate;
-//            if (a.rate > 0.f) { // positive rage
-//                if (x.phase > a.end) { // out of loop bounds
-//                    x.opState = FadeOut;
-//                    if (a.loop) {
-//                        x.opAction = LoopPositive;
-//                    } else {
-//                        x.opAction = Stop;
-//                    }
-//                } else { // in loop bounds
-//                    x.opAction = None;
-//                    x.opState = Playing;
-//                }
-//            } else { // negative rate
-//                if (x.phase < a.start) { // out of loop bounds
-//                    x.opState = FadeOut;
-//                    if (a.loop) {
-//                        x.opAction = LoopNegative;
-//                    } else {
-//                        x.opAction = Stop;
-//                    }
-//                } else { // in loop bounds
-//                    x.opAction = None;
-//                    x.opState = Playing;
-//                }
-//            }
-//            break;
-//        case Stopped:
-//            x.opAction = None;
-//            x.opState = Stopped;
-//    }
-//
-//    return x.opAction;
-//}
 
-void SubHead::calcLevelUpdate(size_t idx, const FrameLevelParameters &a) {
-    pre[idx] = a.pre + (1.f - a.pre) * a.fadeCurves->getPreFadeValue(fade[idx]);
-    rec[idx] = a.rec * a.fadeCurves->getRecFadeValue(fade[idx]);
+void SubHead::calcLevelUpdate(size_t i,
+        //const FrameLevelParameters &a) {
+                              const softcut::ReadWriteHead *rwh) {
+    pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
+    rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
     // TODO: apply rate==0 deadzone
 }
 
 
-void SubHead::performFrameWrite(size_t idx_1, size_t idx, const float input) {
+void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
     // push to resampler, even if stopped
     // this should avoid a glitch when restarting
     int nframes = resamp.processFrame(input);
 
     // if we're stopped, don't touch our buffer or state vars
-    if (opState[idx] == Stopped) {
+    if (opState[i_1] == Stopped) {
         return;
     }
 
-    BOOST_ASSERT_MSG(fade[idx] >= 0.f && fade[idx] <= 1.f, "bad fade coefficient in write");
+    BOOST_ASSERT_MSG(fade[i_1] >= 0.f && fade[i_1] <= 1.f, "bad fade coefficient in write");
 
     sample_t y; // write value
     const sample_t *src = resamp.output();
 
-    size_t w = wrIdx[idx_1];
+    size_t w = wrIdx[i_1];
     for (int fr = 0; fr < nframes; ++fr) {
         y = src[fr];
         // TODO: possible further processing (e.g. softclip, filtering)
-        buf[w] *= pre[idx];
-        buf[w] += y * rec[idx];
-        w = wrapBufIndex(w + 1);
+        buf[w] *= pre[i_1];
+        buf[w] += y * rec[i_1];
+        w = wrapBufIndex(w + dir[i_1]);
     }
-    wrIdx[idx] = w;
+    wrIdx[i] = w;
 }
 
-float SubHead::performFrameRead(size_t idx) {
-    int phase1 = static_cast<int>(phase[idx]);
+float SubHead::performFrameRead(size_t i) {
+    int phase1 = static_cast<int>(phase[i]);
     int phase0 = phase1 - 1;
     int phase2 = phase1 + 1;
     int phase3 = phase1 + 2;
@@ -182,9 +148,10 @@ float SubHead::performFrameRead(size_t idx) {
     float y3 = buf[wrapBufIndex(phase3)];
     float y2 = buf[wrapBufIndex(phase2)];
 
-    auto x = static_cast<float>(phase[idx] - (float) phase1);
+    auto x = static_cast<float>(phase[i] - (float) phase1);
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
 }
+
 //
 //void SubHead::setPhase(size_t idx, phase_t phase) {
 //    phase_ = phase;
