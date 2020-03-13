@@ -69,17 +69,16 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
         // TODO: use other voice for `duck`
         sch.performSubheadReads(out, numFrames);
         // apply post-filter
-        for(size_t fr=0; fr<numFrames; ++fr) {
-            out[fr] = svfPost.getNextSample(out[fr]) +  out[fr]*svfPostDryLevel;
-            updateQuantPhase();
-        }
+//        for(size_t fr=0; fr<numFrames; ++fr) {
+//            out[fr] = svfPost.getNextSample(out[fr]) +  out[fr]*svfPostDryLevel;
+//            updateQuantPhase();
+//        }
     }
 
     // TODO: use other voice for `follow`
     sch.updateSubheadPositions(numFrames);
     sch.updateSubheadWriteLevels(numFrames);
-
-
+    sch.setLastNumFrames(numFrames);
 }
 
 void Voice::setSampleRate(float hz) {

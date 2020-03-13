@@ -21,19 +21,12 @@ namespace softcut {
         template<typename T>
         using StateBuffer = SubHead::StateBuffer<T>;
 
-    public:
-
-        // update all position, state, and action buffers for both subheads
-        void performSubheadWrites(const float* input, size_t numFrames);
-        void performSubheadReads(float* output, size_t numFrames);
-        void updateSubheadPositions(size_t numFrames);
-        void updateSubheadWriteLevels(size_t numFrames);
-
     private:
         // FIXME: should use a proper queue (e.g. from dsp-kit)
         /// for now, only a single value can be queued,
         /// and a negative value indicates that the queue is empty.
         phase_t enqueuedPosition = -1.0;
+        size_t lastNumFrames;
 
         void enqueuePositionChange(phase_t pos) {
             enqueuedPosition = pos;
@@ -46,6 +39,7 @@ namespace softcut {
             // TODO [efficiency]: try low-order polynomial approximation
             return x * sinf(a * (float)M_PI_2) + y * sinf(b * (float) M_PI_2);
         }
+
 
     private:
         SubHead head[2];         // sub-processors
@@ -78,6 +72,17 @@ namespace softcut {
             fadeCurves = fc;
         }
 
+        // queue a position change
+        void cutToPos(float seconds);
+
+        // update all position, state, and action buffers for both subheads
+        void performSubheadWrites(const float* input, size_t numFrames);
+        void performSubheadReads(float* output, size_t numFrames);
+        void updateSubheadPositions(size_t numFrames);
+        void updateSubheadWriteLevels(size_t numFrames);
+        void setLastNumFrames(size_t lnf) { lastNumFrames = lnf; }
+
+
 //        // per-sample update functions
 //        void processSample(sample_t in, sample_t *out);
 //        void processSampleNoRead(sample_t in, sample_t *out);
@@ -99,9 +104,6 @@ namespace softcut {
         void setRate(size_t idx, rate_t x);
         void setRec(size_t idx, float x);
         void setPre(size_t idx, float x);
-
-        // queue a position change
-        void cutToPos(float seconds);
 
         void setRecOffsetSamples(int d);
 

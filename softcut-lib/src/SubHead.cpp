@@ -11,6 +11,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(
         const FramePositionParameters &a) {
     switch (x.opState) {
         case FadeIn:
+            x.phase = x.phase + a.rate;
             x.fade = x.fade + a.fadeInc;
             if (x.fade > 1.f) {
                 x.fade = 1.f;
@@ -20,7 +21,9 @@ SubHead::OpAction SubHead::calcPositionUpdate(
                 x.opState = FadeIn;
                 x.opAction = None;
             }
+            break;
         case FadeOut:
+            x.phase = x.phase + a.rate;
             x.fade = x.fade - a.fadeInc;
             if (x.fade < 0.f) {
                 x.fade = 0.f;
@@ -30,39 +33,52 @@ SubHead::OpAction SubHead::calcPositionUpdate(
                 x.opState = FadeOut;
                 x.opAction = None;
             }
+            break;
         case Playing:
             x.phase = x.phase + a.rate;
-            if (x.phase > a.end || x.phase < a.start) {
-                // outside of loop bounds, always fades out
-                x.opState = FadeOut;
-                if (a.loop) {
-                    if (a.rate > 0.f) {
+            if (a.rate > 0.f) { // positive rage
+                if (x.phase > a.end) { // out of loop bounds
+                    x.opState = FadeOut;
+                    if (a.loop) {
+                        x.opAction = LoopPositive;
+                    } else {
+                        x.opAction = Stop;
+                    }
+                } else { // in loop bounds
+                    x.opAction = None;
+                    x.opState = Playing;
+                }
+            } else { // negative rate
+                if (x.phase < a.start) { // out of loop bounds
+                    x.opState = FadeOut;
+                    if (a.loop) {
                         x.opAction = LoopNegative;
                     } else {
-                        x.opAction = LoopPositive;
+                        x.opAction = Stop;
                     }
-                } else {
-                    x.opAction = Stop;
+                } else { // in loop bounds
+                    x.opAction = None;
+                    x.opState = Playing;
                 }
-            } else { // in loop bounds
-                x.opAction = None;
-                x.opState = Playing;
             }
+            break;
         case Stopped:
             x.opAction = None;
             x.opState = Stopped;
     }
-    return x.opAction;
+
+    return x.
+            opAction;
 }
 
-void SubHead::calcLevelUpdate(SubHead::FrameLevelData &x, const FrameLevelParameters &a) {
-    x.pre = a.pre + (1.f-a.pre) * a.fadeCurves->getPreFadeValue(x.fade);
-    x.rec = a.rec * a.fadeCurves->getRecFadeValue(x.fade);
+void SubHead::calcLevelUpdate(size_t idx, const FrameLevelParameters &a) {
+    pre[idx] = a.pre + (1.f - a.pre) * a.fadeCurves->getPreFadeValue(fade[idx]);
+    rec[idx] = a.rec * a.fadeCurves->getRecFadeValue(fade[idx]);
     // TODO: apply rate==0 deadzone
 }
 
 
-void SubHead::performFrameWrite(SubHead::FrameWriteData &x, size_t idx, const float input) {
+void SubHead::performFrameWrite(size_t idx_1, size_t idx, const float input) {
     // push to resampler, even if stopped
     // this should avoid a glitch when restarting
     int nframes = resamp.processFrame(input);
@@ -75,17 +91,17 @@ void SubHead::performFrameWrite(SubHead::FrameWriteData &x, size_t idx, const fl
     BOOST_ASSERT_MSG(fade[idx] >= 0.f && fade[idx] <= 1.f, "bad fade coefficient in write");
 
     sample_t y; // write value
-    const sample_t* src = resamp.output();
+    const sample_t *src = resamp.output();
 
-    size_t w = x.wrIdx;
-    for(int fr=0; fr<nframes; ++fr) {
+    size_t w =wrIdx[idx_1];
+    for (int fr = 0; fr < nframes; ++fr) {
         y = src[fr];
         // TODO: possible further processing (e.g. softclip, filtering)
         buf[w] *= pre[idx];
         buf[w] += y * rec[idx];
-        w = wrapBufIndex(w+1);
+        w = wrapBufIndex(w + 1);
     }
-    x.wrIdx = w;
+    wrIdx[idx] = w;
 }
 
 float SubHead::performFrameRead(size_t idx) {
@@ -99,7 +115,7 @@ float SubHead::performFrameRead(size_t idx) {
     float y3 = buf[wrapBufIndex(phase3)];
     float y2 = buf[wrapBufIndex(phase2)];
 
-    auto x = static_cast<float>(phase[idx] - (float)phase1);
+    auto x = static_cast<float>(phase[idx] - (float) phase1);
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
 }
 //

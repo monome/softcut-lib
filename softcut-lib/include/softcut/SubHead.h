@@ -90,24 +90,25 @@ namespace softcut {
         };
         // structure containing all data required for a single-frame level update,
         // (targets and sources)
-        struct FrameLevelData {
-            phase_t phase;
-            OpState opState;
-            float fade;
-            float rec;
-            float pre;
-        };
+//        struct FrameLevelData {
+//            phase_t phase;
+//            OpState opState;
+//            float fade;
+//            float rec;
+//            float pre;
+//        };
+
         struct FrameLevelParameters {
             float rate;
             float pre; // base preserve level
             float rec; // base record level
             FadeCurves *fadeCurves;
         };
-        // structure containing all source and target data involved in single-frame write
 
-        struct FrameWriteData {
-            size_t wrIdx;
-        };
+        // structure containing all source and target data involved in single-frame write
+//        struct FrameWriteData {
+//            size_t wrIdx;
+//        };
 
     protected:
         //-------------
@@ -128,30 +129,32 @@ namespace softcut {
             data.fade = fade[idx];
         }
 
-        // update relevant buffers with single frame of level data.
-        void storeFrameLevelData(size_t idx, FrameLevelData &data) {
-            phase[idx] = data.phase;
-            opState[idx] = data.opState;
-            fade[idx] = data.fade;
-            rec[idx] = data.rec;
-            pre[idx] = data.pre;
-        }
+//        // update relevant buffers with single frame of level data.
+//        void storeFrameLevelData(size_t idx, FrameLevelData &data) {
+//            phase[idx] = data.phase;
+//            opState[idx] = data.opState;
+//            fade[idx] = data.fade;
+//            rec[idx] = data.rec;
+//            pre[idx] = data.pre;
+//        }
+//
+//        // initialize a frame level data structure from buffered values
+//        void loadFrameLevelData(size_t idx, FrameLevelData &data) {
+//            data.phase = phase[idx];
+//            data.opState = opState[idx];
+//            data.fade = fade[idx];
+//            data.rec = rec[idx];
+//            data.pre = pre[idx];
+//        }
+//
+//        void loadFrameWriteData(size_t idx, FrameWriteData &data) {
+//            data.wrIdx = wrIdx[idx];
+//        }
+//
+//        void storeFrameWriteData(size_t idx, const FrameWriteData &data) {
+//            wrIdx[idx] = data.wrIdx;
+//        }
 
-        // initialize a frame level data structure from buffered values
-        void loadFrameLevelData(size_t idx, FrameLevelData &data) {
-            data.phase = phase[idx];
-            data.opState = opState[idx];
-            data.fade = fade[idx];
-            data.rec = rec[idx];
-            data.pre = pre[idx];
-        }
-
-        void loadFrameWriteData(size_t idx, FrameWriteData &data) {
-            data.wrIdx = wrIdx[idx];
-        }
-        void storeFrameWriteData(size_t idx, const FrameWriteData &data) {
-            wrIdx[idx] = data.wrIdx;
-        }
         void updateWrIdx(size_t idx, float rate, int offset) {
             size_t w = static_cast<size_t>(phase[idx]);
             if (rate >= 0) {
@@ -162,16 +165,18 @@ namespace softcut {
             wrIdx[idx] = w;
         }
 
+        // -- because ReadWriteHead may manipulate the data between load and store,
+        // we'll break apart the update procedure into explicit load, store and calc.
+        // so this calc function can be static
         // update frame position data from parameters
         static OpAction calcPositionUpdate(FramePositionData &x, const FramePositionParameters &a);
+
+        //--- these update methods can alter data in place, so we make them mutating
         // update frame level data from parameters
-        static void calcLevelUpdate(FrameLevelData &x,  const FrameLevelParameters &a);
-
+        void calcLevelUpdate(size_t idx,  const FrameLevelParameters &a);
         // perform single frame write
-        void performFrameWrite(FrameWriteData &x, size_t idx, float input);
-
+        void performFrameWrite(size_t idx_1, size_t idx, float input);
         // read a single frame
-        // this requires no state update, so no de-interleaved data structure
         float performFrameRead(size_t idx);
 
         void setBuffer(float *b, size_t fr) {
@@ -181,6 +186,7 @@ namespace softcut {
 
         size_t wrapBufIndex(size_t x) {
             size_t y = x + bufFrames;
+            // FIXME: should wrap to loop endpoints, maybe
             while (y > bufFrames) { y -= bufFrames; }
             return y;
         }

@@ -14,9 +14,8 @@ using namespace softcut;
 using namespace std;
 
 int ReadWriteHead::dequeuePositionChange(
-        SubHead::FramePositionData& a,
-        SubHead::FramePositionData& b)
-{
+        SubHead::FramePositionData &a,
+        SubHead::FramePositionData &b) {
     if (enqueuedPosition < 0) {
         return -1;
     }
@@ -36,7 +35,7 @@ int ReadWriteHead::dequeuePositionChange(
 }
 
 void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
-    switch(action) {
+    switch (action) {
         case SubHead::OpAction::LoopPositive:
             enqueuePositionChange(start);
             break;
@@ -62,17 +61,16 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     SubHead::FramePositionData data0{};
     SubHead::FramePositionData data1{};
 
-    // start with the values in the buffer from end of last block
-    head[0].loadFramePositionData(SubHead::maxBlockSize-1, data0);
-    head[1].loadFramePositionData(SubHead::maxBlockSize-1, data1);
-
-    for (size_t fr=0; fr<numFrames; ++fr) {
+    size_t fr = 0;
+    size_t fr_1 = lastNumFrames - 1;
+    while (fr < numFrames) {
+        head[0].loadFramePositionData(fr_1, data0);
+        head[1].loadFramePositionData(fr_1, data1);
         params.rate = rate[fr];
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
-        handleLoopAction (softcut::SubHead::calcPositionUpdate(data0, params));
-        handleLoopAction (softcut::SubHead::calcPositionUpdate(data1, params));
-
+        handleLoopAction(softcut::SubHead::calcPositionUpdate(data0, params));
+        handleLoopAction(softcut::SubHead::calcPositionUpdate(data1, params));
         // change positions if needed
         int headMoved = dequeuePositionChange(data0, data1);
         // store new values in subhead buffers
@@ -80,6 +78,8 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
         head[1].storeFramePositionData(fr, data1);
         if (headMoved == 0) { head[0].updateWrIdx(fr, rate[fr], recOffsetSamples); }
         if (headMoved == 1) { head[1].updateWrIdx(fr, rate[fr], recOffsetSamples); }
+        fr_1 = fr;
+        ++fr;
     }
 }
 
@@ -88,59 +88,44 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
     SubHead::FrameLevelParameters params{};
     params.fadeCurves = fadeCurves;
 
-    SubHead::FrameLevelData data0{};
-    SubHead::FrameLevelData data1{};
-
-    head[0].loadFrameLevelData(SubHead::maxBlockSize-1, data0);
-    head[1].loadFrameLevelData(SubHead::maxBlockSize-1, data1);
-
-    for (size_t fr=0; fr<numFrames; ++fr) {
+    size_t fr = 0;
+    while (fr < numFrames) {
         params.rate = this->rate[fr];
         params.pre = this->pre[fr];
         params.rec = this->rec[fr];
-
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
-        softcut::SubHead::calcLevelUpdate(data0, params);
-        softcut::SubHead::calcLevelUpdate(data1, params);
-
-        // store new values in subhead buffers
-        head[0].storeFrameLevelData(fr, data0);
-        head[1].storeFrameLevelData(fr, data1);
+        head[0].calcLevelUpdate(fr, params);
+        head[1].calcLevelUpdate(fr, params);
+        fr++;
     }
 }
 
 
 void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
-    SubHead::FrameWriteData data0{};
-    SubHead::FrameWriteData data1{};
-    for (size_t fr =0; fr<numFrames; ++fr) {
-        head[0].performFrameWrite(data0, fr, input[fr]);
-        head[1].performFrameWrite(data1, fr, input[fr]);
-        head[0].storeFrameWriteData(fr, data0);
-        head[1].storeFrameWriteData(fr, data1);
+    size_t fr = 0;
+    size_t fr_1 = lastNumFrames - 1;
+    while (fr < numFrames) {
+        head[0].performFrameWrite(fr_1, fr, input[fr]);
+        head[1].performFrameWrite(fr_1, fr, input[fr]);
+        fr_1 = fr++;
     }
 }
 
 void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
-    SubHead::FrameWriteData data0{};
-    SubHead::FrameWriteData data1{};
     float out0;
     float out1;
-    for (size_t fr =0; fr<numFrames; ++fr) {
+    for (size_t fr = 0; fr < numFrames; ++fr) {
         out0 = head[0].performFrameRead(fr);
-        out1 = head[0].performFrameRead(fr);
-        // TODO: apply `duck` here, using subhead record levels from other ReadWriteHead
-        head[0].storeFrameWriteData(fr, data0);
-        head[1].storeFrameWriteData(fr, data1);
+        out1 = head[1].performFrameRead(fr);
         output[fr] = mixFade(out0, out1, head[0].fade[fr], head[1].fade[fr]);
     }
 }
+
 void ReadWriteHead::setSampleRate(float sr) {
     this->sr = sr;
     // TODO: refresh dependent variables..
     // though in present applications, we are unlikely to change SR at runtime.
-
 }
 
 void ReadWriteHead::setBuffer(sample_t *b, uint32_t sz) {
