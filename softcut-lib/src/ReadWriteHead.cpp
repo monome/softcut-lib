@@ -86,7 +86,8 @@ void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
     while (fr < numFrames) {
         head[0].performFrameWrite(fr_1, fr, input[fr]);
         head[1].performFrameWrite(fr_1, fr, input[fr]);
-        fr_1 = fr++;
+        fr_1 = fr;
+        ++fr;
     }
 }
 

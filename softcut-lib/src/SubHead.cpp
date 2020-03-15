@@ -107,10 +107,12 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
     return opAction[i];
 }
 
-void SubHead::calcLevelUpdate(size_t i,
-                              const softcut::ReadWriteHead *rwh) {
-    pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
-    rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
+void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
+//    pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
+//    rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
+    //pre[i] = rwh->pre[i] + rwh->pre[i] * (1-fade[i]);
+    pre[i] = rwh->pre[i] * (2 - fade[i]);
+    rec[i] = rwh->rec[i] * fade[i];
     // TODO: apply rate==0 deadzone
 }
 
@@ -129,7 +131,7 @@ void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
     sample_t y; // write value
     const sample_t *src = resamp.output();
 
-    size_t w = wrIdx[i_1];
+    size_t w = wrapBufIndex(wrIdx[i_1] + dir[i]);
     for (int fr = 0; fr < nframes; ++fr) {
         y = src[fr];
         // TODO: possible further processing (e.g. softclip, filtering)
