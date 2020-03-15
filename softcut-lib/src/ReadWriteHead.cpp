@@ -15,14 +15,14 @@ ReadWriteHead::ReadWriteHead() {
     active.fill(-1);
     lastNumFrames = 0;
 }
-int ReadWriteHead::dequeuePositionChange(size_t fr) {
+int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     if (enqueuedPosition < 0) {
         return -1;
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
             std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
-            head[headIdx].setPosition(fr, enqueuedPosition, this);
+            head[headIdx].setPosition(fr_1, fr, enqueuedPosition, this);
             enqueuedPosition = -1.0;
             return headIdx;
         }
@@ -59,7 +59,7 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
            handleLoopAction(action);
         }
         // change positions if needed
-        int headMoved = dequeuePositionChange(fr);
+        int headMoved = dequeuePositionChange(fr_1, fr);
         if (headMoved >= 0) {
             active[fr] = headMoved;
         } else {

@@ -71,17 +71,7 @@ namespace softcut {
         StateBuffer<float> rec{0.f};
 
     protected:
-        void setPosition(size_t idx, phase_t position, const softcut::ReadWriteHead *rwh);
-
-        void updateWrIdx(size_t idx, float rate, int offset) {
-            size_t w = static_cast<size_t>(phase[idx]);
-            if (rate >= 0) {
-                w = static_cast<size_t>(static_cast<long int>(w) + offset);
-            } else {
-                w = static_cast<size_t>(static_cast<long int>(w) - offset);
-            }
-            wrIdx[idx] = w;
-        }
+        void setPosition(size_t idx_1, size_t idx, phase_t position, const softcut::ReadWriteHead *rwh);
 
 //        // update phase, opState, and opAction
 //        OpAction calcPositionUpdate(size_t idx_1, size_t idx, const FramePositionParameters &a);

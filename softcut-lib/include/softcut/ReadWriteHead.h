@@ -33,7 +33,7 @@ namespace softcut {
             enqueuedPosition = pos;
         }
 
-        int dequeuePositionChange(size_t fr);
+        int dequeuePositionChange(size_t fr_1, size_t fr);
         void handleLoopAction(SubHead::OpAction action);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {

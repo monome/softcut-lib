@@ -68,14 +68,14 @@ void FadeCurves::calcRecFade() {
         }
         buf[n] = 1.f;
     } else if (recShape == Raised) {
-        const float phi = fpi/(nr*2);
+        const float phi = fpi/(nr);
         float x = fpi;
         float y = 0.f;
         while (i < ndr) {
             buf[i++] = y;
         }
         while (i < n) {
-            y = sinf(x);
+            y = cosf(x);
             buf[i++] = y;
             x += phi;
         }
@@ -145,7 +145,6 @@ void FadeCurves::setMinPreWindowFrames(unsigned int x) {
 float FadeCurves::getRecFadeValue(float x) {
     return Interpolate::tabLinear<float, fadeBufSize>(recFadeBuf, x);
 }
-
 
 float FadeCurves::getPreFadeValue(float x) {
     return Interpolate::tabLinear<float, fadeBufSize>(preFadeBuf, x);
