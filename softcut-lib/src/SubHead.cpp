@@ -23,8 +23,10 @@ void SubHead::updateRate(size_t idx, rate_t rate) {
 }
 
 void SubHead::setPosition(size_t idx, phase_t position, const softcut::ReadWriteHead *rwh) {
+    if (opState[idx] != Stopped) {
+        std::cerr << "error: setting position of moving subhead" << std::endl;
+    }
     phase[idx] = position;
-
     opState[idx] = SubHead::FadeIn;
     opAction[idx] = SubHead::OpAction::StartFadeIn;
     updateWrIdx(idx, rwh->rate[idx], rwh->recOffsetSamples);
@@ -64,6 +66,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
             break;
         case Playing:
             phase[i] = phase[i_1] + rwh->rate[i];
+            fade[i] = 1.f;
             if (rwh->rate[i] > 0.f) { // positive rate
                 if (phase[i] > rwh->end || phase[i] < rwh->start) { // out of loop bounds
                     opState[i] = FadeOut;
@@ -91,10 +94,12 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
                 } else { // in loop bounds
                     opAction[i] = None;
                     opState[i] = Playing;
+                    fade[i] = 0.f;
                 }
             }
             break;
         case Stopped:
+            fade[i] = 0.f;
             opAction[i] = None;
             opState[i] = Stopped;
     }

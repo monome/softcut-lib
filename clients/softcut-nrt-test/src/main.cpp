@@ -30,7 +30,7 @@ int main(int argc, const char **argv) {
     double phase = 0.0;
     for (float & f : buf) {
         f = sinf((float)phase * twopi);
-        std::cerr << "["<< phase << ","<< f << "], ";
+        //std::cerr << "["<< phase << ","<< f << "], ";
         phase += inc;
         while (phase > 1.0) { phase -= 1.0; }
     }
@@ -43,9 +43,9 @@ int main(int argc, const char **argv) {
     cut.setVoiceBuffer(0, buf.data(), bufsize);
     cut.setSampleRate(sr);
     cut.setRate(0, 1.0);
-    cut.setFadeTime(0, 0.01);
+    cut.setFadeTime(0, 0.05);
     cut.setLoopStart(0, 0.25);
-    cut.setPosition(0, 0.4);
+    cut.setPosition(0, 0.2);
     cut.setLoopEnd(0, 0.5);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
@@ -65,11 +65,11 @@ int main(int argc, const char **argv) {
         std::cerr << "processed " << fr << " frames" << std::endl;
     }
 
-    std::cout << "output = { " << std::endl;
-    for (float i : output) {
-        std::cout << i << ", ";
-    }
-    std::cout << std::endl << "} ;" << std::endl;
+//    std::cout << "output = { " << std::endl;
+//    for (float i : output) {
+//        std::cout << i << ", ";
+//    }
+//    std::cout << std::endl << "} ;" << std::endl;
     cnpy::npy_save("buffer.npy", buf.data(), {1, bufsize}, "w");
     cnpy::npy_save("output.npy", output.data(), {1, nf}, "w");
     cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, nf}, "w");
