@@ -37,8 +37,8 @@ namespace softcut {
         void handleLoopAction(SubHead::OpAction action);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
-            // TODO [efficiency]: try low-order polynomial approximation
-            return x * sinf(a * (float) M_PI_2) + y * sinf(b * (float) M_PI_2);
+            // we don't actually want equal power since we are summing!
+            return x*a + y*b;
         }
 
 

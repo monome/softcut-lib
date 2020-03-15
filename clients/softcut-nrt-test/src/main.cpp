@@ -5,31 +5,48 @@
 #include <array>
 #include <iostream>
 
+#include <sndfile.hh>
 #include "cnpy/cnpy.h"
 
 #include "softcut/Softcut.h"
 #include "softcut/TestBuffers.h"
 
-static constexpr double pi =  3.1415926535898;
-static constexpr double twopi =  6.2831853071796;
+static constexpr double pi = 3.1415926535898;
+static constexpr double twopi = 6.2831853071796;
 static constexpr int sr = 48000;
-static constexpr size_t nf = sr * 1;
-static constexpr size_t bufsize = sr * 1;
+static constexpr size_t nf = sr * 10;
+static constexpr size_t bufsize = sr * 4;
 
 static std::array<float, nf> input;
 static std::array<float, nf> output;
 static std::array<float, bufsize> buf;
 
+void writeOutputSoundfile() {
+    const std::string path = "output.wav";
+    const int sr = 48000;
+    const int channels = 1;
+    const int format = SF_FORMAT_WAV | SF_FORMAT_PCM_24;
+
+    SndfileHandle file(path, SFM_WRITE, format, channels, sr);
+    if (not file) {
+        std::cerr << "writeOutput(): cannot open sndfile" << path << " for writing" << std::endl;
+        return;
+    }
+
+    file.command(SFC_SET_CLIPPING, NULL, SF_TRUE);
+    file.writef(output.data(), output.size());
+}
+
 int main(int argc, const char **argv) {
-    (void)argc;
-    (void)argv;
+    (void) argc;
+    (void) argv;
 
     //--- fill buffer with sinewave
     double hz = 110.0;
-    double inc =  hz/(double)sr;
+    double inc = hz / (double) sr;
     double phase = 0.0;
-    for (float & f : buf) {
-        f = sinf((float)phase * twopi);
+    for (float &f : buf) {
+        f = sinf((float) phase * twopi) * 0.5f;
         //std::cerr << "["<< phase << ","<< f << "], ";
         phase += inc;
         while (phase > 1.0) { phase -= 1.0; }
@@ -44,11 +61,11 @@ int main(int argc, const char **argv) {
     cut.setSampleRate(sr);
     cut.setRate(0, 1.0);
     cut.setFadeTime(0, 0.05);
-    cut.setLoopStart(0, 0.25);
-    cut.setPosition(0, 0.2);
-    cut.setLoopEnd(0, 0.5);
+    cut.setLoopStart(0, 1);
+    cut.setLoopEnd(0, 3);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
+    cut.setPosition(0, 0.5);
 
     size_t blocksize = 256;
     size_t maxframes = nf - blocksize;
@@ -70,6 +87,7 @@ int main(int argc, const char **argv) {
 //        std::cout << i << ", ";
 //    }
 //    std::cout << std::endl << "} ;" << std::endl;
+
     cnpy::npy_save("buffer.npy", buf.data(), {1, bufsize}, "w");
     cnpy::npy_save("output.npy", output.data(), {1, nf}, "w");
     cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, nf}, "w");
@@ -91,5 +109,6 @@ int main(int argc, const char **argv) {
     cnpy::npy_save("dir0.npy", testBuffers.getBuffer(softcut::TestBuffers::Dir0), {1, nf}, "w");
     cnpy::npy_save("dir1.npy", testBuffers.getBuffer(softcut::TestBuffers::Dir1), {1, nf}, "w");
 
+    writeOutputSoundfile();
 
 }

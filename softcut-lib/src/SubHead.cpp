@@ -53,7 +53,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
             break;
         case FadeOut:
             phase[i] = phase[i_1] + rwh->rate[i];
-            fade[i] = fade[i] - rwh->fadeInc;
+            fade[i] = fade[i_1] - rwh->fadeInc;
             if (fade[i] <= 0.f) {
                 std::cerr << "done fadeout" << std::endl;
                 fade[i] = 0.f;
@@ -94,7 +94,6 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
                 } else { // in loop bounds
                     opAction[i] = None;
                     opState[i] = Playing;
-                    fade[i] = 0.f;
                 }
             }
             break;
@@ -108,7 +107,6 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
 }
 
 void SubHead::calcLevelUpdate(size_t i,
-        //const FrameLevelParameters &a) {
                               const softcut::ReadWriteHead *rwh) {
     pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
     rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
