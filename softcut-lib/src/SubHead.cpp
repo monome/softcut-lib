@@ -33,7 +33,6 @@ void SubHead::setPosition(size_t idx, phase_t position, const softcut::ReadWrite
 }
 
 SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
-//                                     const SubHead::FramePositionParameters &a) {
                                               const softcut::ReadWriteHead *rwh) {
     updateRate(i_1, rwh->rate[i]);
 
@@ -120,11 +119,11 @@ void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
     int nframes = resamp.processFrame(input);
 
     // if we're stopped, don't touch our buffer or state vars
-    if (opState[i_1] == Stopped) {
+    if (opState[i] == Stopped) {
         return;
     }
 
-    BOOST_ASSERT_MSG(fade[i_1] >= 0.f && fade[i_1] <= 1.f, "bad fade coefficient in write");
+    BOOST_ASSERT_MSG(fade[i] >= 0.f && fade[i] <= 1.f, "bad fade coefficient in write");
 
     sample_t y; // write value
     const sample_t *src = resamp.output();
@@ -133,9 +132,9 @@ void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
     for (int fr = 0; fr < nframes; ++fr) {
         y = src[fr];
         // TODO: possible further processing (e.g. softclip, filtering)
-        buf[w] *= pre[i_1];
-        buf[w] += y * rec[i_1];
-        w = wrapBufIndex(w + dir[i_1]);
+        buf[w] *= pre[i];
+        buf[w] += y * rec[i];
+        w = wrapBufIndex(w + dir[i]);
     }
     wrIdx[i] = w;
 }

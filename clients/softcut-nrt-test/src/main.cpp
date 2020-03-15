@@ -65,13 +65,18 @@ int main(int argc, const char **argv) {
     cut.setLoopEnd(0, 3);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
+    cut.setRecFlag(0, true);
+    cut.setRecLevel(0, 1.0);
+    cut.setPreLevel(0, 0.5);
     cut.setPosition(0, 0.5);
+    input.fill(0.f);
 
     size_t blocksize = 256;
     size_t maxframes = nf - blocksize;
     size_t fr = 0;
     float *src = input.data();
     float *dst = output.data();
+
 
     while (fr < maxframes) {
         cut.processBlock(0, src, dst, blocksize);
