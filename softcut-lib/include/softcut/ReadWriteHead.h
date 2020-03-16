@@ -72,8 +72,8 @@ namespace softcut {
             fadeCurves = fc;
             start = 0.f;
             end = 0.f;
-            head[0].init(fc);
-            head[1].init(fc);
+            head[0].init(this);
+            head[1].init(this);
         }
 
         // queue a position change

@@ -9,13 +9,16 @@
 using namespace softcut;
 
 SubHead::SubHead() {
-    phase.fill(0.0);
-    wrIdx.fill(0);
-    opState.fill(Stopped);
-    opAction.fill(None);
-    fade.fill(0.f);
-    pre.fill(0.f);
-    rec.fill(0.f);
+    for (int i=0; i<maxBlockSize; ++i) {
+        // initial offset between phase  / wridx is important!
+        phase[i] = 0.0;
+        wrIdx[i] = 0;
+        opState[i] = Stopped;
+        opAction[i] = None;
+        fade[i] = 0.f;
+        pre[i] = 0.f;
+        rec[i] = 0.f;
+    }
 }
 
 void SubHead::updateRate(size_t idx, rate_t rate) {
@@ -118,6 +121,7 @@ void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
         case Playing:
             pre[i] = rwh->pre[i];
             rec[i] = rwh->rec[i];
+            break;
         case FadeIn:
         case FadeOut:
 #if 0 // use FadeCurves
@@ -132,7 +136,6 @@ void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
 }
 
 void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
-
     // push to resampler, even if stopped
     // this should avoid a glitch when restarting
     int nframes = resamp.processFrame(input);
@@ -158,10 +161,10 @@ void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
 }
 
 float SubHead::performFrameRead(size_t i) {
-    int phase1 = static_cast<int>(phase[i]);
-    int phase0 = phase1 - 1;
-    int phase2 = phase1 + 1;
-    int phase3 = phase1 + 2;
+    frame_t phase1 = static_cast<frame_t>(phase[i]);
+    frame_t phase0 = phase1 - 1;
+    frame_t phase2 = phase1 + 1;
+    frame_t phase3 = phase1 + 2;
 
     float y0 = buf[wrapBufIndex(phase0)];
     float y1 = buf[wrapBufIndex(phase1)];
@@ -172,6 +175,7 @@ float SubHead::performFrameRead(size_t i) {
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
 }
 
-void SubHead::init(FadeCurves *pCurves) {
+void SubHead::init(ReadWriteHead *rwh) {
     resamp.setPhase(0);
+    this->setPosition(maxBlockSize-1, 0, 0, rwh);
 }

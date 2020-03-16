@@ -7,7 +7,6 @@
 #include <chrono>
 
 #include <sndfile.hh>
-#include <softcut/DebugLog.h>
 #include "cnpy/cnpy.h"
 
 #include "softcut/Softcut.h"
@@ -55,25 +54,34 @@ int main(int argc, const char **argv) {
     }
     std::cerr << std::endl;
 
-    softcut::Softcut<1> cut;
+    // must initialize with a non-empty buffer!
+    softcut::Softcut<1> cut(buf.data(), bufsize);
     softcut::TestBuffers testBuffers;
     cut.reset();
 
+    //.. after initialization, it's ok to change buffers.
     cut.setVoiceBuffer(0, buf.data(), bufsize);
     cut.setSampleRate(samplerate);
-    cut.setRate(0, 1.77);
+    cut.setRate(0, 2.77);
+    //cut.setRate(0, 1.0);
     cut.setFadeTime(0, 0.05);
     cut.setLoopStart(0, 0.2);
     cut.setLoopEnd(0, 1.0);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
+
     cut.setRecFlag(0, true);
     cut.setRecLevel(0, 1.0);
     cut.setPreLevel(0, 0.75);
+
+//    cut.setRecFlag(0, false);
+//    cut.setRecLevel(0, 1.0);
+//    cut.setPreLevel(0, 0.75);
+
     cut.setPosition(0, 0.0);
     input.fill(0.f);
 
-    size_t blocksize = 256;
+    size_t blocksize = 64;
     size_t maxframes = numframes - blocksize;
     size_t fr = 0;
     float *src = input.data();
@@ -86,7 +94,25 @@ int main(int argc, const char **argv) {
 
     while (fr < maxframes) {
         cut.processBlock(0, src, dst, blocksize);
+
         testBuffers.update(cut, 0, blocksize);
+        // print each output  block
+        if (fr < 17000) {
+            std::cout << " [ ";
+            for (size_t i = 0; i<blocksize; ++i) {
+                //std::cout << dst[i] << ", ";
+                std::cout << testBuffers.getBuffer(softcut::TestBuffers::WrIdx0)[i] << ", ";
+            }
+            std::cout << " ] " << std::endl;
+            std::cout << " [ ";
+            for (size_t i = 0; i<blocksize; ++i) {
+                //std::cout << dst[i] << ", ";
+                std::cout << testBuffers.getBuffer(softcut::TestBuffers::WrIdx1)[i] << ", ";
+            }
+            std::cout << " ] " << std::endl;
+            std::cout << std::endl;
+        }
+
         src += blocksize;
         dst += blocksize;
         fr += blocksize;

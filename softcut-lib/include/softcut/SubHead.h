@@ -94,6 +94,7 @@ namespace softcut {
         }
 
         frame_t wrapBufIndex(frame_t x) {
+            BOOST_ASSERT_MSG(bufFrames != 0, "bufFrames must not be zero when wrapping a buffer index");
             frame_t y = x;
             // FIXME: should wrap to loop endpoints, maybe
             while (y > bufFrames) { y -= bufFrames; }
@@ -111,7 +112,7 @@ namespace softcut {
         //// debug
         bool didSetPositionThisFrame  {false};
 
-        void init(FadeCurves *pCurves);
+        void init(ReadWriteHead *rwh);
     };
 }
 

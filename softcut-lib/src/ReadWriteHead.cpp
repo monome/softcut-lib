@@ -110,6 +110,8 @@ void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
         out0 = this->head[0].performFrameRead(fr);
         out1 = this->head[1].performFrameRead(fr);
         output[fr] = mixFade(out0, out1, head[0].fade[fr], head[1].fade[fr]);
+        /// testing....
+        //output[fr] = mixFade(out0, 0, head[0].fade[fr], 0);
     }
 }
 

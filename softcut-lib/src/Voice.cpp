@@ -15,7 +15,6 @@ preRamp(48000, 0.1),
 recRamp(48000, 0.1)
 {
     svfPreFcBase = 16000;
-    reset();
 }
 
 void Voice::reset() {
@@ -59,6 +58,7 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
     }
 
 
+
     if (recFlag) {
         sch.updateSubheadWriteLevels(numFrames);
         for(size_t fr=0; fr<numFrames; ++fr) {
@@ -68,6 +68,7 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
         }
         sch.performSubheadWrites(in, numFrames);
     }
+
 
     // TODO: use other voice for `follow`
     sch.updateSubheadPositions(numFrames);
