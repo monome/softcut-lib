@@ -7,9 +7,9 @@ keys = [
     ['state0', 'state1'],
     ['action0', 'action1'],
     ['phase0', 'phase1'],
-    ['fade0', 'fade1'],
-    ['rec0', 'rec1'],
-    ['pre0', 'pre1'],
+#    ['fade0', 'rec0', 'pre0'],
+#    ['fade1', 'rec1', 'pre1'],
+    ['fade0', 'fade1'], ['rec0', 'rec1'], ['pre0', 'pre1'],
     ['wrIdx0', 'wrIdx1'],
     ['dir0', 'dir1'],
 ]
@@ -21,19 +21,16 @@ def load_file(key):
     return np.load('../output/{}.npy'.format(key))
 
 
-fix, ax = plt.subplots(nkeys, 1, figsize=(16, nkeys * 8))
+fix, ax = plt.subplots(nkeys, 1, figsize=(16, nkeys * 4))
 
 for i in range(nkeys):
     k = keys[i]
     if isinstance(k, list):
-        arr1 = (load_file(k[0]))[0]
-        arr2 = (load_file(k[1]))[0]
-        min = np.amin([np.amin(arr1), np.amin(arr2)])
-        max = np.amax([np.amax(arr1), np.max(arr2)])
-        ax[i].grid(True)
-        ax[i].set_title('{} [{}, {}]'.format(k, min, max))
-        ax[i].plot(arr1)
-        ax[i].plot(arr2)
+        for j in range(len(k)):
+            a = (load_file(k[j]))[0]
+            ax[i].set_title(k)
+            ax[i].grid(True)
+            ax[i].plot(a)
     else:
         arr = (load_file(k))[0]
         min = np.amin(arr)

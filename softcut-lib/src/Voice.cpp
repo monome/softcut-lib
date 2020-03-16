@@ -47,39 +47,30 @@ void Voice::reset() {
 }
 
 void Voice:: processBlockMono(float *in, float *out, int numFrames) {
-    //if (recFlag || playFlag) {
-        for(size_t fr=0; fr<numFrames; ++fr) {
-            sch.setRate(fr, rateRamp.update());
-        }
-    //}
-    // TODO: use other voice for `follow`
-    sch.updateSubheadPositions(numFrames);
-    sch.updateSubheadWriteLevels(numFrames);
 
-    if (recFlag) {
-        for(size_t fr=0; fr<numFrames; ++fr) {
-            sch.setPre(fr, preRamp.update());
-            sch.setRec(fr, recRamp.update());
-            // FIXME: ensure that processing in-place is OK here.
-            /// i think it is because each voice has its own input bus..
-            /// pre-filter modulation could also go here
-            //in[fr] = svfPre.getNextSample(in[fr]) + in[fr] * svfPreDryLevel;
-        }
-        sch.performSubheadWrites(in, numFrames);
+    for(size_t fr=0; fr<numFrames; ++fr) {
+        sch.setRate(fr, rateRamp.update());
     }
 
     if (playFlag) {
         // TODO: use other voice for `duck`
         sch.performSubheadReads(out, numFrames);
         // TODO: fix filters and phase polls
-        // apply post-filter
-//        for(size_t fr=0; fr<numFrames; ++fr) {
-//            out[fr] = svfPost.getNextSample(out[fr]) +  out[fr]*svfPostDryLevel;
-//            updateQuantPhase();
-//        }
     }
 
-    sch.setLastNumFrames(numFrames);
+
+    if (recFlag) {
+        sch.updateSubheadWriteLevels(numFrames);
+        for(size_t fr=0; fr<numFrames; ++fr) {
+            sch.setPre(fr, preRamp.update());
+            sch.setRec(fr, recRamp.update());
+            // TODO: pre-filter?
+        }
+        sch.performSubheadWrites(in, numFrames);
+    }
+
+    // TODO: use other voice for `follow`
+    sch.updateSubheadPositions(numFrames);
 }
 
 void Voice::setSampleRate(float hz) {

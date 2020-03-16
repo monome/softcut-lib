@@ -30,22 +30,25 @@ namespace softcut {
     //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
+
         friend class TestBuffers;
+
     public:
         SubHead();
 
     public:
         // operational state and action descriptors
         typedef enum {
-            Playing = 0, Stopped = 1, FadeIn = 2, FadeOut = 3
+            Stopped = 0, FadeIn = 1, Playing = 2, FadeOut = 3
         } OpState;
         typedef enum {
             None, Stop, StartFadeIn, LoopPositive, LoopNegative, DoneFadeIn, DoneFadeOut,
         } OpAction;
 
         static constexpr size_t maxBlockSize = 1024;
-        template <typename T>
+        template<typename T>
         using StateBuffer = std::array<T, maxBlockSize>;
+        using frame_t = long int;
 
     protected:
         //--- buffered state variables, owned:
@@ -58,7 +61,7 @@ namespace softcut {
         // current "logical" buffer position, in units of time
         StateBuffer<phase_t> phase{0.0};
         // last write index in buffer
-        StateBuffer<size_t> wrIdx{0};
+        StateBuffer<frame_t> wrIdx{0};
 
         // current read/write increment direction
         StateBuffer<int> dir{1};
@@ -73,15 +76,15 @@ namespace softcut {
     protected:
         void setPosition(size_t idx_1, size_t idx, phase_t position, const softcut::ReadWriteHead *rwh);
 
-//        // update phase, opState, and opAction
-//        OpAction calcPositionUpdate(size_t idx_1, size_t idx, const FramePositionParameters &a);
-
+        // update phase, opState, and opAction
         OpAction calcPositionUpdate(size_t i_1, size_t i, const softcut::ReadWriteHead *rwh);
-//        // update frame level data
-//        void calcLevelUpdate(size_t idx,  const FrameLevelParameters &a);
+
+        // update frame level data
         void calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh);
+
         // perform single frame write
         void performFrameWrite(size_t i_1, size_t i, float input);
+
         // read a single frame
         float performFrameRead(size_t i);
 
@@ -90,10 +93,11 @@ namespace softcut {
             this->bufFrames = fr;
         }
 
-        size_t wrapBufIndex(size_t x) {
-            size_t y = x + bufFrames;
+        frame_t wrapBufIndex(frame_t x) {
+            frame_t y = x;
             // FIXME: should wrap to loop endpoints, maybe
             while (y > bufFrames) { y -= bufFrames; }
+            while (y < 0) { y += bufFrames; }
             return y;
         }
 
@@ -102,7 +106,10 @@ namespace softcut {
     private:
         Resampler resamp;   // resampler
         float *buf{};         // current audio buffer
-        size_t bufFrames{};   // total buffer size
+        frame_t bufFrames{};   // total buffer size
+
+        //// debug
+        bool didSetPositionThisFrame  {false};
     };
 }
 

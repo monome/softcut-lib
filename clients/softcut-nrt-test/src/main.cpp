@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include <sndfile.hh>
+#include <softcut/DebugLog.h>
 #include "cnpy/cnpy.h"
 
 #include "softcut/Softcut.h"
@@ -14,7 +15,7 @@
 static constexpr double pi = 3.1415926535898;
 static constexpr double twopi = 6.2831853071796;
 static constexpr int samplerate = 48000;
-static constexpr size_t numframes = samplerate * 2.0;
+static constexpr size_t numframes = samplerate * 4.0;
 static constexpr size_t bufsize = samplerate * 4;
 
 static std::array<float, numframes> input;
@@ -67,7 +68,7 @@ int main(int argc, const char **argv) {
     cut.setPlayFlag(0, true);
     cut.setRecFlag(0, true);
     cut.setRecLevel(0, 1.0);
-    cut.setPreLevel(0, 0.5);
+    cut.setPreLevel(0, 0.25);
     cut.setPosition(0, 0.0);
     input.fill(0.f);
 
@@ -77,6 +78,7 @@ int main(int argc, const char **argv) {
     float *src = input.data();
     float *dst = output.data();
 
+    softcut::DebugLog::init();
 
     while (fr < maxframes) {
         cut.processBlock(0, src, dst, blocksize);
@@ -84,7 +86,8 @@ int main(int argc, const char **argv) {
         src += blocksize;
         dst += blocksize;
         fr += blocksize;
-        std::cerr << "processed " << fr << " frames" << std::endl;
+        softcut::DebugLog::advanceFrames(blocksize);
+        //std::cerr << "processed " << fr << " frames" << std::endl;
     }
 
     cnpy::npy_save("buffer.npy", buf.data(), {1, bufsize}, "w");

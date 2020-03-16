@@ -2,6 +2,7 @@
 // Created by ezra on 4/21/18.
 //
 
+#include <softcut/DebugLog.h>
 #include "softcut/SubHead.h"
 #include "softcut/ReadWriteHead.h"
 
@@ -27,17 +28,18 @@ void SubHead::setPosition(size_t idx_1, size_t idx, phase_t position, const soft
         std::cerr << "error: setting position of moving subhead" << std::endl;
     }
     phase[idx] = position;
+    phase[idx_1] = position;
     opState[idx] = SubHead::FadeIn;
+    //opState[idx_1] = SubHead::Stopped;
     opAction[idx] = SubHead::OpAction::StartFadeIn;
 
-    // update write index
-    size_t w;
-    if (rwh->rate[idx] >= 0) {
-        w = static_cast<size_t>(static_cast<size_t>(phase[idx]) + rwh->recOffsetSamples);
-    } else {
-        w = static_cast<size_t>(static_cast<size_t>(phase[idx]) - rwh->recOffsetSamples);
-    }
-    wrIdx[idx_1] = wrIdx[idx] = w;
+    frame_t w = wrapBufIndex(static_cast<frame_t>(phase[idx]) + dir[idx] * rwh->recOffsetSamples);
+    wrIdx[idx] = w;
+    wrIdx[idx_1] = w;
+    DebugLog::newLine(idx);
+    std::cout << "updated write index buffer; last block idx = " << idx_1 << "; new block idx = " << idx
+    << "; new buf idx = " << w << std::endl;
+    didSetPositionThisFrame = true;
 }
 
 SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
@@ -73,7 +75,8 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
             phase[i] = phase[i_1] + rwh->rate[i];
             fade[i] = 1.f;
             if (rwh->rate[i] > 0.f) { // positive rate
-                if (phase[i] > rwh->end || phase[i] < rwh->start) { // out of loop bounds
+                // if we're playing forwards, only loop at endpoint
+                if (phase[i] > rwh->end) { // out of loop bounds
                     opState[i] = FadeOut;
                     if (rwh->loopFlag) {
                         opAction[i] = LoopPositive;
@@ -85,7 +88,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
                     opState[i] = Playing;
                 }
             } else { // negative rate
-                if (phase[i] > rwh->end || phase[i] < rwh->start) { // out of loop bounds
+                if (phase[i] < rwh->start) {
                     opState[i] = FadeOut;
                     if (rwh->loopFlag) {
                         opAction[i] = LoopNegative;
@@ -99,6 +102,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
             }
             break;
         case Stopped:
+            phase[i] = phase[i_1];
             fade[i] = 0.f;
             opAction[i] = None;
             opState[i] = Stopped;
@@ -108,39 +112,62 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
 }
 
 void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
-//    pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
-//    rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
-    //pre[i] = rwh->pre[i] + rwh->pre[i] * (1-fade[i]);
-    pre[i] = rwh->pre[i] * (2 - fade[i]);
-    rec[i] = rwh->rec[i] * fade[i];
-    // TODO: apply rate==0 deadzone
+    switch (opState[i]) {
+        case Stopped:
+            return;
+        case Playing:
+            pre[i] = rwh->pre[i];
+            rec[i] = rwh->rec[i];
+        case FadeIn:
+        case FadeOut:
+#if 0 // use FadeCurves
+            pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
+    rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
+#else // linear
+            // TODO: apply rate==0 deadzone
+            pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * (1.f - fade[i]));
+            rec[i] = rwh->rec[i] * fade[i];
+#endif
+    }
 }
-
 
 void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
     // push to resampler, even if stopped
     // this should avoid a glitch when restarting
     int nframes = resamp.processFrame(input);
-    // if we're stopped, don't touch our buffer or state vars
+    // std::cerr << nframes << std::endl;
+
     if (opState[i] == Stopped) {
+        // hm...
+        if (didSetPositionThisFrame) {
+            // DebugLog::newLine(i);
+            // std::cout << "set position, but state is stopped (?)" << std::endl;
+        } else {
+            // wrIdx[i] = wrIdx[i_1];
+        }
         return;
     }
 
-    BOOST_ASSERT_MSG(fade[i] >= 0.f && fade[i] <= 1.f, "bad fade coefficient in write");
-
-    sample_t y; // write value
+    sample_t y;
     const sample_t *src = resamp.output();
 
-    size_t w = wrapBufIndex(wrIdx[i_1] + dir[i]);
-    for (int fr = 0; fr < nframes; ++fr) {
-        y = src[fr];
-        // TODO: possible further processing (e.g. softclip, filtering)
-        buf[w] *= pre[i];
-        buf[w] += y * rec[i];
-        w = wrapBufIndex(w + dir[i]);
+
+    wrIdx[i] = wrIdx[i_1]; // by default, propagate last write position
+
+    frame_t w;
+    if (didSetPositionThisFrame) {
+        std::cout << "frameWrite(): last block idx = " << i_1 << std::endl;
+        std::cout << "last buf idx= " << wrIdx[i_1] << "; new buf idx = " << w << std::endl;
+        didSetPositionThisFrame = false;
     }
-    // std::cerr << "new write index: " << w << std::endl;
-    wrIdx[i] = w;
+    for (int fr = 0; fr < nframes; ++fr) {
+        w = wrapBufIndex(wrIdx[i_1] + dir[i]);
+        wrIdx[i] = w;
+        y = (buf[w] * pre[i]) + (src[fr] * rec[i]);
+        // TODO: possible further processing (e.g. lowpass, clip)
+        buf[w] = y;
+        //w = wrapBufIndex(w + dir[i]);
+    }
 }
 
 float SubHead::performFrameRead(size_t i) {

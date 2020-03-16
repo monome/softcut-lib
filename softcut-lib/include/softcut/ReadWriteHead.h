@@ -27,12 +27,9 @@ namespace softcut {
         /// for now, only a single value can be queued,
         /// and a negative value indicates that the queue is empty.
         phase_t enqueuedPosition = -1.0;
-        size_t lastNumFrames;
+        size_t frameIdx; // last used index into processing block
 
-        void enqueuePositionChange(phase_t pos) {
-            enqueuedPosition = pos;
-        }
-
+        void enqueuePositionChange(phase_t pos);
         int dequeuePositionChange(size_t fr_1, size_t fr);
         void handleLoopAction(SubHead::OpAction action);
 
@@ -86,8 +83,6 @@ namespace softcut {
         void updateSubheadPositions(size_t numFrames);
 
         void updateSubheadWriteLevels(size_t numFrames);
-
-        void setLastNumFrames(size_t lnf) { lastNumFrames = lnf; }
 
 
 //        // per-sample update functions

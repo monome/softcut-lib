@@ -4,6 +4,7 @@
 #include <cmath>
 #include "softcut/Resampler.h"
 #include "softcut/ReadWriteHead.h"
+#include "softcut/DebugLog.h"
 
 using namespace softcut;
 using namespace std;
@@ -13,8 +14,12 @@ ReadWriteHead::ReadWriteHead() {
     pre.fill(0.f);
     rec.fill(0.f);
     active.fill(-1);
-    lastNumFrames = 0;
+    frameIdx = 0;
 }
+void ReadWriteHead::enqueuePositionChange(phase_t pos) {
+    enqueuedPosition = pos;
+}
+
 int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     if (enqueuedPosition < 0) {
         return -1;
@@ -23,6 +28,8 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
             std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
             head[headIdx].setPosition(fr_1, fr, enqueuedPosition, this);
+            DebugLog::newLine(fr);
+            std::cout << "dequed position change to " << enqueuedPosition << " on head " << headIdx << std::endl;
             enqueuedPosition = -1.0;
             return headIdx;
         }
@@ -48,15 +55,19 @@ void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     // TODO: apply `follow` here, using subhead positions from other ReadWriteHead
 
+    size_t fr_1 = frameIdx;
     size_t fr = 0;
-    size_t fr_1 = lastNumFrames - 1;
     SubHead::OpAction action;
     while (fr < numFrames) {
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
         for (int i=0; i<2; ++i) {
            action =head[i].calcPositionUpdate(fr_1, fr, this);
-           handleLoopAction(action);
+            if (action == SubHead::OpAction::LoopPositive) {
+                enqueuePositionChange(start);
+            } else if (action == SubHead::OpAction::LoopNegative) {
+                enqueuePositionChange(end);
+            }
         }
         // change positions if needed
         int headMoved = dequeuePositionChange(fr_1, fr);
@@ -68,6 +79,7 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
         fr_1 = fr;
         ++fr;
     }
+    frameIdx = fr_1;
 }
 
 void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
@@ -80,19 +92,18 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
 }
 
 void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
-    // TODO [efficiency]: move this loop to subhead method
+    size_t fr_1 = frameIdx;
     size_t fr = 0;
-    size_t fr_1 = lastNumFrames - 1;
     while (fr < numFrames) {
         head[0].performFrameWrite(fr_1, fr, input[fr]);
         head[1].performFrameWrite(fr_1, fr, input[fr]);
         fr_1 = fr;
         ++fr;
     }
+    frameIdx = fr_1;
 }
 
 void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
-    // TODO [efficiency]: move this loop to subhead method
     float out0;
     float out1;
     for (size_t fr = 0; fr < numFrames; ++fr) {
