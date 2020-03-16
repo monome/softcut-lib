@@ -36,10 +36,10 @@ void SubHead::setPosition(size_t idx_1, size_t idx, phase_t position, const soft
     frame_t w = wrapBufIndex(static_cast<frame_t>(phase[idx]) + dir[idx] * rwh->recOffsetSamples);
     wrIdx[idx] = w;
     wrIdx[idx_1] = w;
-    DebugLog::newLine(idx);
-    std::cout << "updated write index buffer; last block idx = " << idx_1 << "; new block idx = " << idx
-    << "; new buf idx = " << w << std::endl;
-    didSetPositionThisFrame = true;
+//    DebugLog::newLine(idx);
+//    std::cout << "updated write index buffer; last block idx = " << idx_1 << "; new block idx = " << idx
+//    << "; new buf idx = " << w << std::endl;
+//    didSetPositionThisFrame = true;
 }
 
 SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
@@ -139,27 +139,27 @@ void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
 
     if (opState[i] == Stopped) {
         // hm...
-        if (didSetPositionThisFrame) {
-            // DebugLog::newLine(i);
-            // std::cout << "set position, but state is stopped (?)" << std::endl;
-        } else {
-            // wrIdx[i] = wrIdx[i_1];
-        }
+//        if (didSetPositionThisFrame) {
+        // DebugLog::newLine(i);
+        // std::cout << "set position, but state is stopped (?)" << std::endl;
+        //       } else {
+        // wrIdx[i] = wrIdx[i_1];
+        //       }
         return;
     }
 
     sample_t y;
     const sample_t *src = resamp.output();
 
-
     wrIdx[i] = wrIdx[i_1]; // by default, propagate last write position
 
     frame_t w;
-    if (didSetPositionThisFrame) {
-        std::cout << "frameWrite(): last block idx = " << i_1 << std::endl;
-        std::cout << "last buf idx= " << wrIdx[i_1] << "; new buf idx = " << w << std::endl;
-        didSetPositionThisFrame = false;
-    }
+//    if (didSetPositionThisFrame) {
+//        std::cout << "frameWrite(): last block idx = " << i_1 << std::endl;
+//        std::cout << "last buf idx= " << wrIdx[i_1] << "; new buf idx = " << w << std::endl;
+//        didSetPositionThisFrame = false;
+//    }
+
     for (int fr = 0; fr < nframes; ++fr) {
         w = wrapBufIndex(wrIdx[i_1] + dir[i]);
         wrIdx[i] = w;

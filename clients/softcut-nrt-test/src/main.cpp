@@ -4,6 +4,7 @@
 
 #include <array>
 #include <iostream>
+#include <chrono>
 
 #include <sndfile.hh>
 #include <softcut/DebugLog.h>
@@ -15,8 +16,8 @@
 static constexpr double pi = 3.1415926535898;
 static constexpr double twopi = 6.2831853071796;
 static constexpr int samplerate = 48000;
-static constexpr size_t numframes = samplerate * 4.0;
-static constexpr size_t bufsize = samplerate * 4;
+static constexpr size_t numframes = samplerate * 40.0;
+static constexpr size_t bufsize = 262144; //samplerate * 4;
 
 static std::array<float, numframes> input;
 static std::array<float, numframes> output;
@@ -60,15 +61,15 @@ int main(int argc, const char **argv) {
 
     cut.setVoiceBuffer(0, buf.data(), bufsize);
     cut.setSampleRate(samplerate);
-    cut.setRate(0, 1.0);
+    cut.setRate(0, 1.77);
     cut.setFadeTime(0, 0.05);
     cut.setLoopStart(0, 0.2);
-    cut.setLoopEnd(0, 0.4);
+    cut.setLoopEnd(0, 1.4);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
     cut.setRecFlag(0, true);
     cut.setRecLevel(0, 1.0);
-    cut.setPreLevel(0, 0.25);
+    cut.setPreLevel(0, 0.75);
     cut.setPosition(0, 0.0);
     input.fill(0.f);
 
@@ -78,17 +79,23 @@ int main(int argc, const char **argv) {
     float *src = input.data();
     float *dst = output.data();
 
-    softcut::DebugLog::init();
+    ///softcut::DebugLog::init();
+
+    using namespace std::chrono;
+   auto ms_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
     while (fr < maxframes) {
         cut.processBlock(0, src, dst, blocksize);
-        testBuffers.update(cut, 0, blocksize);
+        //testBuffers.update(cut, 0, blocksize);
         src += blocksize;
         dst += blocksize;
         fr += blocksize;
-        softcut::DebugLog::advanceFrames(blocksize);
+        // softcut::DebugLog::advanceFrames(blocksize);
         //std::cerr << "processed " << fr << " frames" << std::endl;
     }
+    auto ms_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+    std::cout << "processed " << numframes << " frames in " << (ms_end-ms_start) << " ms" << std::endl;
 
     cnpy::npy_save("buffer.npy", buf.data(), {1, bufsize}, "w");
     cnpy::npy_save("output.npy", output.data(), {1, numframes}, "w");

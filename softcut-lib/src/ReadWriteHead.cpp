@@ -26,10 +26,10 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
-            std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
+            //std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
             head[headIdx].setPosition(fr_1, fr, enqueuedPosition, this);
-            DebugLog::newLine(fr);
-            std::cout << "dequed position change to " << enqueuedPosition << " on head " << headIdx << std::endl;
+            //DebugLog::newLine(fr);
+            //std::cout << "dequed position change to " << enqueuedPosition << " on head " << headIdx << std::endl;
             enqueuedPosition = -1.0;
             return headIdx;
         }

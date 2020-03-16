@@ -55,7 +55,7 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
     if (playFlag) {
         // TODO: use other voice for `duck`
         sch.performSubheadReads(out, numFrames);
-        // TODO: fix filters and phase polls
+        // TODO: post-filter, phase poll
     }
 
 
