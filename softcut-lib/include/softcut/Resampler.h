@@ -53,7 +53,10 @@ namespace softcut {
             phi_ = 1.0 / r;
         }
         // void setBuffer(float *buf, int frames);
-        void setPhase(phase_t phase) { phase_ = phase; }
+        void setPhase(phase_t phase) {
+            std::cerr << "resampler setting phase" << std::endl;
+            phase_ = phase;
+        }
         const sample_t* output(){
             return static_cast<const sample_t*>(outBuf_);
         }

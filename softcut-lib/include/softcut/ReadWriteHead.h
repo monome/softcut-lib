@@ -70,6 +70,10 @@ namespace softcut {
 
         void init(FadeCurves *fc) {
             fadeCurves = fc;
+            start = 0.f;
+            end = 0.f;
+            head[0].init(fc);
+            head[1].init(fc);
         }
 
         // queue a position change

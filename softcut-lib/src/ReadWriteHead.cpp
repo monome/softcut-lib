@@ -37,20 +37,20 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     return -1;
 }
 
-void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
-    switch (action) {
-        case SubHead::OpAction::LoopPositive:
-            enqueuePositionChange(start);
-            break;
-        case SubHead::OpAction::LoopNegative:
-            enqueuePositionChange(end);
-            break;
-        case SubHead::OpAction::DoneFadeIn:
-        case SubHead::OpAction::DoneFadeOut:
-        case SubHead::OpAction::None:
-        default:;; // nothing to do
-    }
-}
+//void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
+//    switch (action) {
+//        case SubHead::OpAction::LoopPositive:
+//            enqueuePositionChange(start);
+//            break;
+//        case SubHead::OpAction::LoopNegative:
+//            enqueuePositionChange(end);
+//            break;
+//        case SubHead::OpAction::DoneFadeIn:
+//        case SubHead::OpAction::DoneFadeOut:
+//        case SubHead::OpAction::None:
+//        default:;; // nothing to do
+//    }
+//}
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     // TODO: apply `follow` here, using subhead positions from other ReadWriteHead

@@ -44,7 +44,7 @@ void SubHead::setPosition(size_t idx_1, size_t idx, phase_t position, const soft
 
 SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
                                               const softcut::ReadWriteHead *rwh) {
-    updateRate(i_1, rwh->rate[i]);
+    updateRate(i, rwh->rate[i]);
 
     switch (opState[i_1]) {
         case FadeIn:
@@ -132,41 +132,28 @@ void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
 }
 
 void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
+
     // push to resampler, even if stopped
     // this should avoid a glitch when restarting
     int nframes = resamp.processFrame(input);
     // std::cerr << nframes << std::endl;
 
     if (opState[i] == Stopped) {
-        // hm...
-//        if (didSetPositionThisFrame) {
-        // DebugLog::newLine(i);
-        // std::cout << "set position, but state is stopped (?)" << std::endl;
-        //       } else {
-        // wrIdx[i] = wrIdx[i_1];
-        //       }
         return;
     }
 
     sample_t y;
-    const sample_t *src = resamp.output();
-
+    frame_t w;
     wrIdx[i] = wrIdx[i_1]; // by default, propagate last write position
 
-    frame_t w;
-//    if (didSetPositionThisFrame) {
-//        std::cout << "frameWrite(): last block idx = " << i_1 << std::endl;
-//        std::cout << "last buf idx= " << wrIdx[i_1] << "; new buf idx = " << w << std::endl;
-//        didSetPositionThisFrame = false;
-//    }
+    const sample_t *src = resamp.output();
 
     for (int fr = 0; fr < nframes; ++fr) {
-        w = wrapBufIndex(wrIdx[i_1] + dir[i]);
+        w = wrapBufIndex(wrIdx[i] + dir[i]);
         wrIdx[i] = w;
         y = (buf[w] * pre[i]) + (src[fr] * rec[i]);
-        // TODO: possible further processing (e.g. lowpass, clip)
+        // TODO: further processing (lowpass, clip)
         buf[w] = y;
-        //w = wrapBufIndex(w + dir[i]);
     }
 }
 
@@ -183,4 +170,8 @@ float SubHead::performFrameRead(size_t i) {
 
     auto x = static_cast<float>(phase[i] - (float) phase1);
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
+}
+
+void SubHead::init(FadeCurves *pCurves) {
+    resamp.setPhase(0);
 }

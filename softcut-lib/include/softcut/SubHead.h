@@ -110,6 +110,8 @@ namespace softcut {
 
         //// debug
         bool didSetPositionThisFrame  {false};
+
+        void init(FadeCurves *pCurves);
     };
 }
 
