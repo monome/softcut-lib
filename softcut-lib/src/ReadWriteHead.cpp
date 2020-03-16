@@ -16,6 +16,20 @@ ReadWriteHead::ReadWriteHead() {
     active.fill(-1);
     frameIdx = 0;
 }
+
+
+void ReadWriteHead::init(FadeCurves *fc) {
+    fadeCurves = fc;
+    start = 0.f;
+    end = maxBlockSize * 2;
+    head[0].init(this);
+    head[1].init(this);
+    // FIXME: for now, we have to goose the phase update before we start running with write enabled.
+    /// could probably deal with this directly in subhead init...
+    // this->updateSubheadPositions(maxBlockSize);
+}
+
+
 void ReadWriteHead::enqueuePositionChange(phase_t pos) {
     enqueuedPosition = pos;
 }
@@ -26,31 +40,13 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
-            //std::cerr << "dequeing position change to head " << headIdx << " : " << enqueuedPosition << std::endl;
             head[headIdx].setPosition(fr_1, fr, enqueuedPosition, this);
-            //DebugLog::newLine(fr);
-            //std::cout << "dequed position change to " << enqueuedPosition << " on head " << headIdx << std::endl;
             enqueuedPosition = -1.0;
             return headIdx;
         }
     }
     return -1;
 }
-
-//void ReadWriteHead::handleLoopAction(SubHead::OpAction action) {
-//    switch (action) {
-//        case SubHead::OpAction::LoopPositive:
-//            enqueuePositionChange(start);
-//            break;
-//        case SubHead::OpAction::LoopNegative:
-//            enqueuePositionChange(end);
-//            break;
-//        case SubHead::OpAction::DoneFadeIn:
-//        case SubHead::OpAction::DoneFadeOut:
-//        case SubHead::OpAction::None:
-//        default:;; // nothing to do
-//    }
-//}
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     // TODO: apply `follow` here, using subhead positions from other ReadWriteHead

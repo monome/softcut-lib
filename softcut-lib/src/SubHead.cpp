@@ -8,44 +8,54 @@
 
 using namespace softcut;
 
-SubHead::SubHead() {
+SubHead::SubHead() {}
+
+void SubHead::init(ReadWriteHead *rwh) {
+    resamp.setPhase(0);
+    frame_t w = rwh->recOffsetSamples;
+    while (w < 0) { w += maxBlockSize; }
+    while (w > maxBlockSize) { w -= maxBlockSize; }
     for (int i=0; i<maxBlockSize; ++i) {
-        // initial offset between phase  / wridx is important!
         phase[i] = 0.0;
-        wrIdx[i] = 0;
+        wrIdx[i] = w;
         opState[i] = Stopped;
         opAction[i] = None;
         fade[i] = 0.f;
         pre[i] = 0.f;
         rec[i] = 0.f;
     }
+
 }
 
-void SubHead::updateRate(size_t idx, rate_t rate) {
+void SubHead::updateRate(frame_t idx, rate_t rate) {
     dir[idx] = rate > 0.f ? 1 : -1;
     resamp.setRate(std::fabs(rate));
 }
 
-void SubHead::setPosition(size_t idx_1, size_t idx, phase_t position, const softcut::ReadWriteHead *rwh) {
-    if (opState[idx] != Stopped) {
+void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position, const softcut::ReadWriteHead *rwh) {
+    if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
     }
-    phase[idx] = position;
-    phase[idx_1] = position;
-    opState[idx] = SubHead::FadeIn;
+    phase[i] = position;
+    phase[i_1] = position;
+    opState[i] = SubHead::FadeIn;
     //opState[idx_1] = SubHead::Stopped;
-    opAction[idx] = SubHead::OpAction::StartFadeIn;
+    opAction[i] = SubHead::OpAction::StartFadeIn;
+    updateWrIdx(i_1, i, rwh);
 
-    frame_t w = wrapBufIndex(static_cast<frame_t>(phase[idx]) + dir[idx] * rwh->recOffsetSamples);
-    wrIdx[idx] = w;
-    wrIdx[idx_1] = w;
 //    DebugLog::newLine(idx);
 //    std::cout << "updated write index buffer; last block idx = " << idx_1 << "; new block idx = " << idx
 //    << "; new buf idx = " << w << std::endl;
 //    didSetPositionThisFrame = true;
 }
 
-SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
+void SubHead::updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh) {
+    frame_t w = wrapBufIndex(static_cast<frame_t>(phase[i]) + dir[i] * rwh->recOffsetSamples);
+    wrIdx[i] = w;
+    wrIdx[i_1] = w;
+}
+
+SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
                                               const softcut::ReadWriteHead *rwh) {
     updateRate(i, rwh->rate[i]);
 
@@ -114,7 +124,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(size_t i_1, size_t i,
     return opAction[i];
 }
 
-void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
+void SubHead::calcLevelUpdate(frame_t i, const softcut::ReadWriteHead *rwh) {
     switch (opState[i]) {
         case Stopped:
             return;
@@ -135,15 +145,11 @@ void SubHead::calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh) {
     }
 }
 
-void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
-    // push to resampler, even if stopped
-    // this should avoid a glitch when restarting
+void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
+    // push to resampler, even if stopped; avoids glitch when restarting
     int nframes = resamp.processFrame(input);
-    // std::cerr << nframes << std::endl;
 
-    if (opState[i] == Stopped) {
-        return;
-    }
+    if (opState[i] == Stopped) { return; }
 
     sample_t y;
     frame_t w;
@@ -160,7 +166,7 @@ void SubHead::performFrameWrite(size_t i_1, size_t i, const float input) {
     }
 }
 
-float SubHead::performFrameRead(size_t i) {
+float SubHead::performFrameRead(frame_t i) {
     frame_t phase1 = static_cast<frame_t>(phase[i]);
     frame_t phase0 = phase1 - 1;
     frame_t phase2 = phase1 + 1;
@@ -173,9 +179,4 @@ float SubHead::performFrameRead(size_t i) {
 
     auto x = static_cast<float>(phase[i] - (float) phase1);
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
-}
-
-void SubHead::init(ReadWriteHead *rwh) {
-    resamp.setPhase(0);
-    this->setPosition(maxBlockSize-1, 0, 0, rwh);
 }

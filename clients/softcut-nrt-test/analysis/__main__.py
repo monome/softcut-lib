@@ -21,7 +21,6 @@ nkeys = len(keys)
 def load_file(key):
     return np.load('../output/{}.npy'.format(key))
 
-
 fix, ax = plt.subplots(nkeys, 1, figsize=(16, nkeys * 4))
 
 # number of samples to plot
@@ -34,14 +33,14 @@ for i in range(nkeys):
             a = (load_file(k[j]))[0]
             ax[i].set_title(k)
             ax[i].grid(True)
-            ax[i].plot(a[M:N], marker='.', linestyle='dashed', linewidth=1, markersize=2)
+            ax[i].plot(a[M:N], marker='.', linewidth=1, markersize=2)
     else:
         arr = (load_file(k))[0]
         min = np.amin(arr)
         max = np.amax(arr)
         ax[i].grid(True)
         ax[i].set_title('{} [{}, {}]'.format(k, min, max))
-        ax[i].plot(arr[M:N], marker='.', linestyle='dashed', linewidth=1, markersize=2)
+        ax[i].plot(arr[M:N], marker='.', linewidth=1, markersize=2)
 plt.savefig('../output/charts.pdf')
 plt.show()
 

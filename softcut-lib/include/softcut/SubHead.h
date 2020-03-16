@@ -30,7 +30,6 @@ namespace softcut {
     //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
-
         friend class TestBuffers;
 
     public:
@@ -74,21 +73,23 @@ namespace softcut {
         StateBuffer<float> rec{0.f};
 
     protected:
-        void setPosition(size_t idx_1, size_t idx, phase_t position, const softcut::ReadWriteHead *rwh);
+        void setPosition(frame_t i_1, frame_t i, phase_t position, const softcut::ReadWriteHead *rwh);
+
+        void updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh);
 
         // update phase, opState, and opAction
-        OpAction calcPositionUpdate(size_t i_1, size_t i, const softcut::ReadWriteHead *rwh);
+        OpAction calcPositionUpdate(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh);
 
         // update frame level data
-        void calcLevelUpdate(size_t i, const softcut::ReadWriteHead *rwh);
+        void calcLevelUpdate(frame_t i, const softcut::ReadWriteHead *rwh);
 
         // perform single frame write
-        void performFrameWrite(size_t i_1, size_t i, float input);
+        void performFrameWrite(frame_t i_1, frame_t i, float input);
 
         // read a single frame
-        float performFrameRead(size_t i);
+        float performFrameRead(frame_t i);
 
-        void setBuffer(float *b, size_t fr) {
+        void setBuffer(float *b, frame_t fr) {
             this->buf = b;
             this->bufFrames = fr;
         }
@@ -102,7 +103,7 @@ namespace softcut {
             return y;
         }
 
-        void updateRate(size_t idx, rate_t rate);
+        void updateRate(frame_t idx, rate_t rate);
 
     private:
         Resampler resamp;   // resampler

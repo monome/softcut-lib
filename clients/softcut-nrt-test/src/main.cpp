@@ -97,21 +97,21 @@ int main(int argc, const char **argv) {
 
         testBuffers.update(cut, 0, blocksize);
         // print each output  block
-        if (fr < 17000) {
-            std::cout << " [ ";
-            for (size_t i = 0; i<blocksize; ++i) {
-                //std::cout << dst[i] << ", ";
-                std::cout << testBuffers.getBuffer(softcut::TestBuffers::WrIdx0)[i] << ", ";
-            }
-            std::cout << " ] " << std::endl;
-            std::cout << " [ ";
-            for (size_t i = 0; i<blocksize; ++i) {
-                //std::cout << dst[i] << ", ";
-                std::cout << testBuffers.getBuffer(softcut::TestBuffers::WrIdx1)[i] << ", ";
-            }
-            std::cout << " ] " << std::endl;
-            std::cout << std::endl;
-        }
+//        if (fr < 17000) {
+//            std::cout << " [ ";
+//            for (size_t i = 0; i<blocksize; ++i) {
+//                //std::cout << dst[i] << ", ";
+//                std::cout << testBuffers.getBuffer(softcut::TestBuffers::WrIdx0)[i] << ", ";
+//            }
+//            std::cout << " ] " << std::endl;
+//            std::cout << " [ ";
+//            for (size_t i = 0; i<blocksize; ++i) {
+//                //std::cout << dst[i] << ", ";
+//                std::cout << testBuffers.getBuffer(softcut::TestBuffers::WrIdx1)[i] << ", ";
+//            }
+//            std::cout << " ] " << std::endl;
+//            std::cout << std::endl;
+//        }
 
         src += blocksize;
         dst += blocksize;

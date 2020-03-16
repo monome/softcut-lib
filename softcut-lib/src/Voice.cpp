@@ -51,13 +51,14 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
         sch.setRate(fr, rateRamp.update());
     }
 
+    // TODO: use other voice for `follow`
+    sch.updateSubheadPositions(numFrames);
+
     if (playFlag) {
         // TODO: use other voice for `duck`
         sch.performSubheadReads(out, numFrames);
         // TODO: post-filter, phase poll
     }
-
-
 
     if (recFlag) {
         sch.updateSubheadWriteLevels(numFrames);
@@ -70,8 +71,6 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
     }
 
 
-    // TODO: use other voice for `follow`
-    sch.updateSubheadPositions(numFrames);
 }
 
 void Voice::setSampleRate(float hz) {

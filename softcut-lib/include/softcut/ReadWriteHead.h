@@ -68,13 +68,7 @@ namespace softcut {
 
         ReadWriteHead();
 
-        void init(FadeCurves *fc) {
-            fadeCurves = fc;
-            start = 0.f;
-            end = 0.f;
-            head[0].init(this);
-            head[1].init(this);
-        }
+        void init(FadeCurves *fc);
 
         // queue a position change
         void setPosition(float seconds);
