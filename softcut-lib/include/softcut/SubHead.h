@@ -98,7 +98,7 @@ namespace softcut {
             BOOST_ASSERT_MSG(bufFrames != 0, "bufFrames must not be zero when wrapping a buffer index");
             frame_t y = x;
             // FIXME: should wrap to loop endpoints, maybe
-            while (y > bufFrames) { y -= bufFrames; }
+            while (y >= bufFrames) { y -= bufFrames; }
             while (y < 0) { y += bufFrames; }
             return y;
         }
