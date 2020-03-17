@@ -15,19 +15,36 @@
 #include "Voice.h"
 
 namespace softcut {
+
     class TestBuffers {
+        // stores the per-sample state of a complete ReadWriteHead,
+        // for analysis and testing
+        //
+        // WARNING: TestBuffers keeps its entire output in heap memory,
+        // and performs allocations when updating with new values.
+        // therefore:
+        // (1) using it from realtime audio threads could stall the thread longer than expected,
+        // so it is most useful in NRT tests,
+        // (2) its memory usage will grow without bounds when appending values,
+        // so it should only be activated for brief intervals.
 
     public:
         typedef enum {
-            Rate, Active,
-            State0, State1,
-            Action0, Action1,
-            Phase0, Phase1,
-            Fade0, Fade1,
-            Rec0, Rec1,
-            Pre0, Pre1,
-            WrIdx0, WrIdx1,
-            Dir0, Dir1,
+            //-- ReadWriteHead parameters
+            Rate,        // movement rate
+            Pre,         // preserve level
+            Rec,         // record level
+            Active,       // index of active subhead
+            FrameInBlock, // current offset into audio block
+            //--- each subhead:
+            State0, State1,    // operational state for each subhead
+            Action0, Action1,  // operation actions taken, if any
+            Phase0, Phase1,    // phase in fractional samples
+            Fade0, Fade1,      // fade position in [0, 1]
+            Rec0, Rec1,        // record level (post-fade)
+            Pre0, Pre1,        // preserve level (post-fade)
+            WrIdx0, WrIdx1,    // write index in audio buffer
+            Dir0, Dir1,        // direction of movement (1 or -1)
             NumBuffers
         } BufferId;
 
@@ -42,13 +59,20 @@ namespace softcut {
         }
 
     public:
-        template <int N>
-        void update(Softcut<N> &cut, int voiceId, size_t numFrames) {
+        TestBuffers() {
+
+        }
+
+        template<int N>
+        void update(Softcut <N> &cut, int voiceId, size_t numFrames) {
             update(cut.scv[voiceId].sch, numFrames);
         }
+
         void update(const ReadWriteHead &rwh, size_t numFrames) {
             appendToBuffer(Active, rwh.active.data(), numFrames);
             appendToBuffer(Rate, rwh.rate.data(), numFrames);
+            appendToBuffer(Rec, rwh.rec.data(), numFrames);
+            appendToBuffer(Pre, rwh.pre.data(), numFrames);
             appendToBuffer(State0, rwh.head[0].opState.data(), numFrames);
             appendToBuffer(State1, rwh.head[1].opState.data(), numFrames);
             appendToBuffer(Action0, rwh.head[0].opAction.data(), numFrames);
@@ -65,8 +89,16 @@ namespace softcut {
             appendToBuffer(WrIdx1, rwh.head[1].wrIdx.data(), numFrames);
             appendToBuffer(Dir0, rwh.head[0].dir.data(), numFrames);
             appendToBuffer(Dir1, rwh.head[1].dir.data(), numFrames);
+            // frame offset is always just an index counting up from zero
+            auto frbuf = new int[numFrames];
+            for (unsigned int i = 0; i < numFrames; ++i) { frbuf[i] = i; }
+            appendToBuffer(FrameInBlock, frbuf, numFrames);
+            delete[]frbuf;
         }
+
         const float *getBuffer(BufferId id) { return buffers[id].data(); }
+
+
     };
 }
 #endif

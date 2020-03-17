@@ -126,8 +126,12 @@ int main(int argc, const char **argv) {
 
     cnpy::npy_save("buffer.npy", buf.data(), {1, bufsize}, "w");
     cnpy::npy_save("output.npy", output.data(), {1, numframes}, "w");
+
+    // FIXME: would be nice to put this in TestBuffers, but that creates a `cnpy` dependency in the lib.
+    /// TestBuffers kinda has to be in the lib itself so it can get access to protected fields.
     cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numframes}, "w");
     cnpy::npy_save("active.npy", testBuffers.getBuffer(softcut::TestBuffers::Active), {1, numframes}, "w");
+    cnpy::npy_save("frameInBlock.npy", testBuffers.getBuffer(softcut::TestBuffers::FrameInBlock), {1, numframes}, "w");
     cnpy::npy_save("phase0.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase0), {1, numframes}, "w");
     cnpy::npy_save("phase1.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase1), {1, numframes}, "w");
     cnpy::npy_save("state0.npy", testBuffers.getBuffer(softcut::TestBuffers::State0), {1, numframes}, "w");

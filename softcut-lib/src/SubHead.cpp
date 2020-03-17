@@ -128,8 +128,12 @@ static float raisedCosFadeOut(float unitphase) {
 };
 
 static float calcPreFadeCurve(float fade) {
-#if 0
-    static constexpr float t = 1.f * (7.f/8.f);
+#if 1
+    static constexpr float t = 0;
+    //static constexpr float t = 0.5f;
+    //static constexpr float t = 3.f/4;
+    //static constexpr float t = 7.f/8;
+    //static constexpr float t = 1.f;
     if (fade > t) { return 0.f; }
     else { return raisedCosFadeOut(fade/t); }
 #else
@@ -137,9 +141,12 @@ static float calcPreFadeCurve(float fade) {
 #endif
 }
 
+// FIXME: refactor these;
+// parameters could be made dynamic again,
+// if this direct-calculation is considered performant enough
 static float calcRecFadeCurve(float fade) {
     static constexpr float t = 1.f/2.f;
-    static constexpr float nt = 1.f - t;
+    static constexpr float nt = 1.f - t; // <- would want to memoize this for dynamic param
     if (fade <= t) {  return 0.f; }
     else { return raisedCosFadeIn((fade-t)/nt); }
 }
