@@ -61,12 +61,12 @@ void Voice:: processBlockMono(float *in, float *out, int numFrames) {
     }
 
     if (recFlag) {
-        sch.updateSubheadWriteLevels(numFrames);
         for(size_t fr=0; fr<numFrames; ++fr) {
             sch.setPre(fr, preRamp.update());
             sch.setRec(fr, recRamp.update());
             // TODO: pre-filter?
         }
+        sch.updateSubheadWriteLevels(numFrames);
         sch.performSubheadWrites(in, numFrames);
     }
 

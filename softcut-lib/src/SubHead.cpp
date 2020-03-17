@@ -15,7 +15,7 @@ void SubHead::init(ReadWriteHead *rwh) {
     frame_t w = rwh->recOffsetSamples;
     while (w < 0) { w += maxBlockSize; }
     while (w > maxBlockSize) { w -= maxBlockSize; }
-    for (int i=0; i<maxBlockSize; ++i) {
+    for (int i = 0; i < maxBlockSize; ++i) {
         phase[i] = 0.0;
         wrIdx[i] = w;
         opState[i] = Stopped;
@@ -39,14 +39,8 @@ void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position, const softcu
     phase[i] = position;
     phase[i_1] = position;
     opState[i] = SubHead::FadeIn;
-    //opState[idx_1] = SubHead::Stopped;
     opAction[i] = SubHead::OpAction::StartFadeIn;
     updateWrIdx(i_1, i, rwh);
-
-//    DebugLog::newLine(idx);
-//    std::cout << "updated write index buffer; last block idx = " << idx_1 << "; new block idx = " << idx
-//    << "; new buf idx = " << w << std::endl;
-//    didSetPositionThisFrame = true;
 }
 
 void SubHead::updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh) {
@@ -124,9 +118,38 @@ SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
     return opAction[i];
 }
 
+
+static float raisedCosFadeIn(float unitphase) {
+    return 0.5f * (cosf(M_PI * (1.f + unitphase)) + 1.f);
+};
+
+static float raisedCosFadeOut(float unitphase) {
+    return 0.5f * (cosf(M_PI * unitphase) + 1.f);
+};
+
+static float calcPreFadeCurve(float fade) {
+#if 0
+    static constexpr float t = 1.f * (7.f/8.f);
+    if (fade > t) { return 0.f; }
+    else { return raisedCosFadeOut(fade/t); }
+#else
+    return 0.f;
+#endif
+}
+
+static float calcRecFadeCurve(float fade) {
+    static constexpr float t = 1.f/2.f;
+    static constexpr float nt = 1.f - t;
+    if (fade <= t) {  return 0.f; }
+    else { return raisedCosFadeIn((fade-t)/nt); }
+}
+
+
 void SubHead::calcLevelUpdate(frame_t i, const softcut::ReadWriteHead *rwh) {
     switch (opState[i]) {
         case Stopped:
+            pre[i] = 1.f;
+            rec[i] = 0.f;
             return;
         case Playing:
             pre[i] = rwh->pre[i];
@@ -138,18 +161,23 @@ void SubHead::calcLevelUpdate(frame_t i, const softcut::ReadWriteHead *rwh) {
             pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
     rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
 #else // linear
-            // TODO: apply rate==0 deadzone
-            pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * (1.f - fade[i]));
-            rec[i] = rwh->rec[i] * fade[i];
+            // TODO: apply rate==0 deadzone for rec level
+//            pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * (1.f - fade[i]));
+//            rec[i] = rwh->rec[i] * fade[i];
+            pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * calcPreFadeCurve(fade[i]));
+            rec[i] = rwh->rec[i] * calcRecFadeCurve(fade[i]);
 #endif
     }
 }
 
 void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     // push to resampler, even if stopped; avoids glitch when restarting
-    int nframes = resamp.processFrame(input);
+    int nsubframes = resamp.processFrame(input);
 
-    if (opState[i] == Stopped) { return; }
+    if (opState[i] == Stopped) {
+        // if we're stopped, don't touch the buffer at all.
+        return;
+    }
 
     sample_t y;
     frame_t w;
@@ -157,10 +185,14 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
 
     const sample_t *src = resamp.output();
 
-    for (int fr = 0; fr < nframes; ++fr) {
+    //----------
+    /// TETSING. of course, in general it is fine to have unity preserve level.
+    BOOST_ASSERT_MSG( !((fade[i] > 0.f) && (pre[i]>=1.f)), ">=unity preserve with nonzero fade");
+
+    for (int sfr = 0; sfr < nsubframes; ++sfr) {
         w = wrapBufIndex(wrIdx[i] + dir[i]);
         wrIdx[i] = w;
-        y = (buf[w] * pre[i]) + (src[fr] * rec[i]);
+        y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
         // TODO: further processing (lowpass, clip)
         buf[w] = y;
     }

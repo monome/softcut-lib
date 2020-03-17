@@ -4,9 +4,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 project(softcut_nrt_test)
 
-set(SRC src/main.cpp)
 
-add_executable(softcut_nrt_test ${SRC})
+add_executable(softcut_nrt_test src/main.cpp)
+add_executable(test-fade-curves src/test-fade-curves.cpp)
 
 include_directories(./lib)
 include_directories(../../softcut-lib/include)

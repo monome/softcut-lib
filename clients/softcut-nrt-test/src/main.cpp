@@ -12,10 +12,11 @@
 #include "softcut/Softcut.h"
 #include "softcut/TestBuffers.h"
 
+static constexpr float dur = 10.0;
 static constexpr double pi = 3.1415926535898;
 static constexpr double twopi = 6.2831853071796;
 static constexpr int samplerate = 48000;
-static constexpr size_t numframes = samplerate * 2.0;
+static constexpr size_t numframes = samplerate * dur;
 static constexpr size_t bufsize = 262144; //samplerate * 4;
 
 static std::array<float, numframes> input;
@@ -66,7 +67,7 @@ int main(int argc, const char **argv) {
     //cut.setRate(0, 1.0);
     cut.setFadeTime(0, 0.05);
     cut.setLoopStart(0, 0.2);
-    cut.setLoopEnd(0, 1.0);
+    cut.setLoopEnd(0, 0.4);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
 
