@@ -24,7 +24,6 @@ void SubHead::init(ReadWriteHead *rwh) {
         pre[i] = 0.f;
         rec[i] = 0.f;
     }
-
 }
 
 void SubHead::updateRate(frame_t idx, rate_t rate) {
@@ -36,6 +35,11 @@ void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position, const softcu
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
     }
+    // testing...
+    if (opState[i_1] != Stopped) {
+        std::cerr << "notable: setting position of subhead that moved last frame" << std::endl;
+    }
+    std::cerr << "setting position; idx = [" << i_1 << ", " << i << "]; " << "pos = " << position << std::endl;
     phase[i] = position;
     phase[i_1] = position;
     opState[i] = SubHead::FadeIn;
@@ -88,7 +92,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
                     if (rwh->loopFlag) {
                         opAction[i] = LoopPositive;
                     } else {
-                        opAction[i] = Stop;
+                        opAction[i] = FadeOutAndStop;
                     }
                 } else { // in loop bounds
                     opAction[i] = None;
@@ -100,7 +104,7 @@ SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
                     if (rwh->loopFlag) {
                         opAction[i] = LoopNegative;
                     } else {
-                        opAction[i] = Stop;
+                        opAction[i] = FadeOutAndStop;
                     }
                 } else { // in loop bounds
                     opAction[i] = None;

@@ -4,6 +4,8 @@ from plots import *
 M = 436603 + 2400 + 50
 # end point in samples
 N = M + 64
+#N = M + 24000
+
 
 print([M, N])
 
@@ -28,6 +30,7 @@ keys = [
     'wrIdx0',
     'wrIdx1',
     ['state0', 'state1'],
+     'action0', 'action1',
     'fade0', 'fade1',
     ['rec0', 'rec1'],
     ['pre0', 'pre1'],

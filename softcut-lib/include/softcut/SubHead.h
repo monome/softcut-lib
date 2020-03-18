@@ -41,7 +41,10 @@ namespace softcut {
             Stopped = 0, FadeIn = 1, Playing = 2, FadeOut = 3
         } OpState;
         typedef enum {
-            None, Stop, StartFadeIn, LoopPositive, LoopNegative, DoneFadeIn, DoneFadeOut,
+            None=0,
+            StartFadeIn=1, DoneFadeIn=2,
+            LoopPositive=3, LoopNegative=4, FadeOutAndStop=5,
+            DoneFadeOut=6
         } OpAction;
 
         static constexpr size_t maxBlockSize = 1024;

@@ -40,6 +40,7 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
+            std::cout << "dequeing position on head " << headIdx << std::endl;
             head[headIdx].setPosition(fr_1, fr, enqueuedPosition, this);
             enqueuedPosition = -1.0;
             return headIdx;
@@ -55,13 +56,18 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     size_t fr = 0;
     SubHead::OpAction action;
     while (fr < numFrames) {
+//        bool didloop = false; // testing...
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
         for (int i=0; i<2; ++i) {
            action =head[i].calcPositionUpdate(fr_1, fr, this);
             if (action == SubHead::OpAction::LoopPositive) {
+//                assert(!didloop);
+//                didloop = true;
                 enqueuePositionChange(start);
             } else if (action == SubHead::OpAction::LoopNegative) {
+//                assert(!didloop);
+//                didloop = true;
                 enqueuePositionChange(end);
             }
         }
