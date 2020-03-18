@@ -17,7 +17,7 @@ static constexpr double pi = 3.1415926535898;
 static constexpr double twopi = 6.2831853071796;
 static constexpr int samplerate = 48000;
 static constexpr size_t numframes = samplerate * dur;
-static constexpr size_t bufsize = 262144; //samplerate * 4;
+static constexpr size_t bufsize = 1048576; // 21sec+
 
 static std::array<float, numframes> input;
 static std::array<float, numframes> output;
@@ -67,7 +67,7 @@ int main(int argc, const char **argv) {
     //cut.setRate(0, 1.0);
     cut.setFadeTime(0, 0.05);
     cut.setLoopStart(0, 0.2);
-    cut.setLoopEnd(0, 0.4);
+    cut.setLoopEnd(0, 1.2);
     cut.setLoopFlag(0, true);
     cut.setPlayFlag(0, true);
 

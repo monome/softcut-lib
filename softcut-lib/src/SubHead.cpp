@@ -123,16 +123,21 @@ static float raisedCosFadeIn(float unitphase) {
     return 0.5f * (cosf(M_PI * (1.f + unitphase)) + 1.f);
 };
 
+// FIXME: move/refactor these fade-calculation functions.
+/// their parameters could be made dynamic again,
+/// if this direct-calculation method is considered performant enough
 static float raisedCosFadeOut(float unitphase) {
     return 0.5f * (cosf(M_PI * unitphase) + 1.f);
 };
 
 static float calcPreFadeCurve(float fade) {
 #if 1
-    static constexpr float t = 0;
+    // time parameter is when to finish closing, when fading in
+    // static constexpr float t = 0;
+    static constexpr float t = 0.0625;
+    //static constexpr float t = 0.125;
+    //static constexpr float t = 0.25;
     //static constexpr float t = 0.5f;
-    //static constexpr float t = 3.f/4;
-    //static constexpr float t = 7.f/8;
     //static constexpr float t = 1.f;
     if (fade > t) { return 0.f; }
     else { return raisedCosFadeOut(fade/t); }
@@ -141,12 +146,14 @@ static float calcPreFadeCurve(float fade) {
 #endif
 }
 
-// FIXME: refactor these;
-// parameters could be made dynamic again,
-// if this direct-calculation is considered performant enough
 static float calcRecFadeCurve(float fade) {
-    static constexpr float t = 1.f/2.f;
-    static constexpr float nt = 1.f - t; // <- would want to memoize this for dynamic param
+    // time parameter is delay before opening, when fading in
+    //static constexpr float t = 0.f;
+    //static constexpr float t = 0.0625f;
+    //static constexpr float t = 0.125f;
+    static constexpr float t = 0.25f;
+    //static constexpr float t = 0.5f;
+    static constexpr float nt = 1.f - t;
     if (fade <= t) {  return 0.f; }
     else { return raisedCosFadeIn((fade-t)/nt); }
 }
