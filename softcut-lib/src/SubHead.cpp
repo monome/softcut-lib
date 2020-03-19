@@ -15,6 +15,7 @@ SubHead::SubHead() {}
 void SubHead::init(ReadWriteHead *rwh) {
     this->rwh = rwh;
     resamp.setPhase(0);
+    resamp.reset();
     frame_t w = rwh->recOffsetSamples;
     while (w < 0) { w += maxBlockSize; }
     while (w > maxBlockSize) { w -= maxBlockSize; }
@@ -50,12 +51,15 @@ void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position) {
     //phase[i_1] = rwh->wrapPhaseToLoop(position - rwh->rate[i]);
     // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
     /// use ReadWriteHead::wrapFrameToLoopfade()..
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p));
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p)  + dir[i] * rwh->recOffsetSamples);
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
+
+    resamp.setPhase(0);
+    resamp.reset();
 }
 
-SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i) {
+SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
     updateRate(i, rwh->rate[i]);
 
     switch (opState[i_1]) {
@@ -151,7 +155,7 @@ static float calcRecFadeCurve(float fade) {
 }
 
 
-void SubHead::calcLevelUpdate(frame_t i) {
+void SubHead::calcFrameLevels(frame_t i) {
     switch (opState[i]) {
         case Stopped:
             pre[i] = 1.f;
@@ -177,12 +181,18 @@ void SubHead::calcLevelUpdate(frame_t i) {
 }
 
 void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
-    // push to resampler, even if stopped; avoids glitch when restarting
+    // push to resampler, even if stopped; avoids possible glitch when restarting
     int nsubframes = resamp.processFrame(input);
 
     if (opState[i] == Stopped) {
         // if we're stopped, don't touch the buffer at all.
         return;
+    }
+
+    // debug
+    if (i == 0) {
+        int dum = 0;
+        ++dum;
     }
 
     sample_t y;
@@ -207,6 +217,14 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         buf[w] = y;
     }
     wrIdx[i] = w;
+
+
+    // debug
+    if (i == 0) {
+        int dum = 0;
+        ++dum;
+    }
+
 }
 
 float SubHead::performFrameRead(frame_t i) {

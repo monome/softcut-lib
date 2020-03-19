@@ -52,22 +52,21 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     // TODO: apply `follow` here, using subhead positions from other ReadWriteHead
 
+    if (frameIdx != 511) {
+        std::cerr << "unexpected saved frame index: " << frameIdx << std::endl;
+    }
+
     size_t fr_1 = frameIdx;
     size_t fr = 0;
     SubHead::OpAction action;
     while (fr < numFrames) {
-//        bool didloop = false; // testing...
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
         for (int i=0; i<2; ++i) {
-           action =head[i].calcPositionUpdate(fr_1, fr);
+           action = head[i].calcFramePosition(fr_1, fr);
             if (action == SubHead::OpAction::LoopPositive) {
-//                assert(!didloop);
-//                didloop = true;
                 enqueuePositionChange(start);
             } else if (action == SubHead::OpAction::LoopNegative) {
-//                assert(!didloop);
-//                didloop = true;
                 enqueuePositionChange(end);
             }
         }
@@ -88,8 +87,8 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
         // TODO: apply `duck` here, using subhead positions/levels from other ReadWriteHead
         // update rec/pre level for each subhead
-        this->head[0].calcLevelUpdate(fr);
-        this->head[1].calcLevelUpdate(fr);
+        this->head[0].calcFrameLevels(fr);
+        this->head[1].calcFrameLevels(fr);
     }
 }
 
@@ -161,16 +160,16 @@ void ReadWriteHead::setLoopFlag(bool val) {
 //    return 0;
 //}
 
-void ReadWriteHead::setRate(size_t idx, rate_t x) {
-    rate[idx] = x;
+void ReadWriteHead::setRate(size_t i, rate_t x) {
+    rate[i] = x;
 }
 
-void ReadWriteHead::setRec(size_t idx, float x) {
-    rec[idx] = x;
+void ReadWriteHead::setRec(size_t i, float x) {
+    rec[i] = x;
 }
 
-void ReadWriteHead::setPre(size_t idx, float x) {
-    pre[idx] = x;
+void ReadWriteHead::setPre(size_t i, float x) {
+    pre[i] = x;
 }
 
 void ReadWriteHead::setPosition(float seconds) {

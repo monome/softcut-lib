@@ -5,12 +5,12 @@ from plots import *
 #N = M + 1000
 #N = M + 200
 M = 1000
-N = M + 600
+N = M + 50
 
 
 
 keys = [
-    'output',
+    'output', 'frameInBlock',
     'phase0', 'phase1',
     'wrIdx0', 'wrIdx1',
     ['pre0', 'pre1'],

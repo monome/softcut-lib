@@ -82,10 +82,10 @@ namespace softcut {
         void updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh);
 
         // update phase, opState, and opAction
-        OpAction calcPositionUpdate(frame_t i_1, frame_t i);
+        OpAction calcFramePosition(frame_t i_1, frame_t i);
 
         // update frame level data
-        void calcLevelUpdate(frame_t i);
+        void calcFrameLevels(frame_t i);
 
         // perform single frame write
         void performFrameWrite(frame_t i_1, frame_t i, float input);
