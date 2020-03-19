@@ -12,8 +12,8 @@ using namespace softcut;
 
 SubHead::SubHead() {}
 
-void SubHead::init(ReadWriteHead *rwh) {
-    this->rwh = rwh;
+void SubHead::init(ReadWriteHead *parent) {
+    rwh = parent;
     resamp.setPhase(0);
     resamp.reset();
     frame_t w = rwh->recOffsetSamples;
@@ -31,7 +31,6 @@ void SubHead::init(ReadWriteHead *rwh) {
 }
 
 void SubHead::updateRate(frame_t idx, rate_t rate) {
-    dir[idx] = rate > 0.f ? 1 : -1;
     resamp.setRate(std::fabs(rate));
 }
 
@@ -44,7 +43,7 @@ void SubHead::setPosition(frame_t i, phase_t position) {
     phase[i] = p;
     // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
     /// use ReadWriteHead::wrapFrameToLoopfade()..
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p)  + dir[i] * rwh->recOffsetSamples);
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p)  + rwh->dir[i] * rwh->recOffsetSamples);
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
 
@@ -204,7 +203,7 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     for (int sfr = 0; sfr < nsubframes; ++sfr) {
         // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
         /// use e.g. ReadWriteHead::wrapFrameToLoopfade()..
-        w = wrapBufIndex(w + dir[i]);
+        w = wrapBufIndex(w + rwh->dir[i]);
         y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
         // TODO: further processing (lowpass, clip)
         buf[w] = y;

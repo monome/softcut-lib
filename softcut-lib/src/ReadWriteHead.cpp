@@ -151,6 +151,7 @@ void ReadWriteHead::setLoopFlag(bool val) {
 
 void ReadWriteHead::setRate(size_t i, rate_t x) {
     rate[i] = x;
+    dir[i] = x > 0.f ? 1 : -1;
 }
 
 void ReadWriteHead::setRec(size_t i, float x) {

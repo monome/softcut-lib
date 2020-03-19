@@ -112,9 +112,9 @@ public:
         // FIXME: would be nice to put this in TestBuffers, but that creates a `cnpy` dependency in the lib.
         /// TestBuffers kinda has to be in the lib itself so it can get access to protected fields.
         cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
+        cnpy::npy_save("dir.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
         cnpy::npy_save("active.npy", testBuffers.getBuffer(softcut::TestBuffers::Active), {1, numFrames}, "w");
-        cnpy::npy_save("frameInBlock.npy", testBuffers.getBuffer(softcut::TestBuffers::FrameInBlock), {1, numFrames},
-                       "w");
+        cnpy::npy_save("frameInBlock.npy", testBuffers.getBuffer(softcut::TestBuffers::FrameInBlock), {1, numFrames}, "w");
         cnpy::npy_save("phase0.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase0), {1, numFrames}, "w");
         cnpy::npy_save("phase1.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase1), {1, numFrames}, "w");
         cnpy::npy_save("state0.npy", testBuffers.getBuffer(softcut::TestBuffers::State0), {1, numFrames}, "w");
@@ -129,8 +129,6 @@ public:
         cnpy::npy_save("pre1.npy", testBuffers.getBuffer(softcut::TestBuffers::Pre1), {1, numFrames}, "w");
         cnpy::npy_save("wrIdx0.npy", testBuffers.getBuffer(softcut::TestBuffers::WrIdx0), {1, numFrames}, "w");
         cnpy::npy_save("wrIdx1.npy", testBuffers.getBuffer(softcut::TestBuffers::WrIdx1), {1, numFrames}, "w");
-        cnpy::npy_save("dir0.npy", testBuffers.getBuffer(softcut::TestBuffers::Dir0), {1, numFrames}, "w");
-        cnpy::npy_save("dir1.npy", testBuffers.getBuffer(softcut::TestBuffers::Dir1), {1, numFrames}, "w");
 
         writeOutputSoundfile("output.wav");
     }

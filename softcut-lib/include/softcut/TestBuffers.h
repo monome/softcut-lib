@@ -32,6 +32,7 @@ namespace softcut {
         typedef enum {
             //-- ReadWriteHead parameters
             Rate,        // movement rate
+            Dir,        // movement direction (should just be sign of rate)
             Pre,         // preserve level
             Rec,         // record level
             Active,       // index of active subhead
@@ -44,7 +45,6 @@ namespace softcut {
             Rec0, Rec1,        // record level (post-fade)
             Pre0, Pre1,        // preserve level (post-fade)
             WrIdx0, WrIdx1,    // write index in audio buffer
-            Dir0, Dir1,        // direction of movement (1 or -1)
             NumBuffers
         } BufferId;
 
@@ -71,6 +71,7 @@ namespace softcut {
         void update(const ReadWriteHead &rwh, size_t numFrames) {
             appendToBuffer(Active, rwh.active.data(), numFrames);
             appendToBuffer(Rate, rwh.rate.data(), numFrames);
+            appendToBuffer(Dir, rwh.dir.data(), numFrames);
             appendToBuffer(Rec, rwh.rec.data(), numFrames);
             appendToBuffer(Pre, rwh.pre.data(), numFrames);
             appendToBuffer(State0, rwh.head[0].opState.data(), numFrames);
@@ -87,8 +88,6 @@ namespace softcut {
             appendToBuffer(Pre1, rwh.head[1].pre.data(), numFrames);
             appendToBuffer(WrIdx0, rwh.head[0].wrIdx.data(), numFrames);
             appendToBuffer(WrIdx1, rwh.head[1].wrIdx.data(), numFrames);
-            appendToBuffer(Dir0, rwh.head[0].dir.data(), numFrames);
-            appendToBuffer(Dir1, rwh.head[1].dir.data(), numFrames);
             // frame offset is always just an index counting up from zero
             auto frbuf = new int[numFrames];
             for (unsigned int i = 0; i < numFrames; ++i) { frbuf[i] = i; }

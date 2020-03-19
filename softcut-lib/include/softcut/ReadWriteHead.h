@@ -57,6 +57,7 @@ namespace softcut {
         //--- buffered state variables
         // rate, in per-sample position increment (1 == normal)
         SubHead::StateBuffer<rate_t> rate{1.f};
+        SubHead::StateBuffer<int> dir{1};
         // preserve and record levels, pre-fade
         SubHead::StateBuffer<float> pre{0.f};
         SubHead::StateBuffer<float> rec{0.f};

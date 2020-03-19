@@ -51,7 +51,7 @@ namespace softcut {
         using frame_t = long int;
 
     protected:
-        ReadWriteHead *rwh;
+        ReadWriteHead *rwh{};
         //--- buffered state variables, owned:
         // current state of operation
         StateBuffer<OpState> opState{Stopped};
@@ -61,8 +61,6 @@ namespace softcut {
         StateBuffer<phase_t> phase{0.0};
         // last write index in buffer
         StateBuffer<frame_t> wrIdx{0};
-        // current read/write increment direction
-        StateBuffer<int> dir{1};
         // current fade position in [0,1]
         StateBuffer<float> fade{0.f};
         // final preserve level, post-fade
