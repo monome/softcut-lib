@@ -8,6 +8,7 @@ def plot_keys(keys, M, N):
     nkeys = len(keys)
     fix, ax = plt.subplots(nkeys, 1, figsize=(16, nkeys * 4))
 
+    data = {}
     for i in range(nkeys):
         k = keys[i]
         if isinstance(k, list):
@@ -23,7 +24,8 @@ def plot_keys(keys, M, N):
             ax[i].grid(True)
             ax[i].set_title('{} [{}, {}]'.format(k, min, max))
             ax[i].plot(arr[M:N], marker='.', linewidth=1, markersize=2)
+            data[k] = arr
     plt.savefig('../output/charts.png')
     # plt.show()
 
-    print("done")
+    return data

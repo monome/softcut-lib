@@ -41,7 +41,7 @@ int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
             std::cout << "dequeing position on head " << headIdx << std::endl;
-            head[headIdx].setPosition(fr_1, fr, enqueuedPosition, this);
+            head[headIdx].setPosition(fr_1, fr, enqueuedPosition);
             enqueuedPosition = -1.0;
             return headIdx;
         }
@@ -60,7 +60,7 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
         for (int i=0; i<2; ++i) {
-           action =head[i].calcPositionUpdate(fr_1, fr, this);
+           action =head[i].calcPositionUpdate(fr_1, fr);
             if (action == SubHead::OpAction::LoopPositive) {
 //                assert(!didloop);
 //                didloop = true;
@@ -88,8 +88,8 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
         // TODO: apply `duck` here, using subhead positions/levels from other ReadWriteHead
         // update rec/pre level for each subhead
-        this->head[0].calcLevelUpdate(fr, this);
-        this->head[1].calcLevelUpdate(fr, this);
+        this->head[0].calcLevelUpdate(fr);
+        this->head[1].calcLevelUpdate(fr);
     }
 }
 
@@ -145,6 +145,7 @@ void ReadWriteHead::setLoopEndSeconds(float x) {
 void ReadWriteHead::setFadeTime(float secs) {
     this->fadeTime = secs;
     this->fadeInc = 1.f / (secs * sr);
+//    fadeOutFrameBeforeLoop = start - (fadeTime * r)
 }
 
 void ReadWriteHead::setLoopFlag(bool val) {
@@ -178,6 +179,23 @@ void ReadWriteHead::setPosition(float seconds) {
 
 phase_t ReadWriteHead::getActivePhase() {
     // FIXME
+    return 0;
+}
+
+
+
+phase_t ReadWriteHead::wrapPhaseToLoop(phase_t p) {
+    if (p < start) {
+        return p + end - start;
+    } else if (p > end) {
+        return p - end + start;
+    } else {
+        return p;
+    }
+}
+
+ReadWriteHead::frame_t ReadWriteHead::wrapFrameToLoopFade(frame_t w) {
+    //frame_t max -
     return 0;
 }
 

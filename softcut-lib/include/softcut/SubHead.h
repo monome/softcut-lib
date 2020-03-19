@@ -53,6 +53,7 @@ namespace softcut {
         using frame_t = long int;
 
     protected:
+        ReadWriteHead *rwh;
         //--- buffered state variables, owned:
         // is operating
         StateBuffer<bool> active{false};
@@ -76,15 +77,15 @@ namespace softcut {
         StateBuffer<float> rec{0.f};
 
     protected:
-        void setPosition(frame_t i_1, frame_t i, phase_t position, const softcut::ReadWriteHead *rwh);
+        void setPosition(frame_t i_1, frame_t i, phase_t position);
 
         void updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh);
 
         // update phase, opState, and opAction
-        OpAction calcPositionUpdate(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh);
+        OpAction calcPositionUpdate(frame_t i_1, frame_t i);
 
         // update frame level data
-        void calcLevelUpdate(frame_t i, const softcut::ReadWriteHead *rwh);
+        void calcLevelUpdate(frame_t i);
 
         // perform single frame write
         void performFrameWrite(frame_t i_1, frame_t i, float input);
@@ -117,6 +118,8 @@ namespace softcut {
         bool didSetPositionThisFrame  {false};
 
         void init(ReadWriteHead *rwh);
+
+        void setRwh(ReadWriteHead *rwh) { this->rwh = rwh; }
     };
 }
 

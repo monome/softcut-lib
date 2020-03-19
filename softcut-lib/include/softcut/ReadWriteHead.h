@@ -21,6 +21,7 @@ namespace softcut {
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
         template<typename T>
         using StateBuffer = SubHead::StateBuffer<T>;
+        using frame_t = SubHead::frame_t;
 
     private:
         // FIXME: should maybe use a proper queue (e.g. from dsp-kit)
@@ -51,9 +52,12 @@ namespace softcut {
         phase_t start{0};       // start/end points
         phase_t end{0};
         float fadeTime{0};      // fade time in seconds
+
         float fadeInc{0};       // linear fade increment per sample
         bool loopFlag{0};       // set to loop, unset for 1-shot
         int recOffsetSamples{-8}; // record offset from write head
+        frame_t fadeOutFrameBeforeLoop;
+        frame_t fadeOutFrameAfterLoop;
 
         //--- buffered state variables
         // rate, in per-sample position increment (1 == normal)
@@ -115,6 +119,10 @@ namespace softcut {
         void setRecOffsetSamples(int d);
 
         phase_t getActivePhase();
+
+        phase_t wrapPhaseToLoop(phase_t p);
+
+        frame_t wrapFrameToLoopFade(frame_t w);
     };
 
 

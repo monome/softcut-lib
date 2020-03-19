@@ -13,11 +13,12 @@ class TestLoopInPlace : public Test<numFrames, bufSize, blockSize> {
     using super = Test<numFrames, bufSize, blockSize>;
 
     void init() override {
+        float r = 1.1224620483094; // 2 semitones 12tet
         super::init();
         super::zeroInput();
         super::loadBufferSoundFile("octave-sines.wav");
         super::cut.setSampleRate(48000);
-        super::cut.setRate(0, 2 * 1.1224620483094); // 2 semitones 12tet
+        super::cut.setRate(0,  r);
         super::cut.setFadeTime(0, 0.05);
         super::cut.setLoopStart(0, 0.2);
         super::cut.setLoopEnd(0, 0.6);

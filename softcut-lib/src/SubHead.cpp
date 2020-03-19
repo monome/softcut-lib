@@ -13,6 +13,7 @@ using namespace softcut;
 SubHead::SubHead() {}
 
 void SubHead::init(ReadWriteHead *rwh) {
+    this->rwh = rwh;
     resamp.setPhase(0);
     frame_t w = rwh->recOffsetSamples;
     while (w < 0) { w += maxBlockSize; }
@@ -33,7 +34,7 @@ void SubHead::updateRate(frame_t idx, rate_t rate) {
     resamp.setRate(std::fabs(rate));
 }
 
-void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position, const softcut::ReadWriteHead *rwh) {
+void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position) {
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
     }
@@ -42,16 +43,19 @@ void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position, const softcu
         std::cerr << "notable: setting position of subhead that moved last frame" << std::endl;
     }
     std::cerr << "setting position; idx = [" << i_1 << ", " << i << "]; " << "pos = " << position << std::endl;
-    phase[i] = position;
-    phase[i_1] = position - rwh->rate[i];
-    wrIdx[i_1] = wrapBufIndex(static_cast<frame_t>(phase[i_1]));
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i]));
+
+    phase_t p = rwh->wrapPhaseToLoop(position);
+    //phase_t p_1 = rwh->wrapPhaseToLoop(position - rwh->rate[i+1]);
+    phase[i] = p;
+    //phase[i_1] = rwh->wrapPhaseToLoop(position - rwh->rate[i]);
+    // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
+    /// use ReadWriteHead::wrapFrameToLoopfade()..
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p));
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
 }
 
-SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
-                                              const softcut::ReadWriteHead *rwh) {
+SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i) {
     updateRate(i, rwh->rate[i]);
 
     switch (opState[i_1]) {
@@ -147,7 +151,7 @@ static float calcRecFadeCurve(float fade) {
 }
 
 
-void SubHead::calcLevelUpdate(frame_t i, const softcut::ReadWriteHead *rwh) {
+void SubHead::calcLevelUpdate(frame_t i) {
     switch (opState[i]) {
         case Stopped:
             pre[i] = 1.f;
@@ -183,21 +187,26 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
 
     sample_t y;
     frame_t w;
-    wrIdx[i] = wrIdx[i_1]; // by default, propagate last write position
 
     const sample_t *src = resamp.output();
 
-    //----------
-    /// TETSING. of course, in general it is fine to have unity preserve level.
-    BOOST_ASSERT_MSG( !((fade[i] > 0.f) && (pre[i]>=1.f)), ">=unity preserve with nonzero fade");
+    if (opAction[i] == OpAction::StartFadeIn) {
+        // if we start a fadein on this frame, previous write index is not meaningful;
+        // assume current write index has already been updated
+        w = wrIdx[i];
+    } else {
+        w = wrIdx[i_1]; // by default, propagate last write position
+    }
 
     for (int sfr = 0; sfr < nsubframes; ++sfr) {
-        w = wrapBufIndex(wrIdx[i] + dir[i]);
-        wrIdx[i] = w;
+        // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
+        /// use e.g. ReadWriteHead::wrapFrameToLoopfade()..
+        w = wrapBufIndex(w + dir[i]);
         y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
         // TODO: further processing (lowpass, clip)
         buf[w] = y;
     }
+    wrIdx[i] = w;
 }
 
 float SubHead::performFrameRead(frame_t i) {
