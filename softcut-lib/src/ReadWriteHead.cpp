@@ -18,8 +18,7 @@ ReadWriteHead::ReadWriteHead() {
 }
 
 
-void ReadWriteHead::init(FadeCurves *fc) {
-    fadeCurves = fc;
+void ReadWriteHead::init() {
     start = 0.f;
     end = maxBlockSize * 2;
     head[0].init(this);
@@ -34,14 +33,14 @@ void ReadWriteHead::enqueuePositionChange(phase_t pos) {
     enqueuedPosition = pos;
 }
 
-int ReadWriteHead::dequeuePositionChange(size_t fr_1, size_t fr) {
+int ReadWriteHead::dequeuePositionChange(size_t fr) {
     if (enqueuedPosition < 0) {
         return -1;
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
             std::cout << "dequeing position on head " << headIdx << std::endl;
-            head[headIdx].setPosition(fr_1, fr, enqueuedPosition);
+            head[headIdx].setPosition( fr, enqueuedPosition);
             enqueuedPosition = -1.0;
             return headIdx;
         }
@@ -71,7 +70,7 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
             }
         }
         // change positions if needed
-        int headMoved = dequeuePositionChange(fr_1, fr);
+        int headMoved = dequeuePositionChange(fr);
         if (headMoved >= 0) {
             active[fr] = headMoved;
         } else {
@@ -124,7 +123,6 @@ void ReadWriteHead::setSampleRate(float sr) {
 
 void ReadWriteHead::setBuffer(sample_t *b, uint32_t sz) {
     this->buf = b;
-    this->bufFrames = sz;
     head[0].setBuffer(b, sz);
     head[1].setBuffer(b, sz);
 }
@@ -142,23 +140,14 @@ void ReadWriteHead::setLoopEndSeconds(float x) {
 }
 
 void ReadWriteHead::setFadeTime(float secs) {
-    this->fadeTime = secs;
     this->fadeInc = 1.f / (secs * sr);
+    // TODO: something like,
 //    fadeOutFrameBeforeLoop = start - (fadeTime * r)
 }
 
 void ReadWriteHead::setLoopFlag(bool val) {
     this->loopFlag = val;
 }
-
-// TODO:
-//phase_t ReadWriteHead::getActivePhase() {
-//    return 0;
-//}
-//
-//rate_t ReadWriteHead::getRate() {
-//    return 0;
-//}
 
 void ReadWriteHead::setRate(size_t i, rate_t x) {
     rate[i] = x;
@@ -177,7 +166,7 @@ void ReadWriteHead::setPosition(float seconds) {
 }
 
 phase_t ReadWriteHead::getActivePhase() {
-    // FIXME
+    // TODO
     return 0;
 }
 

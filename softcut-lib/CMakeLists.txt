@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(SRC
         src/DebugLog.cpp
-        src/FadeCurves.cpp
         src/ReadWriteHead.cpp
         src/SubHead.cpp
         src/Svf.cpp

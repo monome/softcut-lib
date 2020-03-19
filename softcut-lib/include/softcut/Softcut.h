@@ -18,11 +18,15 @@ namespace softcut {
 
     public:
 
-        Softcut(sample_t *buffer, size_t numFrames) {
+//        Softcut(sample_t **buffers, size_t numBuffers, size_t numFrames) {
+//
+//            for (int v = 0; v < numVoices; ++v) {
+//                scv[v].setBuffer(buffers[v % numBuffers], numFrames);
+//            };
+//            this->reset();
+//        }
 
-            for (int v = 0; v < numVoices; ++v) {
-                scv[v].setBuffer(buffer, numFrames);
-            };
+        Softcut() {
             this->reset();
         }
 

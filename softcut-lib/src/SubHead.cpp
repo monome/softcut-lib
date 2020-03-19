@@ -35,20 +35,13 @@ void SubHead::updateRate(frame_t idx, rate_t rate) {
     resamp.setRate(std::fabs(rate));
 }
 
-void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position) {
+void SubHead::setPosition(frame_t i, phase_t position) {
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
+        assert(false);
     }
-    // testing...
-    if (opState[i_1] != Stopped) {
-        std::cerr << "notable: setting position of subhead that moved last frame" << std::endl;
-    }
-    std::cerr << "setting position; idx = [" << i_1 << ", " << i << "]; " << "pos = " << position << std::endl;
-
     phase_t p = rwh->wrapPhaseToLoop(position);
-    //phase_t p_1 = rwh->wrapPhaseToLoop(position - rwh->rate[i+1]);
     phase[i] = p;
-    //phase[i_1] = rwh->wrapPhaseToLoop(position - rwh->rate[i]);
     // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
     /// use ReadWriteHead::wrapFrameToLoopfade()..
     wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p)  + dir[i] * rwh->recOffsetSamples);

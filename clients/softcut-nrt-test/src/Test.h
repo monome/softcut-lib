@@ -20,10 +20,10 @@ public:
     std::array<float, numFrames> output;
     std::array<float, bufSize> buf;
 
-    size_t frameCount;
-    size_t startMs;
+    size_t frameCount{};
+    size_t startMs{};
 
-    Test() : cut(buf.data(), bufSize) {
+    Test() {
         cut.setVoiceBuffer(0, buf.data(), bufSize);
     }
 

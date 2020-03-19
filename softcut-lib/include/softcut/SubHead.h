@@ -21,8 +21,6 @@
 
 #include "Resampler.h"
 #include "Types.h"
-#include "FadeCurves.h"
-
 namespace softcut {
     class ReadWriteHead;
 
@@ -55,8 +53,6 @@ namespace softcut {
     protected:
         ReadWriteHead *rwh;
         //--- buffered state variables, owned:
-        // is operating
-        StateBuffer<bool> active{false};
         // current state of operation
         StateBuffer<OpState> opState{Stopped};
         // last action performed
@@ -65,10 +61,8 @@ namespace softcut {
         StateBuffer<phase_t> phase{0.0};
         // last write index in buffer
         StateBuffer<frame_t> wrIdx{0};
-
         // current read/write increment direction
         StateBuffer<int> dir{1};
-
         // current fade position in [0,1]
         StateBuffer<float> fade{0.f};
         // final preserve level, post-fade
@@ -77,9 +71,7 @@ namespace softcut {
         StateBuffer<float> rec{0.f};
 
     protected:
-        void setPosition(frame_t i_1, frame_t i, phase_t position);
-
-        void updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh);
+        void setPosition(frame_t i, phase_t position);
 
         // update phase, opState, and opAction
         OpAction calcFramePosition(frame_t i_1, frame_t i);
@@ -99,7 +91,7 @@ namespace softcut {
         }
 
         frame_t wrapBufIndex(frame_t x) {
-            BOOST_ASSERT_MSG(bufFrames != 0, "bufFrames must not be zero when wrapping a buffer index");
+            assert(bufFrames != 0 && "buffer frame count must not be zero when running");
             frame_t y = x;
             // FIXME: should wrap to loop endpoints, maybe
             while (y >= bufFrames) { y -= bufFrames; }
@@ -113,9 +105,6 @@ namespace softcut {
         Resampler resamp;   // resampler
         float *buf{};         // current audio buffer
         frame_t bufFrames{};   // total buffer size
-
-        //// debug
-        bool didSetPositionThisFrame  {false};
 
         void init(ReadWriteHead *rwh);
 

@@ -8,7 +8,6 @@
 #include <cstdint>
 #include "SubHead.h"
 #include "Types.h"
-#include "FadeCurves.h"
 
 namespace softcut {
 
@@ -31,8 +30,7 @@ namespace softcut {
         size_t frameIdx; // last used index into processing block
 
         void enqueuePositionChange(phase_t pos);
-        int dequeuePositionChange(size_t fr_1, size_t fr);
-        void handleLoopAction(SubHead::OpAction action);
+        int dequeuePositionChange(size_t fr);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // we don't actually want equal power since we are summing!
@@ -42,22 +40,19 @@ namespace softcut {
 
     protected:
         SubHead head[2];         // sub-processors
-        FadeCurves *fadeCurves{nullptr}; // fade-curve data (allocated elsewhere)
-
         //-------------------
         //--- state variables (unbuffered)
         sample_t *buf{nullptr}; // audio buffer (allocated elsewhere)
-        size_t bufFrames{0};    // size of buffer in frames
         float sr{0};            // sample rate
         phase_t start{0};       // start/end points
         phase_t end{0};
-        float fadeTime{0};      // fade time in seconds
 
         float fadeInc{0};       // linear fade increment per sample
-        bool loopFlag{0};       // set to loop, unset for 1-shot
+        bool loopFlag{false};       // set to loop, unset for 1-shot
         int recOffsetSamples{-8}; // record offset from write head
-        frame_t fadeOutFrameBeforeLoop;
-        frame_t fadeOutFrameAfterLoop;
+
+        frame_t fadeOutFrameBeforeLoop{};
+        frame_t fadeOutFrameAfterLoop{};
 
         //--- buffered state variables
         // rate, in per-sample position increment (1 == normal)
@@ -71,8 +66,7 @@ namespace softcut {
     public:
 
         ReadWriteHead();
-
-        void init(FadeCurves *fc);
+        void init();
 
         // queue a position change
         void setPosition(float seconds);
@@ -86,12 +80,6 @@ namespace softcut {
 
         void updateSubheadWriteLevels(size_t numFrames);
 
-
-//        // per-sample update functions
-//        void processSample(sample_t in, sample_t *out);
-//        void processSampleNoRead(sample_t in, sample_t *out);
-//        void processSampleNoWrite(sample_t in, sample_t *out);
-
         void setSampleRate(float sr);
 
         void setBuffer(sample_t *buf, uint32_t size);
@@ -103,11 +91,6 @@ namespace softcut {
         void setFadeTime(float secs);
 
         void setLoopFlag(bool val);
-
-//        //-- set buffered state for all frames
-//        void setRate(rate_t x);
-//        void setRec(float x);
-//        void setPre(float x);
 
         //-- set buffered state for single frame
         void setRate(size_t idx, rate_t x);
