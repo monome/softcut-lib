@@ -71,29 +71,33 @@ public:
         }
     }
 
-
     void zeroBuffer() {
         for (size_t i = 0; i < bufSize; ++i) {
             buf[i] = 0.f;
         }
     }
 
+    void performBlock(float* &src, float* &dst) {
+        cut.processBlock(0, src, dst, blockSize);
+        testBuffers.update(cut, 0, blockSize);
+        src += blockSize;
+        dst += blockSize;
+        frameCount += blockSize;
+    }
+
     void run() {
         init();
 
         using namespace std::chrono;
-        float *src = input.data();
-        float *dst = output.data();
         startMs = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
+        float *src = input.data();
+        float *dst = output.data();
         size_t maxFrames = numFrames - blockSize;
         while (frameCount < maxFrames) {
-            cut.processBlock(0, src, dst, blockSize);
-            testBuffers.update(cut, 0, blockSize);
-            src += blockSize;
-            dst += blockSize;
-            frameCount += blockSize;
+            performBlock(src, dst);
         }
+        finish();
     }
 
     void finish() {

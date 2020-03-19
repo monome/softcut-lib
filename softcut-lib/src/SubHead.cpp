@@ -2,7 +2,9 @@
 // Created by ezra on 4/21/18.
 //
 
-#include <softcut/DebugLog.h>
+#include "softcut/DebugLog.h"
+
+#include "softcut/Fades.h"
 #include "softcut/SubHead.h"
 #include "softcut/ReadWriteHead.h"
 
@@ -41,16 +43,11 @@ void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position, const softcu
     }
     std::cerr << "setting position; idx = [" << i_1 << ", " << i << "]; " << "pos = " << position << std::endl;
     phase[i] = position;
-    phase[i_1] = position;
+    phase[i_1] = position - rwh->rate[i];
+    wrIdx[i_1] = wrapBufIndex(static_cast<frame_t>(phase[i_1]));
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i]));
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
-    updateWrIdx(i_1, i, rwh);
-}
-
-void SubHead::updateWrIdx(frame_t i_1, frame_t i, const softcut::ReadWriteHead *rwh) {
-    frame_t w = wrapBufIndex(static_cast<frame_t>(phase[i]) + dir[i] * rwh->recOffsetSamples);
-    wrIdx[i] = w;
-    wrIdx[i_1] = w;
 }
 
 SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
@@ -122,29 +119,16 @@ SubHead::OpAction SubHead::calcPositionUpdate(frame_t i_1, frame_t i,
     return opAction[i];
 }
 
-
-static float raisedCosFadeIn(float unitphase) {
-    return 0.5f * (cosf(M_PI * (1.f + unitphase)) + 1.f);
-};
-
-// FIXME: move/refactor these fade-calculation functions.
-/// their parameters could be made dynamic again,
-/// if this direct-calculation method is considered performant enough
-static float raisedCosFadeOut(float unitphase) {
-    return 0.5f * (cosf(M_PI * unitphase) + 1.f);
-};
-
 static float calcPreFadeCurve(float fade) {
 #if 1
     // time parameter is when to finish closing, when fading in
     // static constexpr float t = 0;
-    static constexpr float t = 0.0625;
-    //static constexpr float t = 0.125;
-    //static constexpr float t = 0.25;
-    //static constexpr float t = 0.5f;
+   // static constexpr float t = 1.f/64;
+    static constexpr float t = 1.f/32;
+    //static constexpr float t = 1.f/8;
     //static constexpr float t = 1.f;
     if (fade > t) { return 0.f; }
-    else { return raisedCosFadeOut(fade/t); }
+    else { return Fades::fastCosFadeOut(fade/t); }
 #else
     return 0.f;
 #endif
@@ -159,7 +143,7 @@ static float calcRecFadeCurve(float fade) {
     //static constexpr float t = 0.5f;
     static constexpr float nt = 1.f - t;
     if (fade <= t) {  return 0.f; }
-    else { return raisedCosFadeIn((fade-t)/nt); }
+    else { return Fades::raisedCosFadeIn((fade-t)/nt); }
 }
 
 
