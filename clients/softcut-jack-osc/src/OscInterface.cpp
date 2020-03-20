@@ -6,16 +6,12 @@
 
 #include <utility>
 #include <thread>
-//#include <boost/format.hpp>
-
-#include "softcut/FadeCurves.h"
 
 #include "BufDiskWorker.h"
 #include "Commands.h"
 #include "OscInterface.h"
 
 using namespace softcut_jack_osc;
-using softcut::FadeCurves;
 
 bool OscInterface::quitFlag;
 
@@ -82,7 +78,7 @@ void OscInterface::addServerMethod(const char *path, const char *format, Handler
                                     (void) types;
                                     (void) msg;
                                     auto pm = static_cast<OscMethod *>(data);
-                                    //std::cerr << "osc rx: " << path << std::endl;
+                                    std::cerr << "osc rx: " << path << std::endl;
                                     pm->handler(argv, argc);
                                     return 0;
                                 }, &(methods[numMethods]));

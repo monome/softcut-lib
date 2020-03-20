@@ -15,11 +15,9 @@ preRamp(48000, 0.1),
 recRamp(48000, 0.1)
 {
     svfPreFcBase = 16000;
-    reset();
 }
 
 void Voice::reset() {
-    fadeCurves.init();
     svfPre.setLpMix(1.0);
     svfPre.setHpMix(0.0);
     svfPre.setBpMix(0.0);
@@ -43,45 +41,35 @@ void Voice::reset() {
     recFlag = false;
     playFlag = false;
 
-    sch.init(&fadeCurves);
+    sch.init();
 }
 
-void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
-    std::function<void(sample_t, sample_t*)> sampleFunc;
-    if(playFlag) {
-        if(recFlag) {
-            sampleFunc = [this](float in, float* out) {
-                this->sch.processSample(in, out);
-            };
-        } else {
-            sampleFunc = [this](float in, float* out) {
-                this->sch.processSampleNoWrite(in, out);
-            };
-        }
-    } else {
-        if(recFlag) {
-            sampleFunc = [this](float in, float* out) {
-                this->sch.processSampleNoRead(in, out);
-            };
-        } else {
-            // FIXME? do nothing, i guess?
-            sampleFunc = [](float in, float* out) {
-                (void)in;
-                (void)out;
-            };
-        }
+void Voice:: processBlockMono(float *in, float *out, int numFrames) {
+
+    for(size_t fr=0; fr<numFrames; ++fr) {
+        sch.setRate(fr, rateRamp.update());
     }
 
-    float x, y;
-    for(int i=0; i<numFrames; ++i) {
-        x = svfPre.getNextSample(in[i]) + in[i]*svfPreDryLevel;
-        sch.setRate(rateRamp.update());
-        sch.setPre(preRamp.update());
-        sch.setRec(recRamp.update());
-        sampleFunc(x, &y);
-	    out[i] = svfPost.getNextSample(y) + y*svfPostDryLevel;
-        updateQuantPhase();
+    // TODO: use other voice for `follow`
+    sch.updateSubheadPositions(numFrames);
+
+    if (playFlag) {
+        // TODO: use other voice for `duck`
+        sch.performSubheadReads(out, numFrames);
+        // TODO: post-filter, phase poll
     }
+
+    if (recFlag) {
+        for(size_t fr=0; fr<numFrames; ++fr) {
+            sch.setPre(fr, preRamp.update());
+            sch.setRec(fr, recRamp.update());
+            // TODO: pre-filter?
+        }
+        sch.updateSubheadWriteLevels(numFrames);
+        sch.performSubheadWrites(in, numFrames);
+    }
+
+
 }
 
 void Voice::setSampleRate(float hz) {
@@ -96,7 +84,8 @@ void Voice::setSampleRate(float hz) {
 
 void Voice::setRate(float rate) {    
     rateRamp.setTarget(rate);
-    updatePreSvfFc();
+    // FIXME: fix pre-filter smoothing
+    //updatePreSvfFc();
 }
 
 void Voice::setLoopStart(float sec) {
@@ -111,8 +100,8 @@ void Voice::setFadeTime(float sec) {
     sch.setFadeTime(sec);
 }
 
-void Voice::cutToPos(float sec) {
-    sch.cutToPos(sec);
+void Voice::setPosition(float sec) {
+    sch.setPosition(sec);
 }
 
 void Voice::setRecLevel(float amp) {
@@ -139,7 +128,8 @@ void Voice::setLoopFlag(bool val) {
 // input filter
 void Voice::setPreFilterFc(float x) {
     svfPreFcBase = x;
-    updatePreSvfFc();
+    // FIXME
+    // updatePreSvfFc();
 }
 
 void Voice::setPreFilterRq(float x) {
@@ -170,11 +160,12 @@ void Voice::setPreFilterFcMod(float x) {
     svfPreFcMod = x;
 }
 
-void Voice::updatePreSvfFc() {
-    float fcMod = std::min(svfPreFcBase, svfPreFcBase * std::fabs(static_cast<float>(sch.getRate())));
-    fcMod = svfPreFcBase + svfPreFcMod * (fcMod - svfPreFcBase);
-    svfPre.setFc(fcMod);
-}
+/// FIXME: needs to be per-sample
+//void Voice::updatePreSvfFc() {
+//    float fcMod = std::min(svfPreFcBase, svfPreFcBase * std::fabs(static_cast<float>(sch.getRate())));
+//    fcMod = svfPreFcBase + svfPreFcMod * (fcMod - svfPreFcBase);
+//    svfPre.setFc(fcMod);
+//}
 
 // output filter
 void Voice::setPostFilterFc(float x) {
@@ -232,7 +223,6 @@ void Voice::setPhaseQuant(float x) {
 void Voice::setPhaseOffset(float x) {
     phaseOffset = x * sampleRate;
 }
-
 
 phase_t Voice::getQuantPhase() {
     return quantPhase;

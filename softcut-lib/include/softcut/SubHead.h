@@ -3,85 +3,134 @@
 //
 
 /*
- * this class implements one half of a crossfaded read/write sch.
+ *  a Sub-Head performs direct access on a monophonic buffer.
+ *
+ * a SubHead maintains all necessary state variables for `peek` (read) and `poke` (write),
+ * including current crossfade status and position,
+ * but does not make decisions re: when or if to update them.
+ *
+ * a ReadWriteHead is responsible for coordinating the operations of multiple SubHeads.
+ * some buffered state variables of ReadWriteHead are used by SubHead;
+ * these are accessed by pointer from the SubHead.
  */
 
 #ifndef Softcut_SUBHEAD_H
 #define Softcut_SUBHEAD_H
 
+#include <array>
+
 #include "Resampler.h"
-#include "SoftClip.h"
 #include "Types.h"
-#include "FadeCurves.h"
 
 namespace softcut {
+    class ReadWriteHead;
 
-    typedef enum { Playing=0, Stopped=1, FadeIn=2, FadeOut=3 } State;
-    typedef enum { None, Stop, LoopPos, LoopNeg } Action ;
-
+    // FIXME: template would be nicer
+    //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
 
-    public:
-        void init(FadeCurves *fc);
-        void setSampleRate(float sr);
+        friend class TestBuffers;
 
-    private:
-        sample_t peek4();
-        unsigned int wrapBufIndex(int x);
+    public:
+        SubHead();
+
+    public:
+        // operational state and action descriptors
+        typedef enum {
+            Stopped = 0, FadeIn = 1, Playing = 2, FadeOut = 3
+        } OpState;
+        typedef enum {
+            None = 0,
+            StartFadeIn = 1, DoneFadeIn = 2,
+            LoopPositive = 3, LoopNegative = 4, FadeOutAndStop = 5,
+            DoneFadeOut = 6
+        } OpAction;
+
+        static constexpr size_t maxBlockSize = 1024;
+        template<typename T>
+        using StateBuffer = std::array<T, maxBlockSize>;
+        using frame_t = long int;
 
     protected:
-        static constexpr int blockSize = 2048;
-        sample_t peek();
-        //! poke
-        //! @param in: input value
-        //! @param pre: scaling level for previous buffer content
-        //! @param rec: scaling level for new content
-        void poke(sample_t in, float pre, float rec);
-        Action updatePhase(phase_t start, phase_t end, bool loop);
-        void updateFade(float inc);
+        ReadWriteHead *rwh{};
+        //--- buffered state variables, owned:
+        // current state of operation
+        StateBuffer<OpState> opState{Stopped};
+        // last action performed
+        StateBuffer<OpAction> opAction{None};
+        // current "logical" buffer position, in units of time
+        StateBuffer<phase_t> phase{0.0};
+        // last write index in buffer
+        StateBuffer<frame_t> wrIdx{0};
+        // current fade position in [0,1]
+        StateBuffer<float> fade{0.f};
+        // final preserve level, post-fade
+        StateBuffer<float> pre{0.f};
+        // final record level, post-fade
+        StateBuffer<float> rec{0.f};
 
-        // getters
-        phase_t phase() { return phase_; }
-        float fade() { return fade_; }
-        float trig() { return trig_; }
-        State state() { return state_; }
-        
-        // setters
-        void setState(State state);
-        void setPhase(phase_t phase);
+    protected:
+        void setPosition(frame_t i, phase_t position);
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // **NB** buffer size must be a power of two!!!!
-        void setBuffer(sample_t *buf, unsigned int frames);
-        void setRate(rate_t rate);
-        FadeCurves *fadeCurves;
+        // update phase, opState, and opAction
+        OpAction calcFramePosition(frame_t i_1, frame_t i);
+
+        // update frame level data
+        void calcFrameLevels(frame_t i);
+
+        // perform single frame write
+        void performFrameWrite(frame_t i_1, frame_t i, float input);
+
+        // read a single frame
+        float performFrameRead(frame_t i);
+
+        void setBuffer(float *b, frame_t fr) {
+            this->buf = b;
+            this->bufFrames = fr;
+        }
+
+#if 1
+        frame_t wrapBufIndex(frame_t x) {
+            assert(bufFrames != 0 && "buffer frame count must not be zero when running");
+            frame_t y = x;
+            // FIXME: should wrap to loop endpoints, maybe
+            while (y >= bufFrames) { y -= bufFrames; }
+            while (y < 0) { y += bufFrames; }
+            return y;
+        }
+#else // testing
+        frame_t wrapBufIndex(frame_t x) {
+            assert(bufFrames != 0 && "buffer frame count must not be zero when running");
+            frame_t y = x;
+            bool didWrap = false;
+            // FIXME: should wrap to loop endpoints, maybe
+            while (y >= bufFrames) {
+                y -= bufFrames;
+                didWrap = true;
+            }
+            while (y < 0) {
+                y += bufFrames;
+                didWrap = true;
+            }
+            if (didWrap) {
+                std::cerr << "wrapped " << x << " -> " << y << std::endl;
+            }
+            return y;
+        }
+#endif
+
+        void updateRate(frame_t idx, rate_t rate);
 
     private:
-        Resampler resamp_;
-        SoftClip clip_;
+        Resampler resamp;   // resampler
+        float *buf{};         // current audio buffer
+        frame_t bufFrames{};   // total buffer size
 
-        sample_t* buf_; // output buffer
-        unsigned int wrIdx_; // write index
-        unsigned int bufFrames_;
-        unsigned int bufMask_;
+        void init(ReadWriteHead *rwh);
 
-        State state_;
-        rate_t rate_;
-        int inc_dir_;
-        phase_t phase_;
-        float fade_;
-        float trig_; // output trigger value
-        bool active_;
-        int recOffset_;
-
-        float preFade_;
-        float recFade_;
-
-        void setRecOffsetSamples(int d);
+        void setRwh(ReadWriteHead *rwh) { this->rwh = rwh; }
     };
-
 }
 
-
-#endif //Softcut_SUBHEAD_H
+#endif // Softcut_SUBHEAD_H
