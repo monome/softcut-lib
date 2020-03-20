@@ -1,6 +1,5 @@
 from plots import *
 
-
 keys = [
     'output', 'frameInBlock',
     'phase0', 'phase1',

@@ -39,7 +39,6 @@ int ReadWriteHead::dequeuePositionChange(size_t fr) {
     }
     for (int headIdx = 0; headIdx < 2; ++headIdx) {
         if (head[headIdx].opState[fr] == SubHead::Stopped) {
-            std::cout << "dequeing position on head " << headIdx << std::endl;
             head[headIdx].setPosition(fr, enqueuedPosition);
             enqueuedPosition = -1.0;
             return headIdx;
@@ -109,8 +108,7 @@ void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
     unsigned int activeHeadBits;
     unsigned int active0;
     unsigned int active1;
-    // FIXME(?) these checks are for debugging,
-    /// probably not a net performance win
+    // FIXME: these checks are probably not a net win for performance
     for (size_t fr = 0; fr < numFrames; ++fr) {
         active0 = static_cast<unsigned int>(
                 (head[0].opState[fr] != SubHead::Stopped)

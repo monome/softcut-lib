@@ -23,7 +23,6 @@ namespace softcut {
 
     public:
         static void init() {
-//            os = &(std::cerr);
             frameOffset = 0;
         }
 

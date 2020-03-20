@@ -90,7 +90,7 @@ namespace softcut {
             this->bufFrames = fr;
         }
 
-#if 0 // testing
+#if 1
         frame_t wrapBufIndex(frame_t x) {
             assert(bufFrames != 0 && "buffer frame count must not be zero when running");
             frame_t y = x;
@@ -99,8 +99,7 @@ namespace softcut {
             while (y < 0) { y += bufFrames; }
             return y;
         }
-#else
-
+#else // testing
         frame_t wrapBufIndex(frame_t x) {
             assert(bufFrames != 0 && "buffer frame count must not be zero when running");
             frame_t y = x;
@@ -119,7 +118,6 @@ namespace softcut {
             }
             return y;
         }
-
 #endif
 
         void updateRate(frame_t idx, rate_t rate);
