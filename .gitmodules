@@ -1,3 +1,3 @@
 [submodule "lib/dsp-kit"]
-	path = lib/dsp-kit
+	path = softcut-lib/lib/dsp-kit/dsp-kit
 	url = http://github.com/monome/dsp-kit.git
