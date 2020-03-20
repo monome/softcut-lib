@@ -21,6 +21,7 @@
 
 #include "Resampler.h"
 #include "Types.h"
+
 namespace softcut {
     class ReadWriteHead;
 
@@ -28,6 +29,7 @@ namespace softcut {
     //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
+
         friend class TestBuffers;
 
     public:
@@ -39,10 +41,10 @@ namespace softcut {
             Stopped = 0, FadeIn = 1, Playing = 2, FadeOut = 3
         } OpState;
         typedef enum {
-            None=0,
-            StartFadeIn=1, DoneFadeIn=2,
-            LoopPositive=3, LoopNegative=4, FadeOutAndStop=5,
-            DoneFadeOut=6
+            None = 0,
+            StartFadeIn = 1, DoneFadeIn = 2,
+            LoopPositive = 3, LoopNegative = 4, FadeOutAndStop = 5,
+            DoneFadeOut = 6
         } OpAction;
 
         static constexpr size_t maxBlockSize = 1024;
@@ -88,6 +90,7 @@ namespace softcut {
             this->bufFrames = fr;
         }
 
+#if 0 // testing
         frame_t wrapBufIndex(frame_t x) {
             assert(bufFrames != 0 && "buffer frame count must not be zero when running");
             frame_t y = x;
@@ -96,6 +99,28 @@ namespace softcut {
             while (y < 0) { y += bufFrames; }
             return y;
         }
+#else
+
+        frame_t wrapBufIndex(frame_t x) {
+            assert(bufFrames != 0 && "buffer frame count must not be zero when running");
+            frame_t y = x;
+            bool didWrap = false;
+            // FIXME: should wrap to loop endpoints, maybe
+            while (y >= bufFrames) {
+                y -= bufFrames;
+                didWrap = true;
+            }
+            while (y < 0) {
+                y += bufFrames;
+                didWrap = true;
+            }
+            if (didWrap) {
+                std::cerr << "wrapped " << x << " -> " << y << std::endl;
+            }
+            return y;
+        }
+
+#endif
 
         void updateRate(frame_t idx, rate_t rate);
 

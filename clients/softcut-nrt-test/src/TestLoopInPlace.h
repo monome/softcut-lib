@@ -16,6 +16,7 @@ class TestLoopInPlace : public Test<numFrames, bufSize, blockSize> {
         float r = 1.1224620483094; // 2 semitones 12tet
         super::init();
         super::zeroInput();
+        super::loadInputSoundFile("single_chirp.wav");
         super::loadBufferSoundFile("octave-sines.wav");
         super::cut.setSampleRate(48000);
         super::cut.setRate(0,  r);
@@ -28,7 +29,7 @@ class TestLoopInPlace : public Test<numFrames, bufSize, blockSize> {
         super::cut.setRecFlag(0, true);
         super::cut.setRecLevel(0, 1.0);
         super::cut.setPreLevel(0, 0.75);
-        super::cut.setPosition(0.1, 0.0);
+        super::cut.setPosition(0.1, 0.1);
     }
 };
 

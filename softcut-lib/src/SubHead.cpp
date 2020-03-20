@@ -15,7 +15,7 @@ SubHead::SubHead() {}
 void SubHead::init(ReadWriteHead *parent) {
     rwh = parent;
     resamp.setPhase(0);
-    resamp.reset();
+    resamp.clearBuffers();
     frame_t w = rwh->recOffsetSamples;
     while (w < 0) { w += maxBlockSize; }
     while (w > maxBlockSize) { w -= maxBlockSize; }
@@ -47,8 +47,12 @@ void SubHead::setPosition(frame_t i, phase_t position) {
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
 
+    // resetting the resampler here seems correct:
+    // if rate !=1, then each process frame can produce a different number of write-frame advances.
+    // so to ensure each pass over a loop has identical write-frame history,
+    // resampler should always start at phase=0.
     resamp.setPhase(0);
-    resamp.reset();
+    resamp.clearBuffers();
 }
 
 SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
@@ -119,23 +123,27 @@ SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
     return opAction[i];
 }
 
+
 static float calcPreFadeCurve(float fade) {
-#if 1
     // time parameter is when to finish closing, when fading in
+    // FIXME: make this dynamic
     // static constexpr float t = 0;
-   // static constexpr float t = 1.f/64;
     static constexpr float t = 1.f/32;
+   // static constexpr float t = 1.f/64;
     //static constexpr float t = 1.f/8;
     //static constexpr float t = 1.f;
-    if (fade > t) { return 0.f; }
-    else { return Fades::fastCosFadeOut(fade/t); }
-#else
-    return 0.f;
-#endif
+    if (fade > t) {
+        return 0.f;
+    }
+    else {
+
+        return Fades::fastCosFadeOut(fade/t);
+    }
 }
 
 static float calcRecFadeCurve(float fade) {
     // time parameter is delay before opening, when fading in
+    // FIXME: make this dynamic
     //static constexpr float t = 0.f;
     //static constexpr float t = 0.0625f;
     //static constexpr float t = 0.125f;
@@ -159,16 +167,9 @@ void SubHead::calcFrameLevels(frame_t i) {
             break;
         case FadeIn:
         case FadeOut:
-#if 0 // use FadeCurves
-            pre[i] = rwh->pre[i] + (1.f - pre[i]) * rwh->fadeCurves->getPreFadeValue(fade[i]);
-    rec[i] = rwh->rec[i] * rwh->fadeCurves->getRecFadeValue(fade[i]);
-#else // linear
             // TODO: apply rate==0 deadzone for rec level
-//            pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * (1.f - fade[i]));
-//            rec[i] = rwh->rec[i] * fade[i];
             pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * calcPreFadeCurve(fade[i]));
             rec[i] = rwh->rec[i] * calcRecFadeCurve(fade[i]);
-#endif
     }
 }
 
@@ -181,12 +182,6 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         return;
     }
 
-    // debug
-    if (i == 0) {
-        int dum = 0;
-        ++dum;
-    }
-
     sample_t y;
     frame_t w;
 
@@ -194,7 +189,7 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
 
     if (opAction[i] == OpAction::StartFadeIn) {
         // if we start a fadein on this frame, previous write index is not meaningful;
-        // assume current write index has already been updated
+        // assume current write index has already been updated (in setPosition())
         w = wrIdx[i];
     } else {
         w = wrIdx[i_1]; // by default, propagate last write position
@@ -209,18 +204,10 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         buf[w] = y;
     }
     wrIdx[i] = w;
-
-
-    // debug
-    if (i == 0) {
-        int dum = 0;
-        ++dum;
-    }
-
 }
 
 float SubHead::performFrameRead(frame_t i) {
-    frame_t phase1 = static_cast<frame_t>(phase[i]);
+    auto phase1 = static_cast<frame_t>(phase[i]);
     frame_t phase0 = phase1 - 1;
     frame_t phase2 = phase1 + 1;
     frame_t phase3 = phase1 + 2;

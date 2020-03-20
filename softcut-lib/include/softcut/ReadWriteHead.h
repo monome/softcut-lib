@@ -31,6 +31,7 @@ namespace softcut {
 
         void enqueuePositionChange(phase_t pos);
         int dequeuePositionChange(size_t fr);
+        void checkPositionChange(frame_t fr_1, frame_t fr);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // we don't actually want equal power since we are summing!

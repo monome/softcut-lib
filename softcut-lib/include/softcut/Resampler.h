@@ -54,14 +54,13 @@ namespace softcut {
         }
         // void setBuffer(float *buf, int frames);
         void setPhase(phase_t phase) {
-            std::cerr << "resampler setting phase" << std::endl;
             phase_ = phase;
         }
         const sample_t* output(){
             return static_cast<const sample_t*>(outBuf_);
         }
 
-        void reset() {
+        void clearBuffers() {
 
 #ifdef RESAMPLER_INTERPOLATE_LINEAR
             x_ = 0.f;

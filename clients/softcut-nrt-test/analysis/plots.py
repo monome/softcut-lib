@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 def load_file(key):
     return np.load('../output/{}.npy'.format(key))
 
-def plot_keys(keys, M, N):
+def plot_keys(keys, M, N, output_name="output.png"):
     nkeys = len(keys)
     fix, ax = plt.subplots(nkeys, 1, figsize=(16, nkeys * 4))
 
@@ -25,7 +25,7 @@ def plot_keys(keys, M, N):
             ax[i].set_title('{} [{}, {}]'.format(k, min, max))
             ax[i].plot(arr[M:N], marker='.', linewidth=1, markersize=2)
             data[k] = arr
-    plt.savefig('../output/charts.png')
+    plt.savefig('../output/{}'.format(output_name))
     # plt.show()
 
     return data

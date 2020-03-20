@@ -1,9 +1,5 @@
 from plots import *
 
-# start point in samples
-M = 17065
-N = M + 72
-
 
 keys = [
     'output', 'frameInBlock',
@@ -14,8 +10,13 @@ keys = [
     ['fade0', 'fade1'],
     ['state0', 'state1'],
     ['action0', 'action1']
-#    'fade0', 'rec0', 'pre0', 'wrIdx0', 'state0',
-#    'fade1', 'rec1', 'pre1', 'wrIdx1', 'state1',
 ]
-
-data = plot_keys(keys, M, N)
+M = 17065
+N = M + 72
+data = plot_keys(keys, M, N, "loop_1.png")
+M = 34160
+N = M + 72
+data = plot_keys(keys, M, N, "loop_2.png")
+M = 51278
+N = M + 72
+data = plot_keys(keys, M, N, "loop_3.png")
