@@ -88,31 +88,51 @@ namespace softcut {
         }
 
         void setPreFilterFc(int voice, float x) {
+            (void) voice;
+            (void) x;
             scv[voice].setPreFilterFc(x);
         }
 
         void setPreFilterRq(int voice, float x) {
-            scv[voice].setPreFilterRq(x);
+            (void) voice;
+            (void) x;
+            // FIXME: disabled for now
+            // scv[voice].setPreFilterRq(x);
         }
 
         void setPreFilterLp(int voice, float x) {
-            scv[voice].setPreFilterLp(x);
+            (void) voice;
+            (void) x;
+            // FIXME: disabled for now
+            // scv[voice].setPreFilterLp(x);
         }
 
         void setPreFilterHp(int voice, float x) {
-            scv[voice].setPreFilterHp(x);
+            (void) voice;
+            (void) x;
+            // FIXME: disabled for now
+            // scv[voice].setPreFilterHp(x);
         }
 
         void setPreFilterBp(int voice, float x) {
-            scv[voice].setPreFilterBp(x);
+            (void) voice;
+            (void) x;
+            // FIXME: disabled for now
+            // scv[voice].setPreFilterBp(x);
         }
 
         void setPreFilterBr(int voice, float x) {
-            scv[voice].setPreFilterBr(x);
+            (void) voice;
+            (void) x;
+            // FIXME: disabled for now
+            // scv[voice].setPreFilterBr(x);
         }
 
         void setPreFilterDry(int voice, float x) {
-            scv[voice].setPreFilterDry(x);
+            (void) voice;
+            (void) x;
+            // FIXME: disabled for now
+            // scv[voice].setPreFilterDry(x);
         }
 
         void setPreFilterFcMod(int voice, float x) {
@@ -217,8 +237,15 @@ void setRecFadeShape(float x) {
             scv[follow].setPosition(scv[lead].getPos() + offset);
         }
 
-        void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
-            scv[id].setBuffer(buf, bufFrames);
+        void setVoiceBuffer(int i, float *buf, size_t bufFrames) {
+            scv[i].setBuffer(buf, bufFrames);
+        }
+
+        void setPreFilterQ(int i, float x) {
+            scv[i].setPreFilterQ(x);
+        }
+        void setPreFilterEnabled(int i, bool x) {
+            scv[i].setPreFilterEnabled(x);
         }
 
     private:

@@ -90,36 +90,13 @@ namespace softcut {
             this->bufFrames = fr;
         }
 
-#if 1
         frame_t wrapBufIndex(frame_t x) {
             assert(bufFrames != 0 && "buffer frame count must not be zero when running");
             frame_t y = x;
-            // FIXME: should wrap to loop endpoints, maybe
             while (y >= bufFrames) { y -= bufFrames; }
             while (y < 0) { y += bufFrames; }
             return y;
         }
-#else // testing
-        frame_t wrapBufIndex(frame_t x) {
-            assert(bufFrames != 0 && "buffer frame count must not be zero when running");
-            frame_t y = x;
-            bool didWrap = false;
-            // FIXME: should wrap to loop endpoints, maybe
-            while (y >= bufFrames) {
-                y -= bufFrames;
-                didWrap = true;
-            }
-            while (y < 0) {
-                y += bufFrames;
-                didWrap = true;
-            }
-            if (didWrap) {
-                std::cerr << "wrapped " << x << " -> " << y << std::endl;
-            }
-            return y;
-        }
-#endif
-
         void updateRate(frame_t idx, rate_t rate);
 
     private:

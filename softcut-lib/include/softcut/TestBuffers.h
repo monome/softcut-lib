@@ -65,7 +65,7 @@ namespace softcut {
 
         template<int N>
         void update(Softcut <N> &cut, int voiceId, size_t numFrames) {
-            update(cut.scv[voiceId].sch, numFrames);
+            update(cut.scv[voiceId].rwh, numFrames);
         }
 
         void update(const ReadWriteHead &rwh, size_t numFrames) {
