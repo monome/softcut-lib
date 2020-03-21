@@ -200,7 +200,6 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         /// use e.g. ReadWriteHead::wrapFrameToLoopfade()..
         w = wrapBufIndex(w + rwh->dir[i]);
         y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
-        // TODO: further processing (lowpass, clip)
         buf[w] = y;
     }
     wrIdx[i] = w;

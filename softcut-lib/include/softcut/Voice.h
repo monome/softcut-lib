@@ -8,8 +8,10 @@
 #include <array>
 #include <atomic>
 
+#include "dsp-kit/LadderLpf.hpp"
+#include "dsp-kit/Svf.hpp"
+
 #include "ReadWriteHead.h"
-#include "Svf.h"
 #include "Utilities.h"
 
 namespace softcut {
@@ -44,19 +46,21 @@ namespace softcut {
 
         void setPreFilterFc(float);
 
-        void setPreFilterRq(float);
+//        void setPreFilterRq(float);
+//
+//        void setPreFilterLp(float);
+//
+//        void setPreFilterHp(float);
+//
+//        void setPreFilterBp(float);
+//
+//        void setPreFilterBr(float);
+//
+//        void setPreFilterDry(float);
 
-        void setPreFilterLp(float);
-
-        void setPreFilterHp(float);
-
-        void setPreFilterBp(float);
-
-        void setPreFilterBr(float);
-
-        void setPreFilterDry(float);
-
+        void setPreFilterEnabled(bool);
         void setPreFilterFcMod(float x);
+        void setPreFilterQ(float x);
 
         void setPostFilterFc(float);
 
@@ -98,21 +102,23 @@ namespace softcut {
         void reset();
 
     private:
-        void updatePreSvfFc();
-
+        void processInputFilter(float* src, float *dst, int numFrames);
         void updateQuantPhase();
 
     private:
-        float *buf;
-        int bufFrames;
-        float sampleRate;
+        float *buf{};
+        int bufFrames{};
+        float sampleRate{};
 
-        // xfaded read/write head
-        ReadWriteHead sch;
-        // input filter
-        Svf svfPre;
-        // output filter
-        Svf svfPost;
+        // crossfaded read/write head
+        ReadWriteHead rwh;
+
+        // pre-write filter
+        dspkit::LadderLpf<float> preFilter{};
+        std::array<float, ReadWriteHead::maxBlockSize>  preFilterInputBuf{};
+        // post-read filter
+        dspkit::Svf postFilter;
+
         // rate ramp
         LogRamp rateRamp;
         // pre-level ramp
@@ -120,27 +126,25 @@ namespace softcut {
         // record-level ramp
         LogRamp recRamp;
 
-
         // default frequency for SVF
         // reduced automatically when setting rate
-        float svfPreFcBase;
+        float preFilterFcBase;
         // the amount by which SVF frequency is modulated by rate
-        float svfPreFcMod = 1.0;
-        float svfPreDryLevel = 1.0;
-        float svfPostDryLevel = 1.0;
-        // phase quantization unit, should be in [0,1]
-        phase_t phaseQuant;
+        float preFilterFcMod = 1.0;
+        // dry level at post-playback filtering stage
+        float postFilterDryLevel = 1.0;
+        // phase quantization unit, in fractional frames
+        phase_t phaseQuant{};
         // phase offset in sec
         float phaseOffset = 0;
         // quantized phase
-        std::atomic<phase_t> quantPhase;
+        std::atomic<phase_t> quantPhase{};
 
 
     private:
-
-        bool playFlag;
-        bool recFlag;
-
+        bool playEnabled{};
+        bool recEnabled{};
+        bool preFilterEnabled;
     };
 }
 

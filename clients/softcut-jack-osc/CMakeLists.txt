@@ -14,6 +14,7 @@ set(SRC src/main.cpp
 add_executable(softcut_jack_osc ${SRC})
 
 include_directories(../../softcut-lib/include)
+include_directories(../../softcut-lib/lib)
 
 target_link_libraries(softcut_jack_osc softcut jack lo pthread sndfile)
 

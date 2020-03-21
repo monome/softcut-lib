@@ -17,7 +17,6 @@ namespace softcut {
         friend class SubHead;
         friend class TestBuffers;
 
-        static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
         template<typename T>
         using StateBuffer = SubHead::StateBuffer<T>;
         using frame_t = SubHead::frame_t;
@@ -108,6 +107,10 @@ namespace softcut {
         phase_t wrapPhaseToLoop(phase_t p);
 
         frame_t wrapFrameToLoopFade(frame_t w);
+
+        static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
+
+        float getRateBuffer(size_t i);
     };
 
 

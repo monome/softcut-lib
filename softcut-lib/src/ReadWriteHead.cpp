@@ -165,7 +165,8 @@ void ReadWriteHead::setLoopEndSeconds(float x) {
 void ReadWriteHead::setFadeTime(float secs) {
     this->fadeInc = 1.f / (secs * sr);
     // TODO: something like,
-//    fadeOutFrameBeforeLoop = start - (fadeTime * r)
+    /// fadeOutFrameBeforeLoop = start - (fadeTime * r)
+    /// ... plus record offset, hm..
 }
 
 void ReadWriteHead::setLoopFlag(bool val) {
@@ -208,5 +209,9 @@ phase_t ReadWriteHead::wrapPhaseToLoop(phase_t p) {
 ReadWriteHead::frame_t ReadWriteHead::wrapFrameToLoopFade(frame_t w) {
     //frame_t max -
     return 0;
+}
+
+float ReadWriteHead::getRateBuffer(size_t i) {
+    return rate[i];
 }
 
