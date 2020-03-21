@@ -13,13 +13,17 @@
 #include "softcut/TestBuffers.h"
 #include "Test.h"
 #include "TestLoopInPlace.h"
+#include "TestRateIncreasing.h"
+#include "TestRateSignChange.h"
 
 
 int main(int argc, const char **argv) {
     (void) argc;
     (void) argv;
 
-    TestLoopInPlace test;
+//    TestLoopInPlace test;
+//    TestRateIncreasing test;
+    TestRateSignChange test;
     test.run();
 
 }

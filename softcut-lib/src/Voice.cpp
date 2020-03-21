@@ -43,9 +43,8 @@ void Voice::processInputFilter(float *src, float *dst, int numFrames) {
     float fc, fcMod;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         fcMod = std::fabs(rwh.getRateBuffer(fr));
+        // FIXME: refactor
         fc = (preFilterFcMod*(preFilterFcBase*fcMod)) + ((1.f-preFilterFcMod)*preFilterFcBase);
-        //fc = preFilterFcBase + preFilterFcMod*(preFilterFcBase*fcMod - preFilterFcBase);
-        //fc = preFilterFcBase + preFilterFcMod*(preFilterFcBase*(fcMod - 1));
 
         preFilter.setCutoff(std::fmax(0.f, std::fmin(16000.f, fc)));
         dst[fr] = preFilter.processSample(src[fr]);
@@ -100,6 +99,7 @@ void Voice::setSampleRate(float hz) {
 }
 
 void Voice::setRate(float rate) {
+    std::cout << "set rate target " << rate << std::endl;
     rateRamp.setTarget(rate);
     // FIXME: fix pre-filter smoothing
     //updatePreSvfFc();
@@ -226,6 +226,8 @@ void Voice::setRecPreSlewTime(float d) {
 }
 
 void Voice::setRateSlewTime(float d) {
+
+    std::cout << "set rate time " << d << std::endl;
     rateRamp.setTime(d);
 }
 

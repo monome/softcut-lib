@@ -18,7 +18,7 @@
 #define Softcut_SUBHEAD_H
 
 #include <array>
-
+#include <iostream>
 #include "Resampler.h"
 #include "Types.h"
 
@@ -85,19 +85,9 @@ namespace softcut {
         // read a single frame
         float performFrameRead(frame_t i);
 
-        void setBuffer(float *b, frame_t fr) {
-            this->buf = b;
-            this->bufFrames = fr;
-        }
+        void setBuffer(float *b, frame_t fr);
 
-        frame_t wrapBufIndex(frame_t x) {
-            assert(bufFrames != 0 && "buffer frame count must not be zero when running");
-            frame_t y = x;
-            while (y >= bufFrames) { y -= bufFrames; }
-            while (y < 0) { y += bufFrames; }
-            return y;
-        }
-        void updateRate(frame_t idx, rate_t rate);
+        frame_t wrapBufIndex(frame_t x);
 
     private:
         Resampler resamp;   // resampler

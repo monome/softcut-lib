@@ -30,10 +30,6 @@ void SubHead::init(ReadWriteHead *parent) {
     }
 }
 
-void SubHead::updateRate(frame_t idx, rate_t rate) {
-    resamp.setRate(std::fabs(rate));
-}
-
 void SubHead::setPosition(frame_t i, phase_t position) {
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
@@ -56,8 +52,6 @@ void SubHead::setPosition(frame_t i, phase_t position) {
 }
 
 SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
-    updateRate(i, rwh->rate[i]);
-
     switch (opState[i_1]) {
         case FadeIn:
             phase[i] = phase[i_1] + rwh->rate[i];
@@ -174,6 +168,7 @@ void SubHead::calcFrameLevels(frame_t i) {
 }
 
 void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
+    resamp.setRate(std::fabs(rwh->rate[i]));
     // push to resampler, even if stopped; avoids possible glitch when restarting
     int nsubframes = resamp.processFrame(input);
 
@@ -196,8 +191,6 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     }
 
     for (int sfr = 0; sfr < nsubframes; ++sfr) {
-        // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
-        /// use e.g. ReadWriteHead::wrapFrameToLoopfade()..
         w = wrapBufIndex(w + rwh->dir[i]);
         y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
         buf[w] = y;
@@ -218,4 +211,22 @@ float SubHead::performFrameRead(frame_t i) {
 
     auto x = static_cast<float>(phase[i] - (float) phase1);
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
+}
+
+SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
+    assert(bufFrames != 0 && "buffer frame count must not be zero when running");
+    frame_t y = x;
+    while (y >= bufFrames) { y -= bufFrames;
+        std::cout << "wrapped high: " << x << " -> " << y << std::endl;
+    }
+    while (y < 0) { y += bufFrames;
+        std::cout << "wrapped low: " << x << " -> " << y << std::endl;
+    }
+    return y;
+}
+
+
+void SubHead::setBuffer(float *b, frame_t fr) {
+    this->buf = b;
+    this->bufFrames = fr;
 }
