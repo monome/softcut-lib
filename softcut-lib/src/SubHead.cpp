@@ -37,18 +37,19 @@ void SubHead::setPosition(frame_t i, phase_t position) {
     }
     phase_t p = rwh->wrapPhaseToLoop(position);
     phase[i] = p;
-    // FIXME: presently, wridx is not wrapped to loop position, but to buffer size...
-    /// use ReadWriteHead::wrapFrameToLoopfade()..
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(p)  + rwh->dir[i] * rwh->recOffsetSamples);
+    syncWrIdx(i);
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
-
     // resetting the resampler here seems correct:
     // if rate !=1, then each process frame can produce a different number of write-frame advances.
     // so to ensure each pass over a loop has identical write-frame history,
-    // resampler should always start at phase=0.
+    // resampler should always start each loop with internal phase=0
     resamp.setPhase(0);
     resamp.clearBuffers();
+}
+
+void SubHead::syncWrIdx(frame_t i){
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i])  + rwh->dir[i] * rwh->recOffsetSamples);
 }
 
 SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
@@ -177,7 +178,6 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         // if we're stopped, don't touch the buffer at all.
         return;
     }
-
     sample_t y;
     frame_t w;
 
@@ -186,10 +186,18 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     if (opAction[i] == OpAction::StartFadeIn) {
         // if we start a fadein on this frame, previous write index is not meaningful;
         // assume current write index has already been updated (in setPosition())
-        w = wrIdx[i];
+        ;;
     } else {
-        w = wrIdx[i_1]; // by default, propagate last write position
+        // otherwise, propagate last write position
+        wrIdx[i] = wrIdx[i_1];
     }
+
+    if (rwh->dir[i] != rwh->dir[i_1]) {
+        // if we are flipping rate sign, we need to re-apply the record offset!
+        syncWrIdx(i);
+    }
+
+    w = wrIdx[i];
 
     for (int sfr = 0; sfr < nsubframes; ++sfr) {
         w = wrapBufIndex(w + rwh->dir[i]);
