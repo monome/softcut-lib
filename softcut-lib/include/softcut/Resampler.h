@@ -5,9 +5,10 @@
 #ifndef SoftcutHEAD_RESAMPLER_H
 #define SoftcutHEAD_RESAMPLER_H
 
-#include <cassert>
+#include <iostream>
 #include <cmath>
 
+#include <boost/assert.hpp>
 #include "Types.h"
 #include "Interpolate.h"
 
@@ -52,14 +53,12 @@ namespace softcut {
             phi_ = 1.0 / r;
         }
         // void setBuffer(float *buf, int frames);
-        void setPhase(phase_t phase) {
-            phase_ = phase;
-        }
+        void setPhase(phase_t phase) { phase_ = phase; }
         const sample_t* output(){
             return static_cast<const sample_t*>(outBuf_);
         }
 
-        void clearBuffers() {
+        void reset() {
 
 #ifdef RESAMPLER_INTERPOLATE_LINEAR
             x_ = 0.f;
@@ -157,7 +156,7 @@ namespace softcut {
             // we need to produce a fractional interpolation coefficient,
             // by "normalizing" to the output phase period
             phase_t p = phase_ + rate_;
-            assert(p >= 0.0 && "resampler encountered negative phase");
+            BOOST_ASSERT_MSG(p >= 0.0, "resampler encountered negative phase");
             auto nf = static_cast<unsigned int>(p);
             if (nf > 0) {
                 phase_t f = 1.0 - phase_;

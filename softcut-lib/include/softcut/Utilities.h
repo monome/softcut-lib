@@ -9,8 +9,6 @@
 #include <math.h>
 #include <cmath>
 
-#include <limits>
-
 namespace softcut {
 
 #ifndef BUILD_SC_UGEN // supercollider headers define these themselves
@@ -169,10 +167,6 @@ namespace softcut {
         // update input only
         void setTarget(float x) {
             x0 = x;
-            // special case!
-            if (b < std::numeric_limits<float>::epsilon()) {
-                y0 =  x;
-            }
         }
 
         // update output only

@@ -27,13 +27,13 @@ namespace softcut_jack_osc {
             SET_LEVEL_CUT_CUT,
 
             // params
-            SET_CUT_REC_ENABLED,
-            SET_CUT_PLAY_ENABLED,
+            SET_CUT_REC_FLAG,
+            SET_CUT_PLAY_FLAG,
 
             SET_CUT_RATE,
             SET_CUT_LOOP_START,
             SET_CUT_LOOP_END,
-            SET_CUT_LOOP_ENABLED,
+            SET_CUT_LOOP_FLAG,
             SET_CUT_POSITION,
 
             SET_CUT_FADE_TIME,
@@ -43,14 +43,12 @@ namespace softcut_jack_osc {
 
             SET_CUT_PRE_FILTER_FC,
             SET_CUT_PRE_FILTER_FC_MOD,
-            SET_CUT_PRE_FILTER_Q,
-            SET_CUT_PRE_FILTER_ENABLED,
-//            SET_CUT_PRE_FILTER_RQ,
-//            SET_CUT_PRE_FILTER_LP,
-//            SET_CUT_PRE_FILTER_HP,
-//            SET_CUT_PRE_FILTER_BP,
-//            SET_CUT_PRE_FILTER_BR,
-//            SET_CUT_PRE_FILTER_DRY,
+            SET_CUT_PRE_FILTER_RQ,
+            SET_CUT_PRE_FILTER_LP,
+            SET_CUT_PRE_FILTER_HP,
+            SET_CUT_PRE_FILTER_BP,
+            SET_CUT_PRE_FILTER_BR,
+            SET_CUT_PRE_FILTER_DRY,
 
 	        SET_CUT_POST_FILTER_FC,
 	        SET_CUT_POST_FILTER_RQ,

@@ -13,18 +13,8 @@
 namespace softcut {
     template<int numVoices>
     class Softcut {
-    protected:
-        friend class TestBuffers;
 
     public:
-
-//        Softcut(sample_t **buffers, size_t numBuffers, size_t numFrames) {
-//
-//            for (int v = 0; v < numVoices; ++v) {
-//                scv[v].setBuffer(buffers[v % numBuffers], numFrames);
-//            };
-//            this->reset();
-//        }
 
         Softcut() {
             this->reset();
@@ -36,8 +26,8 @@ namespace softcut {
             };
         }
 
-        // assumption: v is in range
-        void processBlock(int v, float *in, float *out, int numFrames) {
+        // assumption: channel count is equal to voice count!
+        void processBlock(int v, const float *in, float *out, int numFrames) {
             scv[v].processBlockMono(in, out, numFrames);
         }
 
@@ -83,56 +73,36 @@ namespace softcut {
             scv[voice].setPlayFlag(val);
         }
 
-        void setPosition(int voice, float sec) {
-            scv[voice].setPosition(sec);
+        void cutToPos(int voice, float sec) {
+            scv[voice].cutToPos(sec);
         }
 
         void setPreFilterFc(int voice, float x) {
-            (void) voice;
-            (void) x;
             scv[voice].setPreFilterFc(x);
         }
 
         void setPreFilterRq(int voice, float x) {
-            (void) voice;
-            (void) x;
-            // FIXME: disabled for now
-            // scv[voice].setPreFilterRq(x);
+            scv[voice].setPreFilterRq(x);
         }
 
         void setPreFilterLp(int voice, float x) {
-            (void) voice;
-            (void) x;
-            // FIXME: disabled for now
-            // scv[voice].setPreFilterLp(x);
+            scv[voice].setPreFilterLp(x);
         }
 
         void setPreFilterHp(int voice, float x) {
-            (void) voice;
-            (void) x;
-            // FIXME: disabled for now
-            // scv[voice].setPreFilterHp(x);
+            scv[voice].setPreFilterHp(x);
         }
 
         void setPreFilterBp(int voice, float x) {
-            (void) voice;
-            (void) x;
-            // FIXME: disabled for now
-            // scv[voice].setPreFilterBp(x);
+            scv[voice].setPreFilterBp(x);
         }
 
         void setPreFilterBr(int voice, float x) {
-            (void) voice;
-            (void) x;
-            // FIXME: disabled for now
-            // scv[voice].setPreFilterBr(x);
+            scv[voice].setPreFilterBr(x);
         }
 
         void setPreFilterDry(int voice, float x) {
-            (void) voice;
-            (void) x;
-            // FIXME: disabled for now
-            // scv[voice].setPreFilterDry(x);
+            scv[voice].setPreFilterDry(x);
         }
 
         void setPreFilterFcMod(int voice, float x) {
@@ -234,18 +204,11 @@ void setRecFadeShape(float x) {
         }
 
         void syncVoice(int follow, int lead, float offset) {
-            scv[follow].setPosition(scv[lead].getPos() + offset);
+            scv[follow].cutToPos(scv[lead].getPos() + offset);
         }
 
-        void setVoiceBuffer(int i, float *buf, size_t bufFrames) {
-            scv[i].setBuffer(buf, bufFrames);
-        }
-
-        void setPreFilterQ(int i, float x) {
-            scv[i].setPreFilterQ(x);
-        }
-        void setPreFilterEnabled(int i, bool x) {
-            scv[i].setPreFilterEnabled(x);
+        void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
+            scv[id].setBuffer(buf, bufFrames);
         }
 
     private:
