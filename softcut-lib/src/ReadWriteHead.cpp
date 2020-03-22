@@ -190,7 +190,7 @@ void ReadWriteHead::setPosition(float seconds) {
     enqueuePositionChange(seconds * sr);
 }
 
-phase_t ReadWriteHead::getActivePhase() {
+phase_t ReadWriteHead::getActivePhase() const {
     // TODO
     return 0;
 }
@@ -206,10 +206,10 @@ phase_t ReadWriteHead::wrapPhaseToLoop(phase_t p) {
     }
 }
 
-ReadWriteHead::frame_t ReadWriteHead::wrapFrameToLoopFade(frame_t w) {
-    //frame_t max -
-    return 0;
-}
+//ReadWriteHead::frame_t ReadWriteHead::wrapFrameToLoopFade(frame_t w) {
+//    //frame_t max = ...
+//    return 0;
+//}
 
 float ReadWriteHead::getRateBuffer(size_t i) {
     return rate[i];

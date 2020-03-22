@@ -93,11 +93,15 @@ namespace softcut {
 
         phase_t getQuantPhase();
 
-        bool getPlayFlag();
+        bool getPlayFlag() const;
 
-        bool getRecFlag();
+        bool getRecFlag() const;
 
-        float getPos();
+        float getPos() const;
+
+        void setDuckTarget(Voice* v)  {
+            duckTarget = v;
+        }
 
         void reset();
 
@@ -145,6 +149,13 @@ namespace softcut {
         bool playEnabled{};
         bool recEnabled{};
         bool preFilterEnabled;
+
+        const Voice *duckTarget{nullptr};
+        const Voice *followTarget{nullptr};
+
+        void applyDucking(float *out, size_t numFrames);
+
+        static float calcPhaseDuck(double a, double b, float rec, float pre);
     };
 }
 

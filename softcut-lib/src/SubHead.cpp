@@ -149,7 +149,6 @@ static float calcRecFadeCurve(float fade) {
     else { return Fades::raisedCosFadeIn((fade-t)/nt); }
 }
 
-
 void SubHead::calcFrameLevels(frame_t i) {
     switch (opState[i]) {
         case Stopped:
@@ -173,16 +172,10 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     resamp.setRate(std::fabs(rwh->rate[i]));
     // push to resampler, even if stopped; avoids possible glitch when restarting
     int nsubframes = resamp.processFrame(input);
-
     if (opState[i] == Stopped) {
         // if we're stopped, don't touch the buffer at all.
         return;
     }
-    sample_t y;
-    frame_t w;
-
-    const sample_t *src = resamp.output();
-
     if (opAction[i] == OpAction::StartFadeIn) {
         // if we start a fadein on this frame, previous write index is not meaningful;
         // assume current write index has already been updated (in setPosition())
@@ -191,15 +184,16 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         // otherwise, propagate last write position
         wrIdx[i] = wrIdx[i_1];
     }
-
     if (rwh->dir[i] != rwh->dir[i_1]) {
-        // if we are flipping rate sign, we need to re-apply the record offset!
+        // if rate sign was just flipped, we need to re-apply the record offset!
         syncWrIdx(i);
     }
-
-    w = wrIdx[i];
-
+    const sample_t *src = resamp.output();
+    frame_t w = wrIdx[i];
+    sample_t y; // output value
     for (int sfr = 0; sfr < nsubframes; ++sfr) {
+        // for each frame produced by the resampler for this input frame,
+        // mix, store, and advance the write index
         w = wrapBufIndex(w + rwh->dir[i]);
         y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
         buf[w] = y;
@@ -225,11 +219,13 @@ float SubHead::performFrameRead(frame_t i) {
 SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
     assert(bufFrames != 0 && "buffer frame count must not be zero when running");
     frame_t y = x;
-    while (y >= bufFrames) { y -= bufFrames;
-        std::cout << "wrapped high: " << x << " -> " << y << std::endl;
+    while (y >= bufFrames) {
+        y -= bufFrames;
+        //std::cout << "wrapped high: " << x << " -> " << y << std::endl;
     }
-    while (y < 0) { y += bufFrames;
-        std::cout << "wrapped low: " << x << " -> " << y << std::endl;
+    while (y < 0) {
+        y += bufFrames;
+        //std::cout << "wrapped low: " << x << " -> " << y << std::endl;
     }
     return y;
 }
