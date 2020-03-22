@@ -158,12 +158,13 @@ void SubHead::calcFrameLevels(frame_t i) {
         case Playing:
             pre[i] = rwh->pre[i];
             rec[i] = rwh->rec[i];
+            applyRateDeadzone(i);
             break;
         case FadeIn:
         case FadeOut:
-            // TODO: apply rate==0 deadzone for rec level
             pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * calcPreFadeCurve(fade[i]));
             rec[i] = rwh->rec[i] * calcRecFadeCurve(fade[i]);
+            applyRateDeadzone(i);
     }
 }
 
@@ -229,4 +230,15 @@ SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
 void SubHead::setBuffer(float *b, frame_t fr) {
     this->buf = b;
     this->bufFrames = fr;
+}
+
+void SubHead::applyRateDeadzone(SubHead::frame_t i) {
+    static constexpr float deadzoneBound = 1.f/32.f;
+    static constexpr float deadzoneBound_2 = 1.f/64.f;
+    const float r = fabs(rwh->rate[i]);
+    if (r > deadzoneBound) { return; }
+    if (r < deadzoneBound_2) { rec[i] = 0.f; return; }
+    const float f = (r - deadzoneBound_2) / deadzoneBound_2;
+    const float a = Fades::raisedCosFadeIn(f);
+    rec[i] *= a;
 }

@@ -38,12 +38,20 @@ keys = [
     'output',
     'frameInBlock',
     'rate',
+    'rec0',
     'phase0', 'phase1',
-    'wrIdx0',
-    'wrIdx1',
+    # 'wrIdx0',
+    # 'wrIdx1',
     ['fade0', 'fade1']
 ]
+#
+# M = 20000
+# N = 25000
 
-M = 20000
-N = 25000
+
+# M = 00000
+# N = 25000
+
+M = 9000
+N = 11000
 data = plot_keys(keys, M, N, "plots.png")
