@@ -97,6 +97,8 @@ namespace softcut {
         void init(ReadWriteHead *rwh);
 
         void setRwh(ReadWriteHead *rwh) { this->rwh = rwh; }
+
+        void applyRateDeadzone(frame_t i);
     };
 }
 
