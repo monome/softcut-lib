@@ -100,7 +100,7 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
         case Commands::Id::SET_CUT_LOOP_END:
             cut.setLoopEnd(p->idx_0, p->value);
             break;
-        case Commands::Id::SET_CUT_LOOP_FLAG:
+        case Commands::Id::SET_CUT_LOOP_ENABLED:
             cut.setLoopFlag(p->idx_0, p->value > 0.f);
             break;
         case Commands::Id::SET_CUT_FADE_TIME:
@@ -112,17 +112,17 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
         case Commands::Id::SET_CUT_PRE_LEVEL:
             cut.setPreLevel(p->idx_0, p->value);
             break;
-        case Commands::Id::SET_CUT_REC_FLAG:
+        case Commands::Id::SET_CUT_REC_ENABLED:
             cut.setRecFlag(p->idx_0, p->value > 0.f);
             break;
-        case Commands::Id::SET_CUT_PLAY_FLAG:
+        case Commands::Id::SET_CUT_PLAY_ENABLED:
             cut.setPlayFlag(p->idx_0, p->value > 0.f);
             break;
         case Commands::Id::SET_CUT_REC_OFFSET:
             cut.setRecOffset(p->idx_0, p->value);
             break;
         case Commands::Id::SET_CUT_POSITION:
-            cut.cutToPos(p->idx_0, p->value);
+            cut.setPosition(p->idx_0, p->value);
             break;
             // input filter
         case Commands::Id::SET_CUT_PRE_FILTER_FC:
@@ -131,23 +131,11 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
         case Commands::Id::SET_CUT_PRE_FILTER_FC_MOD:
             cut.setPreFilterFcMod(p->idx_0, p->value);
             break;
-        case Commands::Id::SET_CUT_PRE_FILTER_RQ:
-            cut.setPreFilterRq(p->idx_0, p->value);
+        case Commands::Id::SET_CUT_PRE_FILTER_Q:
+            cut.setPreFilterQ(p->idx_0, p->value);
             break;
-        case Commands::Id::SET_CUT_PRE_FILTER_LP:
-            cut.setPreFilterLp(p->idx_0, p->value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_HP:
-            cut.setPreFilterHp(p->idx_0, p->value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_BP:
-            cut.setPreFilterBp(p->idx_0, p->value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_BR:
-            cut.setPreFilterBr(p->idx_0, p->value);
-            break;
-        case Commands::Id::SET_CUT_PRE_FILTER_DRY:
-            cut.setPreFilterDry(p->idx_0, p->value);
+        case Commands::Id::SET_CUT_PRE_FILTER_ENABLED:
+            cut.setPreFilterEnabled(p->idx_0, p->value > 0);
             break;
             // output filter
         case Commands::Id::SET_CUT_POST_FILTER_FC:

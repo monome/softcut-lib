@@ -4,12 +4,12 @@ project(softcut)
 set(CMAKE_CXX_STANDARD 14)
 
 set(SRC
-        src/Voice.cpp
+        src/DebugLog.cpp
         src/ReadWriteHead.cpp
         src/SubHead.cpp
-        src/FadeCurves.cpp
-        src/Svf.cpp)
+        src/Voice.cpp
+        lib/dsp-kit/Svf.cpp)
 
-include_directories(include src)
+include_directories(include src lib)
 
 add_library(softcut STATIC ${SRC})
