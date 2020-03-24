@@ -221,11 +221,9 @@ SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
     frame_t y = x;
     while (y >= bufFrames) {
         y -= bufFrames;
-        //std::cout << "wrapped high: " << x << " -> " << y << std::endl;
     }
     while (y < 0) {
         y += bufFrames;
-        //std::cout << "wrapped low: " << x << " -> " << y << std::endl;
     }
     return y;
 }
@@ -239,7 +237,7 @@ void SubHead::setBuffer(float *b, frame_t fr) {
 void SubHead::applyRateDeadzone(SubHead::frame_t i) {
     static constexpr float deadzoneBound = 1.f/32.f;
     static constexpr float deadzoneBound_2 = 1.f/64.f;
-    const float r = fabs(rwh->rate[i]);
+    const float r = fabs(static_cast<float>(rwh->rate[i]));
     if (r > deadzoneBound) { return; }
     if (r < deadzoneBound_2) { rec[i] = 0.f; return; }
     const float f = (r - deadzoneBound_2) / deadzoneBound_2;

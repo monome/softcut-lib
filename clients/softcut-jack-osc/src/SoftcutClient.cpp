@@ -89,7 +89,6 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
         case Commands::Id::SET_CUT_VOICE_LEVEL:
             outLevel[p->idx_0].setTarget(p->value);
             break;
-
             //-- voice commands
         case Commands::Id::SET_CUT_VOICE_BUFFER:
             cut.voice(p->idx_0)->setBuffer(buf[p->idx_1], BufFrames);

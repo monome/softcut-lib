@@ -7,7 +7,6 @@
 #include <utility>
 #include <thread>
 
-#include "BufDiskWorker.h"
 #include "Commands.h"
 #include "OscInterface.h"
 
@@ -67,12 +66,9 @@ void OscInterface::addServerMethod(const char *path, const char *format, Handler
     OscMethod m(path, format, handler);
     methods[numMethods] = m;
     lo_server_thread_add_method(st, path, format,
-                                [](const char *path,
-                                   const char *types,
-                                   lo_arg **argv,
-                                   int argc,
-                                   lo_message msg,
-                                   void *data)
+                                [](const char *path, const char *types,
+                                   lo_arg **argv, int argc,
+                                   lo_message msg, void *data)
                                         -> int {
                                     (void) path;
                                     (void) types;
@@ -304,7 +300,7 @@ void OscInterface::addServerMethods() {
 
     addServerMethod("/set/param/cut/duck", "ii", [](lo_arg **argv, int argc) {
         if (argc < 2) { return; }
-        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_DUCK_TARGET,argv[0]->i, argv[1]->i);
+        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_DUCK_TARGET, argv[0]->i, argv[1]->i);
     });
 
 
