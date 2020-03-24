@@ -27,7 +27,7 @@ env.tests['voice'] = lambda str: "voice" in str
 
 #--- functions
 def write_file(text, name, location):
-    path = '{}/{}'.format(name, location)
+    path = '{}/{}'.format(location, name)
     try:
         with open(path, 'w') as pagefile:
             pagefile.write(text)
@@ -36,7 +36,7 @@ def write_file(text, name, location):
     except IOError:
         print("error exporting page at location: {}".format(path))
 
-def perform(filename, location):
+def perform(filename, location=None):
     if location is None: location = default_output_location;
     template = env.get_template(filename)
     text = template.render(ops=operations.ops)
