@@ -29,7 +29,7 @@ namespace softcut {
     //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
-
+        friend class Voice;
         friend class TestBuffers;
 
     public:

@@ -14,7 +14,6 @@
 #include "softcut/Softcut.h"
 #include "softcut/Types.h"
 
-
 namespace softcut_jack_osc {
     class SoftcutClient: public JackClient<2, 2> {
     public:
@@ -89,26 +88,29 @@ namespace softcut_jack_osc {
         }
 
         // check if quantized phase has changed for a given voice
-        // returns true
+        // returns true if changed
         bool checkVoiceQuantPhase(int i) {
-            if (quantPhase[i] != cut.getQuantPhase(i)) {
-                quantPhase[i] = cut.getQuantPhase(i);
+            auto qp = cut.voice(i)->getQuantPhase();
+            if (quantPhase[i] != qp) {
+                quantPhase[i] = qp;
                 return true;
             } else {
                 return false;
             }
         }
         softcut::phase_t getQuantPhase(int i) {
-            return cut.getQuantPhase(i);
-        }
-        void setPhaseQuant(int i, softcut::phase_t q) {
-            cut.setPhaseQuant(i, q);
-        }
-        void setPhaseOffset(int i, float sec) {
-            cut.setPhaseOffset(i, sec);
+            return cut.voice(i)->getQuantPhase();
         }
 
-        int getNumVoices() const { return NumVoices; }
+        void setPhaseQuant(int i, softcut::phase_t q) {
+            cut.voice(i)->setPhaseQuant(q);
+        }
+
+        void setPhaseOffset(int i, float sec) {
+            cut.voice(i)->setPhaseOffset(sec);
+        }
+
+        [[nodiscard]] int getNumVoices() const { return NumVoices; }
 
 	void reset();
 

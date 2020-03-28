@@ -19,53 +19,51 @@ namespace softcut_jack_osc {
 
             // mix
             SET_ENABLED_CUT,
-            SET_LEVEL_CUT,
-            SET_PAN_CUT,
+            SET_CUT_VOICE_LEVEL,
+            SET_CUT_VOICE_PAN,
             // level of individual input channel -> cut voice
             // (separate commands just to avoid a 3rd parameter)
             SET_LEVEL_IN_CUT,
             SET_LEVEL_CUT_CUT,
 
-            // params
-            SET_CUT_REC_ENABLED,
-            SET_CUT_PLAY_ENABLED,
+            // voice parameters
+            SET_CUT_VOICE_BUFFER,
+            SET_CUT_VOICE_REC_ENABLED,
+            SET_CUT_VOICE_PLAY_ENABLED,
 
-            SET_CUT_RATE,
-            SET_CUT_LOOP_START,
-            SET_CUT_LOOP_END,
-            SET_CUT_LOOP_ENABLED,
-            SET_CUT_POSITION,
+            SET_CUT_VOICE_RATE,
+            SET_CUT_VOICE_LOOP_START,
+            SET_CUT_VOICE_LOOP_END,
+            SET_CUT_VOICE_LOOP_ENABLED,
+            SET_CUT_VOICE_POSITION,
 
-            SET_CUT_FADE_TIME,
-            SET_CUT_REC_LEVEL,
-            SET_CUT_PRE_LEVEL,
-            SET_CUT_REC_OFFSET,
+            SET_CUT_VOICE_FADE_TIME,
+            SET_CUT_VOICE_REC_LEVEL,
+            SET_CUT_VOICE_PRE_LEVEL,
+            SET_CUT_VOICE_REC_OFFSET,
 
-            SET_CUT_PRE_FILTER_FC,
-            SET_CUT_PRE_FILTER_FC_MOD,
-            SET_CUT_PRE_FILTER_Q,
-            SET_CUT_PRE_FILTER_ENABLED,
-//            SET_CUT_PRE_FILTER_RQ,
-//            SET_CUT_PRE_FILTER_LP,
-//            SET_CUT_PRE_FILTER_HP,
-//            SET_CUT_PRE_FILTER_BP,
-//            SET_CUT_PRE_FILTER_BR,
-//            SET_CUT_PRE_FILTER_DRY,
+            SET_CUT_VOICE_PRE_FILTER_FC,
+            SET_CUT_VOICE_PRE_FILTER_FC_MOD,
+            SET_CUT_VOICE_PRE_FILTER_Q,
+            SET_CUT_VOICE_PRE_FILTER_ENABLED,
 
-	        SET_CUT_POST_FILTER_FC,
-	        SET_CUT_POST_FILTER_RQ,
-            SET_CUT_POST_FILTER_LP,
-            SET_CUT_POST_FILTER_HP,
-            SET_CUT_POST_FILTER_BP,
-            SET_CUT_POST_FILTER_BR,
-            SET_CUT_POST_FILTER_DRY,
+	        SET_CUT_VOICE_POST_FILTER_FC,
+	        SET_CUT_VOICE_POST_FILTER_RQ,
+            SET_CUT_VOICE_POST_FILTER_LP,
+            SET_CUT_VOICE_POST_FILTER_HP,
+            SET_CUT_VOICE_POST_FILTER_BP,
+            SET_CUT_VOICE_POST_FILTER_BR,
+            SET_CUT_VOICE_POST_FILTER_DRY,
 
-            SET_CUT_LEVEL_SLEW_TIME,
-            SET_CUT_PAN_SLEW_TIME,
-            SET_CUT_RECPRE_SLEW_TIME,
-            SET_CUT_RATE_SLEW_TIME,
+            SET_CUT_VOICE_LEVEL_SLEW_TIME,
+            SET_CUT_VOICE_PAN_SLEW_TIME,
+            SET_CUT_VOICE_RECPRE_SLEW_TIME,
+            SET_CUT_VOICE_RATE_SLEW_TIME,
+
             SET_CUT_VOICE_SYNC,
-            SET_CUT_BUFFER,
+            SET_CUT_VOICE_DUCK_TARGET,
+            SET_CUT_VOICE_FOLLOW_TARGET,
+
             NUM_COMMANDS,
         } Id;
 

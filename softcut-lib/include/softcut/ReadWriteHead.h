@@ -14,6 +14,7 @@ namespace softcut {
     class ReadWriteHead {
 
     protected:
+        friend class Voice;
         friend class SubHead;
         friend class TestBuffers;
 
@@ -102,11 +103,11 @@ namespace softcut {
 
         void setRecOffsetSamples(int d);
 
-        phase_t getActivePhase();
+        phase_t getActivePhase() const;
 
         phase_t wrapPhaseToLoop(phase_t p);
 
-        frame_t wrapFrameToLoopFade(frame_t w);
+//        frame_t wrapFrameToLoopFade(frame_t w);
 
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
 

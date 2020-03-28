@@ -99,5 +99,6 @@ namespace softcut {
 
 
     };
+
 }
 #endif

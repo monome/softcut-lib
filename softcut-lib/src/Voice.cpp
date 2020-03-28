@@ -3,6 +3,7 @@
 //
 
 #include <functional>
+#include <softcut/Fades.h>
 
 #include "softcut/Voice.h"
 #include "softcut/Resampler.h"
@@ -66,6 +67,11 @@ void Voice::processBlockMono(float *in, float *out, int numFrames) {
         // TODO: post-filter, phase poll
     }
 
+    if (duckTarget != nullptr) {
+        if (duckTarget->getRecFlag()) {
+            applyDucking(out, numFrames);
+        }
+    }
 
     if (recEnabled) {
         // NB: could move filter outside of recEnabled,
@@ -147,30 +153,6 @@ void Voice::setPreFilterFc(float x) {
     preFilterFcBase = x;
 }
 
-//void Voice::setPreFilterRq(float x) {
-//    preFilter.setInverseQ(x);
-//}
-//
-//void Voice::setPreFilterLp(float x) {
-//    preFilter.setLpMix(x);
-//}
-//
-//void Voice::setPreFilterHp(float x) {
-//    preFilter.setHpMix(x);
-//}
-//
-//void Voice::setPreFilterBp(float x) {
-//    preFilter.setBpMix(x);
-//}
-//
-//void Voice::setPreFilterBr(float x) {
-//    preFilter.setBrMix(x);
-//}
-//
-//void Voice::setPreFilterDry(float x) {
-//    preFilterDryLevel = x;
-//}
-
 void Voice::setPreFilterFcMod(float x) {
     preFilterFcMod = x;
 }
@@ -178,7 +160,6 @@ void Voice::setPreFilterFcMod(float x) {
 void Voice::setPreFilterEnabled(bool x) {
     preFilterEnabled = x;
 }
-
 
 // output filter
 void Voice::setPostFilterFc(float x) {
@@ -252,18 +233,55 @@ void Voice::updateQuantPhase() {
     }
 }
 
-bool Voice::getPlayFlag() {
+bool Voice::getPlayFlag() const {
     return playEnabled;
 }
 
-bool Voice::getRecFlag() {
+bool Voice::getRecFlag() const {
     return recEnabled;
 }
 
-float Voice::getPos() {
+float Voice::getPos() const {
     return static_cast<float>(rwh.getActivePhase() / sampleRate);
 }
 
 void Voice::setPreFilterQ(float x) {
     preFilter.setQ(x);
+}
+
+void Voice::applyDucking(float *out, size_t numFrames) {
+    const auto &phaseMine0 = rwh.head[0].phase.data();
+    const auto &phaseMine1 = rwh.head[1].phase.data();
+    const auto &phaseOther0 = duckTarget->rwh.head[0].phase.data();
+    const auto &phaseOther1 = duckTarget->rwh.head[1].phase.data();
+    const auto &recOther0 = duckTarget->rwh.head[0].rec.data();
+    const auto &recOther1 = duckTarget->rwh.head[1].rec.data();
+    const auto &preOther0 = duckTarget->rwh.head[0].pre.data();
+    const auto &preOther1 = duckTarget->rwh.head[1].pre.data();
+    for (int i=0; i<numFrames; ++i) {
+        out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i]);
+        out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i]);
+        out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i]);
+        out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i]);
+    }
+}
+
+float Voice::calcPhaseDuck(double a, double b, float r, float p) {
+    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+    if (r <= recMin && p >= preMax) { return 1.f; }
+    phase_t d = fabs(a - b);
+
+    // FIXME: these are in samples!
+    // should be dynamic..?
+    /// and probably scale with rate??
+    static constexpr phase_t dmax = 1000;
+    static constexpr phase_t dmin = 500;
+    if (d > dmax) {
+        return 1.f;
+    }
+    if (d < dmin) {
+        return 0.f;
+    }
+    return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
 }
