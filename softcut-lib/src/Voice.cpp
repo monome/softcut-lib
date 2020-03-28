@@ -40,7 +40,7 @@ void Voice::reset() {
     rwh.init();
 }
 
-void Voice::processInputFilter(float *src, float *dst, int numFrames) {
+void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     float fc, fcMod;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         fcMod = std::fabs(rwh.getRateBuffer(fr));
@@ -52,7 +52,7 @@ void Voice::processInputFilter(float *src, float *dst, int numFrames) {
     }
 }
 
-void Voice::processBlockMono(float *in, float *out, int numFrames) {
+void Voice::processBlockMono(float *in, float *out, size_t numFrames) {
 
     for (size_t fr = 0; fr < numFrames; ++fr) {
         rwh.setRate(fr, rateRamp.update());
@@ -191,7 +191,7 @@ void Voice::setPostFilterDry(float x) {
     postFilterDryLevel = x;
 }
 
-void Voice::setBuffer(float *b, unsigned int nf) {
+void Voice::setBuffer(float *b, size_t nf) {
     buf = b;
     bufFrames = nf;
     rwh.setBuffer(buf, bufFrames);
@@ -258,7 +258,7 @@ void Voice::applyDucking(float *out, size_t numFrames) {
     const auto &recOther1 = duckTarget->rwh.head[1].rec.data();
     const auto &preOther0 = duckTarget->rwh.head[0].pre.data();
     const auto &preOther1 = duckTarget->rwh.head[1].pre.data();
-    for (int i=0; i<numFrames; ++i) {
+    for (size_t i=0; i<numFrames; ++i) {
         out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i]);
         out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i]);
         out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i]);

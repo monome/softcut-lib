@@ -22,7 +22,7 @@ namespace softcut {
     public:
         Voice();
 
-        void setBuffer(float *buf, unsigned int numFrames);
+        void setBuffer(float *buf, size_t numFrames);
 
         void setSampleRate(float hz);
 
@@ -79,7 +79,7 @@ namespace softcut {
         void setPosition(float sec);
 
         // process a single channel
-        void processBlockMono(float *in, float *out, int numFrames);
+        void processBlockMono(float *in, float *out, size_t numFrames);
 
         void setRecOffset(float d);
 
@@ -106,12 +106,12 @@ namespace softcut {
         void reset();
 
     private:
-        void processInputFilter(float* src, float *dst, int numFrames);
+        void processInputFilter(float* src, float *dst, size_t numFrames);
         void updateQuantPhase();
 
     private:
         float *buf{};
-        int bufFrames{};
+        size_t bufFrames{};
         float sampleRate{};
 
         // crossfaded read/write head
