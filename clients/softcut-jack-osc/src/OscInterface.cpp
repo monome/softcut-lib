@@ -29,7 +29,6 @@ SoftcutClient *OscInterface::softCutClient;
 OscInterface::OscMethod::OscMethod(string p, string f, OscInterface::Handler h)
         : path(std::move(p)), format(std::move(f)), handler(h) {}
 
-
 void OscInterface::init(SoftcutClient *sc) {
     quitFlag = false;
     // FIXME: should get port configs from program args or elsewhere
@@ -67,13 +66,9 @@ void OscInterface::addServerMethod(const char *path, const char *format, Handler
     OscMethod m(path, format, handler);
     methods[numMethods] = m;
     lo_server_thread_add_method(st, path, format,
-                                [](const char *path,
-                                   const char *types,
-                                   lo_arg **argv,
-                                   int argc,
-                                   lo_message msg,
-                                   void *data)
-                                        -> int {
+                                [](const char *path, const char *types,
+                                   lo_arg **argv, int argc,
+                                   lo_message msg, void *data) -> int {
                                     (void) path;
                                     (void) types;
                                     (void) msg;

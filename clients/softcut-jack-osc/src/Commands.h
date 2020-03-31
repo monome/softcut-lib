@@ -22,7 +22,6 @@ namespace softcut_jack_osc {
             SET_CUT_VOICE_LEVEL,
             SET_CUT_VOICE_PAN,
             // level of individual input channel -> cut voice
-            // (separate commands just to avoid a 3rd parameter)
             SET_LEVEL_IN_CUT,
             SET_LEVEL_CUT_CUT,
 
