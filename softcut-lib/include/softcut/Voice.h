@@ -104,6 +104,10 @@ namespace softcut {
             writeDuckTarget = v;
         }
 
+        void setFollowTarget(Voice* v)  {
+            followTarget = v;
+        }
+
         void syncPosition(const Voice &v, float offset);
 
         void reset();

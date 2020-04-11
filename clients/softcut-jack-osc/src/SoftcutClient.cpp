@@ -183,8 +183,15 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
         case Commands::Id::SET_CUT_VOICE_SYNC:
             cut.syncVoice(p->idx_0, p->idx_1, p->value);
             break;
-        case Commands::Id::SET_CUT_VOICE_DUCK_TARGET:
+        case Commands::Id::SET_CUT_VOICE_READ_DUCK_TARGET:
             cut.voice(p->idx_0)->setReadDuckTarget(cut.voice(p->idx_1));
+            break;
+        case Commands::Id::SET_CUT_VOICE_WRITE_DUCK_TARGET:
+            cut.voice(p->idx_0)->setWriteDuckTarget(cut.voice(p->idx_1));
+            break;
+        case Commands::Id::SET_CUT_VOICE_FOLLOW_TARGET:
+            cut.voice(p->idx_0)->setFollowTarget(cut.voice(p->idx_1));
+            break;
         default:;;
     }
 }
