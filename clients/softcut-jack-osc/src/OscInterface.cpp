@@ -297,9 +297,17 @@ void OscInterface::addServerMethods() {
         Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_BUFFER, argv[0]->i, argv[1]->i);
     });
 
-    addServerMethod("/set/param/cut/duck", "ii", [](lo_arg **argv, int argc) {
+    addServerMethod("/set/param/cut/read_duck", "ii", [](lo_arg **argv, int argc) {
         if (argc < 2) { return; }
-        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_DUCK_TARGET,argv[0]->i, argv[1]->i);
+        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_READ_DUCK_TARGET,argv[0]->i, argv[1]->i);
+    });
+    addServerMethod("/set/param/cut/write_duck", "ii", [](lo_arg **argv, int argc) {
+        if (argc < 2) { return; }
+        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_WRITE_DUCK_TARGET,argv[0]->i, argv[1]->i);
+    });
+    addServerMethod("/set/param/cut/follow", "ii", [](lo_arg **argv, int argc) {
+        if (argc < 2) { return; }
+        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_FOLLOW_TARGET,argv[0]->i, argv[1]->i);
     });
 
 

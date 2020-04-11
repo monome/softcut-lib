@@ -60,7 +60,8 @@ namespace softcut_jack_osc {
             SET_CUT_VOICE_RATE_SLEW_TIME,
 
             SET_CUT_VOICE_SYNC,
-            SET_CUT_VOICE_DUCK_TARGET,
+            SET_CUT_VOICE_READ_DUCK_TARGET,
+            SET_CUT_VOICE_WRITE_DUCK_TARGET,
             SET_CUT_VOICE_FOLLOW_TARGET,
 
             NUM_COMMANDS,

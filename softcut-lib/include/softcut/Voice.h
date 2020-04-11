@@ -22,6 +22,13 @@ namespace softcut {
     public:
         Voice();
 
+        //----------------------------------
+        // decomposed single-channel process functions
+        void updatePositions(size_t numFrames);
+        void performReads(float *out, size_t numFrames);
+        void performWrites(float *in, size_t numFrames);
+        //-----------------------------------------
+
         void setBuffer(float *buf, size_t numFrames);
 
         void setSampleRate(float hz);
@@ -46,20 +53,10 @@ namespace softcut {
 
         void setPreFilterFc(float);
 
-//        void setPreFilterRq(float);
-//
-//        void setPreFilterLp(float);
-//
-//        void setPreFilterHp(float);
-//
-//        void setPreFilterBp(float);
-//
-//        void setPreFilterBr(float);
-//
-//        void setPreFilterDry(float);
-
         void setPreFilterEnabled(bool);
+
         void setPreFilterFcMod(float x);
+
         void setPreFilterQ(float x);
 
         void setPostFilterFc(float);
@@ -77,9 +74,7 @@ namespace softcut {
         void setPostFilterDry(float);
 
         void setPosition(float sec);
-
-        // process a single channel
-        void processBlockMono(float *in, float *out, size_t numFrames);
+        void setPhase(phase_t phase);
 
         void setRecOffset(float d);
 
@@ -93,25 +88,40 @@ namespace softcut {
 
         phase_t getQuantPhase();
 
+        // return logical position in seconds
+        float getPos() const;
+
+
         bool getPlayFlag() const;
 
         bool getRecFlag() const;
 
-        float getPos() const;
-
-        void setDuckTarget(Voice* v)  {
-            duckTarget = v;
+        void setReadDuckTarget(Voice* v)  {
+            readDuckTarget = v;
         }
+
+        void setWriteDuckTarget(Voice* v)  {
+            writeDuckTarget = v;
+        }
+
+        void setFollowTarget(Voice* v)  {
+            followTarget = v;
+        }
+
+        void syncPosition(const Voice &v, float offset);
 
         void reset();
 
+        void updateQuantPhase();
     private:
         void processInputFilter(float* src, float *dst, size_t numFrames);
-        void updateQuantPhase();
 
     private:
+        // audio buffer
         float *buf{};
+        // size of buffer in frames
         size_t bufFrames{};
+        // audio sample rate
         float sampleRate{};
 
         // crossfaded read/write head
@@ -150,12 +160,16 @@ namespace softcut {
         bool recEnabled{};
         bool preFilterEnabled;
 
-        const Voice *duckTarget{nullptr};
+        const Voice *readDuckTarget{nullptr};
+        const Voice *writeDuckTarget{nullptr};
         const Voice *followTarget{nullptr};
 
-        void applyDucking(float *out, size_t numFrames);
+        void applyReadDuck(float *out, size_t numFrames);
+        void applyWriteDuck(float *in, size_t numFrames);
 
-        static float calcPhaseDuck(double a, double b, float rec, float pre);
+        static float calcReadDuckFromPhasePair(double a, double b, float rec, float pre, float fade);
+        static float calcWriteDuckFromPhasePair(double phaseA, double phaseB,
+                float recA, float recB, float preA, float preB);
     };
 }
 

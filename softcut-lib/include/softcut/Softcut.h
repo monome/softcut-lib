@@ -5,8 +5,10 @@
 #ifndef Softcut_Softcut_H
 #define Softcut_Softcut_H
 
+#include <array>
 #include <memory>
 #include <thread>
+
 #include "Types.h"
 #include "Voice.h"
 
@@ -18,7 +20,13 @@ namespace softcut {
         friend class TestBuffers;
 
     private:
-        Voice scv[numVoices];
+        std::array<Voice, numVoices> voices;
+        // enabled flags
+        std::array<bool, numVoices> voiceEnabled;
+        // input and output busses are assigned and persisted
+        std::array<float*, numVoices> input;
+        std::array<float*, numVoices> output;
+
     public:
 
         Softcut() {
@@ -26,32 +34,42 @@ namespace softcut {
         }
 
         void reset() {
-            for (int v = 0; v < numVoices; ++v) {
-                scv[v].reset();
+            for (int i=0; i<numVoices; ++i) {
+                voices[i].reset();
                 /// test: set each voice to duck the next one, in a loop
-                scv[v].setDuckTarget( &(scv[(v+1)%numVoices]) );
-                // test: set voices to duck each other in pairs
-                //// (FIXME: probably won't work right because each voice processes whole block in turn...)
-//                scv[0].setDuckTarget(&(scv[1]));
-//                scv[1].setDuckTarget(&(scv[0]));
+                voices[i].setReadDuckTarget(&(voices[(i + 1) % numVoices]) );
             };
 
         }
 
-        // assumption: v is in range
-        void processBlock(int v, float *in, float *out, int numFrames) {
-            scv[v].processBlockMono(in, out, numFrames);
+        void processBlock(int numFrames) {
+            for (int i=0; i<numVoices; ++i) {
+                if (voiceEnabled[i]) {
+                    voices[i].updatePositions(numFrames);
+                    voices[i].updateQuantPhase();
+                }
+            }
+            for (int i=0; i<numVoices; ++i) {
+                if (voiceEnabled[i]) {
+                    voices[i].performReads(output[i], numFrames);
+                }
+            }
+            for (int i=0; i<numVoices; ++i) {
+                if (voiceEnabled[i]) {
+                    voices[i].performWrites(input[i], numFrames);
+                }
+            }
         }
 
         void setSampleRate(unsigned int hz) {
-            for (auto &v : scv) {
+            for (auto &v : voices) {
                 v.setSampleRate(hz);
             }
         }
 
         Voice *voice(int i) {
             if (i >= 0 && i < numVoices) {
-                return &(scv[i]);
+                return &(voices[i]);
             } else {
                 return nullptr;
             }
@@ -59,10 +77,22 @@ namespace softcut {
 
 
         void syncVoice(int follower, int leader, float offset) {
-            // TODO
+            voices[follower].syncPosition(voices[leader], offset);
         }
+
+
+        void setInputBus( int vIdx, float* src) {
+            input[vIdx] = src;
+        }
+        void setOutputBus(int vIdx, float* dst) {
+            output[vIdx] = dst;
+        }
+        void setVoiceEnabled(int vIdx, bool val) {
+            voiceEnabled[vIdx] = val;
+        }
+
     };
 }
 
 
-#endif //Softcut_Softcut_H2
+#endif //Softcut_Softcut_H

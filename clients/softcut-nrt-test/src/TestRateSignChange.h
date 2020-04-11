@@ -15,23 +15,24 @@ class TestRateSignChange : public Test<numFrames, bufSize, blockSize> {
         super::loadInputSoundFile("octave-sines.wav");
         super::loadBufferSoundFile("octave-sines.wav");
         super::cut.setSampleRate(48000);
-        super::cut.setFadeTime(0, 0.05);
-        super::cut.setLoopStart(0, 0.1);
-        super::cut.setLoopEnd(0, 0.2);
-        super::cut.setLoopFlag(0, true);
-        super::cut.setPlayFlag(0, true);
 
-        super::cut.setPreFilterEnabled(0, false);
+        super::cut.voice(0).setFadeTime(0.05);
+        super::cut.voice(0).setLoopStart(0.1);
+        super::cut.voice(0).setLoopEnd(0.2);
+        super::cut.voice(0).setLoopFlag(true);
+        super::cut.voice(0).setPlayFlag(true);
 
-        super::cut.setRecFlag(0, true);
-        super::cut.setRecLevel(0, 1.0);
-        super::cut.setPreLevel(0, 0.75);
-        super::cut.setPosition(0, 0.1);
+        super::cut.voice(0).setPreFilterEnabled(false);
 
-        super::cut.setRateSlewTime(0, 0.0);
-        super::cut.setRate(0,  1.0);
-        super::cut.setRateSlewTime(0, 2.0);
-        super::cut.setRate(0, -1.0);
+        super::cut.voice(0).setRecFlag(true);
+        super::cut.voice(0).setRecLevel(1.0);
+        super::cut.voice(0).setPreLevel(0.75);
+        super::cut.voice(0).setPosition(0.1);
+
+        super::cut.voice(0).setRateSlewTime(0.0);
+        super::cut.voice(0).setRate(1.0);
+        super::cut.voice(0).setRateSlewTime(2.0);
+        super::cut.voice(0).setRate(-1.0);
 
 
     }
