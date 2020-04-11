@@ -191,8 +191,6 @@ void ReadWriteHead::setPosition(float seconds) {
 }
 
 phase_t ReadWriteHead::getActivePhase() const {
-    // TODO
-    return 0;
 }
 
 
