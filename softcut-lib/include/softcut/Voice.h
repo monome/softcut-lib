@@ -53,18 +53,6 @@ namespace softcut {
 
         void setPreFilterFc(float);
 
-//        void setPreFilterRq(float);
-//
-//        void setPreFilterLp(float);
-//
-//        void setPreFilterHp(float);
-//
-//        void setPreFilterBp(float);
-//
-//        void setPreFilterBr(float);
-//
-//        void setPreFilterDry(float);
-
         void setPreFilterEnabled(bool);
 
         void setPreFilterFcMod(float x);
@@ -108,18 +96,21 @@ namespace softcut {
 
         bool getRecFlag() const;
 
-
         void setReadDuckTarget(Voice* v)  {
             readDuckTarget = v;
+        }
+
+        void setWriteDuckTarget(Voice* v)  {
+            writeDuckTarget = v;
         }
 
         void syncPosition(const Voice &v, float offset);
 
         void reset();
 
+        void updateQuantPhase();
     private:
         void processInputFilter(float* src, float *dst, size_t numFrames);
-        void updateQuantPhase();
 
     private:
         // audio buffer
@@ -166,12 +157,15 @@ namespace softcut {
         bool preFilterEnabled;
 
         const Voice *readDuckTarget{nullptr};
+        const Voice *writeDuckTarget{nullptr};
         const Voice *followTarget{nullptr};
 
         void applyReadDuck(float *out, size_t numFrames);
         void applyWriteDuck(float *in, size_t numFrames);
 
         static float calcReadDuckFromPhasePair(double a, double b, float rec, float pre, float fade);
+        static float calcWriteDuckFromPhasePair(double phaseA, double phaseB,
+                float recA, float recB, float preA, float preB);
     };
 }
 

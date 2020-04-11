@@ -53,6 +53,7 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
 }
 
 void Voice::setSampleRate(float hz) {
+
     sampleRate = hz;
     rateRamp.setSampleRate(hz);
     preRamp.setSampleRate(hz);
@@ -237,11 +238,15 @@ void Voice::applyWriteDuck(float *in, size_t numFrames) {
     const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
     const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
     const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
+    const auto &recMine0 = rwh.head[0].rec.data();
+    const auto &recMine1 = rwh.head[1].rec.data();
+    const auto &preMine0 = rwh.head[0].pre.data();
+    const auto &preMine1 = rwh.head[1].pre.data();
     for (size_t i=0; i<numFrames; ++i) {
-        in[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
-        in[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
-        in[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
-        in[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine0[i], phaseOther0[i], preMine0[i], preOther0[i], recMine0[i], recOther0[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine0[i], phaseOther1[i], preMine0[i], preOther1[i], recMine0[i], recOther1[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine1[i], phaseOther0[i], preMine1[i], preOther0[i], recMine1[i], recOther0[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine1[i], phaseOther1[i], preMine1[i], preOther1[i], recMine1[i], recOther1[i]);
     }
 }
 
@@ -254,6 +259,28 @@ float Voice::calcReadDuckFromPhasePair(double a, double b, float r, float p, flo
 
     if (f <= fadeMin) { return 1.f; }
     if (r <= recMin && p >= preMax) { return 1.f; }
+
+    phase_t d = fabs(a - b);
+
+    // FIXME: these are in samples!
+    // should be dynamic..?
+    /// and probably scale with rate??
+    static constexpr phase_t dmax = 1000;
+    static constexpr phase_t dmin = 500;
+    if (d > dmax) {
+        return 1.f;
+    }
+    if (d < dmin) {
+        return 0.f;
+    }
+    return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
+}
+
+float Voice::calcWriteDuckFromPhasePair(double a, double b, float ra, float rb, float pa, float pb) {
+    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+
+    if ((ra <= recMin && pa >= preMax) || (rb <= recMin && pb >= preMax)) { return 1.f; }
 
     phase_t d = fabs(a - b);
 
@@ -314,6 +341,12 @@ void Voice::performWrites(float *in, size_t numFrames) {
         for (size_t fr = 0; fr < numFrames; ++fr) {
             rwh.setPre(fr, preRamp.update());
             rwh.setRec(fr, recRamp.update());
+        }
+
+        if (writeDuckTarget != nullptr) {
+            if (writeDuckTarget->getRecFlag()) {
+                applyWriteDuck(in, numFrames);
+            }
         }
         rwh.updateSubheadWriteLevels(numFrames);
         rwh.performSubheadWrites(src, numFrames);
