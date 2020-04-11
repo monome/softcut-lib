@@ -10,10 +10,10 @@ n.sendMsg("/set/level/adc_cut", 1.0);
 /// voice 1, playing, not recording, ducking voice 2
 n.sendMsg("/set/level/cut", 0, 0.6);
 n.sendMsg("/set/param/cut/buffer", 0, 0);
-n.sendMsg("/set/pan/cut", 0, -0.9);
+n.sendMsg("/set/pan/cut", 0, -0.3);
 n.sendMsg("/set/enabled/cut", 0, 1.0);
 
-n.sendMsg("/set/param/cut/rate", 0, -1.0);
+n.sendMsg("/set/param/cut/rate", 0, -0.25);
 n.sendMsg("/set/param/cut/loop_start", 0, 1.6);
 n.sendMsg("/set/param/cut/loop_end", 0, 4.0);
 
@@ -51,11 +51,11 @@ n.sendMsg("/set/param/cut/duck", 1, -1);
 /// voice 3, playing, not recording, ducking voice 2
 n.sendMsg("/set/level/cut", 2, 0.6);
 n.sendMsg("/set/param/cut/buffer", 2, 0);
-n.sendMsg("/set/pan/cut", 2, 0.9);
+n.sendMsg("/set/pan/cut", 2, 0.0);
 n.sendMsg("/set/enabled/cut", 2, 1.0);
 
-n.sendMsg("/set/param/cut/rate", 2, -1.5);
-n.sendMsg("/set/param/cut/loop_start", 2, 0.1);
+n.sendMsg("/set/param/cut/rate", 2, -0.5);
+n.sendMsg("/set/param/cut/loop_start", 2, 1.1);
 n.sendMsg("/set/param/cut/loop_end", 2, 2.2);
 
 n.sendMsg("/set/param/cut/loop_flag", 2, 1.0);

@@ -24,7 +24,7 @@ public:
     size_t startMs{};
 
     Test() {
-        cut.setVoiceBuffer(0, buf.data(), bufSize);
+        cut.voice(0)->setBuffer(buf.data(), bufSize);
     }
 
     void writeOutputSoundfile(const std::string &path) {
@@ -78,7 +78,8 @@ public:
     }
 
     void performBlock(float* &src, float* &dst) {
-        cut.processBlock(0, src, dst, blockSize);
+        //FIXME
+        // cut.processBlock(0, src, dst, blockSize);
         testBuffers.update(cut, 0, blockSize);
         src += blockSize;
         dst += blockSize;

@@ -1,7 +1,9 @@
 //
 // Created by ezra on 12/6/17.
 //
+#include <algorithm>
 #include <cmath>
+
 #include "softcut/Resampler.h"
 #include "softcut/ReadWriteHead.h"
 #include "softcut/DebugLog.h"
@@ -17,17 +19,12 @@ ReadWriteHead::ReadWriteHead() {
     frameIdx = 0;
 }
 
-
 void ReadWriteHead::init() {
     start = 0.f;
     end = maxBlockSize * 2;
     head[0].init(this);
     head[1].init(this);
-    // FIXME: for now, we have to goose the phase update before we start running with write enabled.
-    /// could probably deal with this directly in subhead init...
-    // this->updateSubheadPositions(maxBlockSize);
 }
-
 
 void ReadWriteHead::enqueuePositionChange(phase_t pos) {
     enqueuedPosition = pos;
@@ -58,7 +55,6 @@ void ReadWriteHead::checkPositionChange(frame_t fr_1, frame_t fr) {
 }
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
-    // TODO: apply `follow` here, using subhead positions from other ReadWriteHead
     size_t fr_1 = frameIdx;
     size_t fr = 0;
     SubHead::OpAction action;
@@ -66,8 +62,8 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     while (fr < numFrames) {
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
-        for (int i = 0; i < 2; ++i) {
-            action = head[i].calcFramePosition(fr_1, fr);
+        for (auto &h  : head) {
+            action = h.calcFramePosition(fr_1, fr);
             if (action == SubHead::OpAction::LoopPositive) {
                 enqueuePositionChange(start);
             } else if (action == SubHead::OpAction::LoopNegative) {
@@ -83,8 +79,6 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
 
 void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        // TODO: apply `duck` here, using subhead positions/levels from other ReadWriteHead
-        // update rec/pre level for each subhead
         this->head[0].calcFrameLevels(fr);
         this->head[1].calcFrameLevels(fr);
     }
@@ -108,7 +102,6 @@ void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
     unsigned int activeHeadBits;
     unsigned int active0;
     unsigned int active1;
-    // FIXME: these checks are probably not a net win for performance
     for (size_t fr = 0; fr < numFrames; ++fr) {
         active0 = static_cast<unsigned int>(
                 (head[0].opState[fr] != SubHead::Stopped)
@@ -164,9 +157,6 @@ void ReadWriteHead::setLoopEndSeconds(float x) {
 
 void ReadWriteHead::setFadeTime(float secs) {
     this->fadeInc = 1.f / (secs * sr);
-    // TODO: something like,
-    /// fadeOutFrameBeforeLoop = start - (fadeTime * r)
-    /// ... plus record offset, hm..
 }
 
 void ReadWriteHead::setLoopFlag(bool val) {
@@ -191,8 +181,8 @@ void ReadWriteHead::setPosition(float seconds) {
 }
 
 phase_t ReadWriteHead::getActivePhase() const {
-    // TODO
-    return 0;
+    // return the last written phase for the last active head
+    return head[active[frameIdx]].phase[frameIdx];
 }
 
 
@@ -206,12 +196,22 @@ phase_t ReadWriteHead::wrapPhaseToLoop(phase_t p) {
     }
 }
 
-//ReadWriteHead::frame_t ReadWriteHead::wrapFrameToLoopFade(frame_t w) {
-//    //frame_t max = ...
-//    return 0;
-//}
-
 float ReadWriteHead::getRateBuffer(size_t i) {
     return rate[i];
+}
+
+void ReadWriteHead::copySubheadPositions(const ReadWriteHead &src, size_t numFrames) {
+    std::copy_n(src.rate.begin(), numFrames, rate.begin());
+    std::copy_n(src.dir.begin(), numFrames, dir.begin());
+    std::copy_n(src.active.begin(), numFrames, active.begin());
+    for (int h = 0; h < 2; ++h) {
+        std::copy_n(src.head[h].phase.begin(), numFrames, head[h].phase.begin());
+        std::copy_n(src.head[h].wrIdx.begin(), numFrames, head[h].wrIdx.begin());
+        std::copy_n(src.head[h].rec.begin(), numFrames, head[h].rec.begin());
+        std::copy_n(src.head[h].pre.begin(), numFrames, head[h].pre.begin());
+        std::copy_n(src.head[h].fade.begin(), numFrames, head[h].fade.begin());
+        std::copy_n(src.head[h].opState.begin(), numFrames, head[h].opState.begin());
+        std::copy_n(src.head[h].opAction.begin(), numFrames, head[h].opAction.begin());
+    }
 }
 

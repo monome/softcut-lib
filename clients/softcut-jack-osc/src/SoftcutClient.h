@@ -30,21 +30,19 @@ namespace softcut_jack_osc {
         // processors
         softcut::Softcut<NumVoices> cut;
         // main buffer
-        float buf[2][BufFrames];
+        float buf[2][BufFrames]{};
         // buffer index for use with BufDiskWorker
-        int bufIdx[2];
+        int bufIdx[2]{};
         // busses
-        StereoBus mix;
-        MonoBus input[NumVoices];
-        MonoBus output[NumVoices];
+        StereoBus mix{};
+        MonoBus input[NumVoices]{};
+        MonoBus output[NumVoices]{};
         // levels
         LogRamp inLevel[2][NumVoices];
         LogRamp outLevel[NumVoices];
         LogRamp outPan[NumVoices];
         LogRamp fbLevel[NumVoices][NumVoices];
-        // enabled flags
-        bool enabled[NumVoices];
-        softcut::phase_t quantPhase[NumVoices];
+        softcut::phase_t quantPhase[NumVoices]{};
 
     private:
         void process(jack_nframes_t numFrames) override;

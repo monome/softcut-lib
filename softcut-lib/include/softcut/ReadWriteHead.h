@@ -52,9 +52,6 @@ namespace softcut {
         bool loopFlag{false};       // set to loop, unset for 1-shot
         int recOffsetSamples{-8}; // record offset from write head
 
-        frame_t fadeOutFrameBeforeLoop{};
-        frame_t fadeOutFrameAfterLoop{};
-
         //--- buffered state variables
         // rate, in per-sample position increment (1 == normal)
         SubHead::StateBuffer<rate_t> rate{1.f};
@@ -79,6 +76,7 @@ namespace softcut {
         void performSubheadReads(float *output, size_t numFrames);
 
         void updateSubheadPositions(size_t numFrames);
+        void copySubheadPositions(const ReadWriteHead &other, size_t numFrames);
 
         void updateSubheadWriteLevels(size_t numFrames);
 
@@ -106,8 +104,6 @@ namespace softcut {
         phase_t getActivePhase() const;
 
         phase_t wrapPhaseToLoop(phase_t p);
-
-//        frame_t wrapFrameToLoopFade(frame_t w);
 
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
 

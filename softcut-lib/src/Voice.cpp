@@ -52,49 +52,8 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     }
 }
 
-void Voice::processBlockMono(float *in, float *out, size_t numFrames) {
-
-    for (size_t fr = 0; fr < numFrames; ++fr) {
-        rwh.setRate(fr, rateRamp.update());
-    }
-
-    // TODO: use other voice for `follow`
-    rwh.updateSubheadPositions(numFrames);
-
-    if (playEnabled) {
-        // TODO: use other voice for `duck`
-        rwh.performSubheadReads(out, numFrames);
-        // TODO: post-filter, phase poll
-    }
-
-    if (duckTarget != nullptr) {
-        if (duckTarget->getRecFlag()) {
-            applyDucking(out, numFrames);
-        }
-    }
-
-    if (recEnabled) {
-        // NB: could move filter outside of recEnabled,
-        // consuming CPU but reducing clicks on rec toggle
-        float *src;
-        if (preFilterEnabled) {
-            src = preFilterInputBuf.data();
-            processInputFilter(in, src, numFrames);
-        } else {
-            src = in;
-        }
-
-        for (size_t fr = 0; fr < numFrames; ++fr) {
-            rwh.setPre(fr, preRamp.update());
-            rwh.setRec(fr, recRamp.update());
-            // TODO: pre-filter?
-        }
-        rwh.updateSubheadWriteLevels(numFrames);
-        rwh.performSubheadWrites(src, numFrames);
-    }
-}
-
 void Voice::setSampleRate(float hz) {
+
     sampleRate = hz;
     rateRamp.setSampleRate(hz);
     preRamp.setSampleRate(hz);
@@ -127,6 +86,10 @@ void Voice::setPosition(float sec) {
     rwh.setPosition(sec);
 }
 
+void Voice::setPhase(phase_t phase) {
+    rwh.enqueuePositionChange(phase);
+}
+
 void Voice::setRecLevel(float amp) {
     recRamp.setTarget(amp);
 }
@@ -138,7 +101,6 @@ void Voice::setPreLevel(float amp) {
 void Voice::setRecFlag(bool val) {
     recEnabled = val;
 }
-
 
 void Voice::setPlayFlag(bool val) {
     playEnabled = val;
@@ -207,7 +169,6 @@ void Voice::setRecPreSlewTime(float d) {
 }
 
 void Voice::setRateSlewTime(float d) {
-
     std::cout << "set rate time " << d << std::endl;
     rateRamp.setTime(d);
 }
@@ -249,27 +210,56 @@ void Voice::setPreFilterQ(float x) {
     preFilter.setQ(x);
 }
 
-void Voice::applyDucking(float *out, size_t numFrames) {
+void Voice::applyReadDuck(float *out, size_t numFrames) {
     const auto &phaseMine0 = rwh.head[0].phase.data();
     const auto &phaseMine1 = rwh.head[1].phase.data();
-    const auto &phaseOther0 = duckTarget->rwh.head[0].phase.data();
-    const auto &phaseOther1 = duckTarget->rwh.head[1].phase.data();
-    const auto &recOther0 = duckTarget->rwh.head[0].rec.data();
-    const auto &recOther1 = duckTarget->rwh.head[1].rec.data();
-    const auto &preOther0 = duckTarget->rwh.head[0].pre.data();
-    const auto &preOther1 = duckTarget->rwh.head[1].pre.data();
+    const auto &fadeMine0 = rwh.head[0].fade.data();
+    const auto &fadeMine1 = rwh.head[1].fade.data();
+    const auto &phaseOther0 = readDuckTarget->rwh.head[0].phase.data();
+    const auto &phaseOther1 = readDuckTarget->rwh.head[1].phase.data();
+    const auto &recOther0 = readDuckTarget->rwh.head[0].rec.data();
+    const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
+    const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
+    const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
     for (size_t i=0; i<numFrames; ++i) {
-        out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i]);
-        out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i]);
-        out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i]);
-        out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
     }
 }
 
-float Voice::calcPhaseDuck(double a, double b, float r, float p) {
+void Voice::applyWriteDuck(float *in, size_t numFrames) {
+    const auto &phaseMine0 = rwh.head[0].phase.data();
+    const auto &phaseMine1 = rwh.head[1].phase.data();
+    const auto &phaseOther0 = readDuckTarget->rwh.head[0].phase.data();
+    const auto &phaseOther1 = readDuckTarget->rwh.head[1].phase.data();
+    const auto &recOther0 = readDuckTarget->rwh.head[0].rec.data();
+    const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
+    const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
+    const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
+    const auto &recMine0 = rwh.head[0].rec.data();
+    const auto &recMine1 = rwh.head[1].rec.data();
+    const auto &preMine0 = rwh.head[0].pre.data();
+    const auto &preMine1 = rwh.head[1].pre.data();
+    for (size_t i=0; i<numFrames; ++i) {
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine0[i], phaseOther0[i], preMine0[i], preOther0[i], recMine0[i], recOther0[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine0[i], phaseOther1[i], preMine0[i], preOther1[i], recMine0[i], recOther1[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine1[i], phaseOther0[i], preMine1[i], preOther0[i], recMine1[i], recOther0[i]);
+        in[i] *= calcWriteDuckFromPhasePair(phaseMine1[i], phaseOther1[i], preMine1[i], preOther1[i], recMine1[i], recOther1[i]);
+    }
+}
+
+
+
+float Voice::calcReadDuckFromPhasePair(double a, double b, float r, float p, float f) {
     static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+
+    if (f <= fadeMin) { return 1.f; }
     if (r <= recMin && p >= preMax) { return 1.f; }
+
     phase_t d = fabs(a - b);
 
     // FIXME: these are in samples!
@@ -284,4 +274,87 @@ float Voice::calcPhaseDuck(double a, double b, float r, float p) {
         return 0.f;
     }
     return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
+}
+
+float Voice::calcWriteDuckFromPhasePair(double a, double b, float ra, float rb, float pa, float pb) {
+    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+
+    if ((ra <= recMin && pa >= preMax) || (rb <= recMin && pb >= preMax)) { return 1.f; }
+
+    phase_t d = fabs(a - b);
+
+    // FIXME: these are in samples!
+    // should be dynamic..?
+    /// and probably scale with rate??
+    static constexpr phase_t dmax = 1000;
+    static constexpr phase_t dmin = 500;
+    if (d > dmax) {
+        return 1.f;
+    }
+    if (d < dmin) {
+        return 0.f;
+    }
+    return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
+}
+
+
+void Voice::updatePositions(size_t numFrames) {
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        rwh.setRate(fr, rateRamp.update());
+    }
+
+    if (followTarget == nullptr) {
+        rwh.updateSubheadPositions(numFrames);
+    } else {
+        rwh.copySubheadPositions(followTarget->rwh, numFrames);
+    }
+}
+
+
+void Voice::performReads(float *out, size_t numFrames) {
+    if (playEnabled) {
+        // TODO: use other voice for `duck`
+        rwh.performSubheadReads(out, numFrames);
+        // TODO: post-filter, phase poll
+    }
+
+    if (readDuckTarget != nullptr) {
+        if (readDuckTarget->getRecFlag()) {
+            applyReadDuck(out, numFrames);
+        }
+    }
+}
+
+void Voice::performWrites(float *in, size_t numFrames) {
+    if (recEnabled) {
+        // NB: could move filter outside of recEnabled,
+        // consuming CPU but reducing clicks on rec toggle
+        float *src;
+        if (preFilterEnabled) {
+            src = preFilterInputBuf.data();
+            processInputFilter(in, src, numFrames);
+        } else {
+            src = in;
+        }
+
+        for (size_t fr = 0; fr < numFrames; ++fr) {
+            rwh.setPre(fr, preRamp.update());
+            rwh.setRec(fr, recRamp.update());
+        }
+
+        if (writeDuckTarget != nullptr) {
+            if (writeDuckTarget->getRecFlag()) {
+                applyWriteDuck(in, numFrames);
+            }
+        }
+        rwh.updateSubheadWriteLevels(numFrames);
+        rwh.performSubheadWrites(src, numFrames);
+    }
+}
+
+void Voice::syncPosition(const Voice &target, float offset) {
+    phase_t newPhase = target.rwh.getActivePhase() + offset;
+    // NB: relying on position change function to perform phase wrapping if needed
+    rwh.enqueuePositionChange(newPhase);
 }
