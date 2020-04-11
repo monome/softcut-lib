@@ -32,6 +32,8 @@ int main() {
     sc->connectDacPorts();
 
     OscInterface::init(sc.get());
+    OscInterface::printServerMethods();
+
     BufDiskWorker::init(48000);
 
 

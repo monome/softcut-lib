@@ -473,7 +473,7 @@ void OscInterface::printServerMethods() {
     cout << "osc methods: " << endl;
     for (unsigned int i = 0; i < numMethods; ++i) {
         //cout << format(" %1% [%2%]") % methods[i].path % methods[i].format << endl;
-        cout << methods[i].path << "\t" << methods[i].format << endl;
+        cout << methods[i].path << " [" << methods[i].format << "]" << endl;
     }
 }
 
