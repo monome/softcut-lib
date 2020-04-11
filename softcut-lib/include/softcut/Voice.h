@@ -86,6 +86,7 @@ namespace softcut {
         void setPostFilterDry(float);
 
         void setPosition(float sec);
+        void setPhase(phase_t phase);
 
         void setRecOffset(float d);
 
@@ -99,15 +100,20 @@ namespace softcut {
 
         phase_t getQuantPhase();
 
+        // return logical position in seconds
+        float getPos() const;
+
+
         bool getPlayFlag() const;
 
         bool getRecFlag() const;
 
-        float getPos() const;
 
         void setReadDuckTarget(Voice* v)  {
             readDuckTarget = v;
         }
+
+        void syncPosition(const Voice &v, float offset);
 
         void reset();
 
@@ -163,8 +169,9 @@ namespace softcut {
         const Voice *followTarget{nullptr};
 
         void applyReadDuck(float *out, size_t numFrames);
+        void applyWriteDuck(float *in, size_t numFrames);
 
-        static float calcDuckFromPhasePair(double a, double b, float rec, float pre, float fade);
+        static float calcReadDuckFromPhasePair(double a, double b, float rec, float pre, float fade);
     };
 }
 

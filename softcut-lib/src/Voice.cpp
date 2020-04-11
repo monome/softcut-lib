@@ -85,6 +85,10 @@ void Voice::setPosition(float sec) {
     rwh.setPosition(sec);
 }
 
+void Voice::setPhase(phase_t phase) {
+    rwh.enqueuePositionChange(phase);
+}
+
 void Voice::setRecLevel(float amp) {
     recRamp.setTarget(amp);
 }
@@ -96,7 +100,6 @@ void Voice::setPreLevel(float amp) {
 void Voice::setRecFlag(bool val) {
     recEnabled = val;
 }
-
 
 void Voice::setPlayFlag(bool val) {
     playEnabled = val;
@@ -165,7 +168,6 @@ void Voice::setRecPreSlewTime(float d) {
 }
 
 void Voice::setRateSlewTime(float d) {
-
     std::cout << "set rate time " << d << std::endl;
     rateRamp.setTime(d);
 }
@@ -219,14 +221,33 @@ void Voice::applyReadDuck(float *out, size_t numFrames) {
     const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
     const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
     for (size_t i=0; i<numFrames; ++i) {
-        out[i] *= calcDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
-        out[i] *= calcDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
-        out[i] *= calcDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
-        out[i] *= calcDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
+        out[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
     }
 }
 
-float Voice::calcDuckFromPhasePair(double a, double b, float r, float p, float f) {
+void Voice::applyWriteDuck(float *in, size_t numFrames) {
+    const auto &phaseMine0 = rwh.head[0].phase.data();
+    const auto &phaseMine1 = rwh.head[1].phase.data();
+    const auto &phaseOther0 = readDuckTarget->rwh.head[0].phase.data();
+    const auto &phaseOther1 = readDuckTarget->rwh.head[1].phase.data();
+    const auto &recOther0 = readDuckTarget->rwh.head[0].rec.data();
+    const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
+    const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
+    const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
+    for (size_t i=0; i<numFrames; ++i) {
+        in[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
+        in[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
+        in[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
+        in[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
+    }
+}
+
+
+
+float Voice::calcReadDuckFromPhasePair(double a, double b, float r, float p, float f) {
     static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
@@ -259,7 +280,7 @@ void Voice::updatePositions(size_t numFrames) {
     if (followTarget == nullptr) {
         rwh.updateSubheadPositions(numFrames);
     } else {
-        // TODO: copy all position data from other voice
+        rwh.copySubheadPositions(followTarget->rwh, numFrames);
     }
 }
 
@@ -297,4 +318,10 @@ void Voice::performWrites(float *in, size_t numFrames) {
         rwh.updateSubheadWriteLevels(numFrames);
         rwh.performSubheadWrites(src, numFrames);
     }
+}
+
+void Voice::syncPosition(const Voice &target, float offset) {
+    phase_t newPhase = target.rwh.getActivePhase() + offset;
+    // NB: relying on position change function to perform phase wrapping if needed
+    rwh.enqueuePositionChange(newPhase);
 }

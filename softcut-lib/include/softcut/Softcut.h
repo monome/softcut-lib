@@ -46,6 +46,7 @@ namespace softcut {
             for (int i=0; i<numVoices; ++i) {
                 if (voiceEnabled[i]) {
                     voices[i].updatePositions(numFrames);
+                    voices[i].updateQuantPhase();
                 }
             }
             for (int i=0; i<numVoices; ++i) {
@@ -76,8 +77,9 @@ namespace softcut {
 
 
         void syncVoice(int follower, int leader, float offset) {
-            // TODO
+            voices[follower].syncPosition(voices[leader], offset);
         }
+
 
         void setInputBus( int vIdx, float* src) {
             input[vIdx] = src;
@@ -88,8 +90,9 @@ namespace softcut {
         void setVoiceEnabled(int vIdx, bool val) {
             voiceEnabled[vIdx] = val;
         }
+
     };
 }
 
 
-#endif //Softcut_Softcut_H2
+#endif //Softcut_Softcut_H
