@@ -35,10 +35,9 @@ namespace softcut {
 
         void reset() {
             for (int i=0; i<numVoices; ++i) {
-
                 voices[i].reset();
                 /// test: set each voice to duck the next one, in a loop
-                voices[i].setDuckTarget(&(voices[(i + 1) % numVoices]) );
+                voices[i].setReadDuckTarget(&(voices[(i + 1) % numVoices]) );
             };
 
         }

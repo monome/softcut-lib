@@ -70,7 +70,7 @@ void Voice::processBlockMono(float *in, float *out, size_t numFrames) {
 
     if (duckTarget != nullptr) {
         if (duckTarget->getRecFlag()) {
-            applyDucking(out, numFrames);
+            applyReadDuck(out, numFrames);
         }
     }
 
@@ -251,27 +251,33 @@ void Voice::setPreFilterQ(float x) {
     preFilter.setQ(x);
 }
 
-void Voice::applyDucking(float *out, size_t numFrames) {
+void Voice::applyReadDuck(float *out, size_t numFrames) {
     const auto &phaseMine0 = rwh.head[0].phase.data();
     const auto &phaseMine1 = rwh.head[1].phase.data();
-    const auto &phaseOther0 = duckTarget->rwh.head[0].phase.data();
-    const auto &phaseOther1 = duckTarget->rwh.head[1].phase.data();
-    const auto &recOther0 = duckTarget->rwh.head[0].rec.data();
-    const auto &recOther1 = duckTarget->rwh.head[1].rec.data();
-    const auto &preOther0 = duckTarget->rwh.head[0].pre.data();
-    const auto &preOther1 = duckTarget->rwh.head[1].pre.data();
+    const auto &fadeMine0 = rwh.head[0].fade.data();
+    const auto &fadeMine1 = rwh.head[1].fade.data();
+    const auto &phaseOther0 = readDuckTarget->rwh.head[0].phase.data();
+    const auto &phaseOther1 = readDuckTarget->rwh.head[1].phase.data();
+    const auto &recOther0 = readDuckTarget->rwh.head[0].rec.data();
+    const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
+    const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
+    const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
     for (size_t i=0; i<numFrames; ++i) {
-        out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i]);
-        out[i] *= calcPhaseDuck(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i]);
-        out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i]);
-        out[i] *= calcPhaseDuck(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i]);
+        out[i] *= calcDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
+        out[i] *= calcDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
+        out[i] *= calcDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
+        out[i] *= calcDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
     }
 }
 
-float Voice::calcPhaseDuck(double a, double b, float r, float p) {
+float Voice::calcDuckFromPhasePair(double a, double b, float r, float p, float f) {
     static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+
+    if (f <= fadeMin) { return 1.f; }
     if (r <= recMin && p >= preMax) { return 1.f; }
+
     phase_t d = fabs(a - b);
 
     // FIXME: these are in samples!
@@ -294,8 +300,11 @@ void Voice::updatePositions(size_t numFrames) {
         rwh.setRate(fr, rateRamp.update());
     }
 
-    // TODO: use other voice for `follow`
-    rwh.updateSubheadPositions(numFrames);
+    if (followTarget == nullptr) {
+        rwh.updateSubheadPositions(numFrames);
+    } else {
+        // TODO: copy all position data from other voice
+    }
 }
 
 
@@ -306,9 +315,9 @@ void Voice::performReads(float *out, size_t numFrames) {
         // TODO: post-filter, phase poll
     }
 
-    if (duckTarget != nullptr) {
-        if (duckTarget->getRecFlag()) {
-            applyDucking(out, numFrames);
+    if (readDuckTarget != nullptr) {
+        if (readDuckTarget->getRecFlag()) {
+            applyReadDuck(out, numFrames);
         }
     }
 }
@@ -328,7 +337,6 @@ void Voice::performWrites(float *in, size_t numFrames) {
         for (size_t fr = 0; fr < numFrames; ++fr) {
             rwh.setPre(fr, preRamp.update());
             rwh.setRec(fr, recRamp.update());
-            // TODO: pre-filter?
         }
         rwh.updateSubheadWriteLevels(numFrames);
         rwh.performSubheadWrites(src, numFrames);

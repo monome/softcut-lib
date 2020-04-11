@@ -22,6 +22,13 @@ namespace softcut {
     public:
         Voice();
 
+        //----------------------------------
+        // decomposed single-channel process functions
+        void updatePositions(size_t numFrames);
+        void performReads(float *out, size_t numFrames);
+        void performWrites(float *in, size_t numFrames);
+        //-----------------------------------------
+
         void setBuffer(float *buf, size_t numFrames);
 
         void setSampleRate(float hz);
@@ -59,7 +66,9 @@ namespace softcut {
 //        void setPreFilterDry(float);
 
         void setPreFilterEnabled(bool);
+
         void setPreFilterFcMod(float x);
+
         void setPreFilterQ(float x);
 
         void setPostFilterFc(float);
@@ -77,12 +86,6 @@ namespace softcut {
         void setPostFilterDry(float);
 
         void setPosition(float sec);
-
-        // process a single channel
-        //void processBlockMono(float *in, float *out, size_t numFrames);
-        void updatePositions(size_t numFrames);
-        void performReads(float *out, size_t numFrames);
-        void performWrites(float *in, size_t numFrames);
 
         void setRecOffset(float d);
 
@@ -102,8 +105,8 @@ namespace softcut {
 
         float getPos() const;
 
-        void setDuckTarget(Voice* v)  {
-            duckTarget = v;
+        void setReadDuckTarget(Voice* v)  {
+            readDuckTarget = v;
         }
 
         void reset();
@@ -113,8 +116,11 @@ namespace softcut {
         void updateQuantPhase();
 
     private:
+        // audio buffer
         float *buf{};
+        // size of buffer in frames
         size_t bufFrames{};
+        // audio sample rate
         float sampleRate{};
 
         // crossfaded read/write head
@@ -153,12 +159,12 @@ namespace softcut {
         bool recEnabled{};
         bool preFilterEnabled;
 
-        const Voice *duckTarget{nullptr};
+        const Voice *readDuckTarget{nullptr};
         const Voice *followTarget{nullptr};
 
-        void applyDucking(float *out, size_t numFrames);
+        void applyReadDuck(float *out, size_t numFrames);
 
-        static float calcPhaseDuck(double a, double b, float rec, float pre);
+        static float calcDuckFromPhasePair(double a, double b, float rec, float pre, float fade);
     };
 }
 

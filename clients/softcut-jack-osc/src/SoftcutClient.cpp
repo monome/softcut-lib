@@ -17,7 +17,7 @@ static inline void clamp(size_t &x, const size_t a) {
 
 SoftcutClient::SoftcutClient() : JackClient<2, 2>("softcut") {
     for (unsigned int i = 0; i < NumVoices; ++i) {
-        cut.voice(i)->setBuffer(buf[i & 1], BufFrames);
+        cut.voice((int)i)->setBuffer(buf[i & 1], BufFrames);
         cut.setInputBus(input[i].buf[0], (int)i);
         cut.setOutputBus(output[i].buf[0], (int)i);
     }
@@ -29,12 +29,6 @@ void SoftcutClient::process(jack_nframes_t numFrames) {
     Commands::softcutCommands.handlePending(this);
     clearBusses(numFrames);
     mixInput(numFrames);
-//    // process softcut voices (overwrites output bus)
-//    for (int v = 0; v < NumVoices; ++v) {
-//        if (enabled[v]) {
-//            cut.processBlock(v, input[v].buf[0], output[v].buf[0], static_cast<int>(numFrames));
-//        }
-//    }
     cut.processBlock(numFrames);
     mixOutput(numFrames);
     mix.copyTo(sink[0], numFrames);
@@ -52,9 +46,11 @@ void SoftcutClient::clearBusses(size_t numFrames) {
 void SoftcutClient::mixInput(size_t numFrames) {
     for (int dst = 0; dst < NumVoices; ++dst) {
         if (cut.voice(dst)->getRecFlag()) {
+            // stereo capture
             for (int ch = 0; ch < 2; ++ch) {
                 input[dst].mixFrom(&source[SourceAdc][ch], numFrames, inLevel[ch][dst]);
             }
+            // feedback matrix
             for (int src = 0; src < NumVoices; ++src) {
                 if (cut.voice(src)->getPlayFlag()) {
                     input[dst].mixFrom(output[src], numFrames, fbLevel[src][dst]);
@@ -188,7 +184,7 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
             cut.syncVoice(p->idx_0, p->idx_1, p->value);
             break;
         case Commands::Id::SET_CUT_VOICE_DUCK_TARGET:
-            cut.voice(p->idx_0)->setDuckTarget(cut.voice(p->idx_1));
+            cut.voice(p->idx_0)->setReadDuckTarget(cut.voice(p->idx_1));
         default:;;
     }
 }
@@ -206,9 +202,9 @@ void SoftcutClient::reset() {
         setPhaseQuant(v, 1.f);
         setPhaseOffset(v, 0.f);
 
-        for (int i = 0; i < 2; ++i) {
-            inLevel[i][v].setTime(0.001);
-            inLevel[i][v].setTarget(0.0);
+        for (auto & i : inLevel) {
+            i[v].setTime(0.001);
+            i[v].setTarget(0.0);
         }
 
         for (int w = 0; w < NumVoices; ++w) {
@@ -216,8 +212,8 @@ void SoftcutClient::reset() {
             fbLevel[v][w].setTarget(0.0);
         }
 
-        cut.voice(v)->setLoopStart(v * 2);
-        cut.voice(v)->setLoopEnd(v * 2 + 1);
+        cut.voice(v)->setLoopStart((float)v * 2);
+        cut.voice(v)->setLoopEnd((float)v * 2 + 1);
 
         output[v].clear();
         input[v].clear();
