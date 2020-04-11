@@ -18,8 +18,8 @@ static inline void clamp(size_t &x, const size_t a) {
 SoftcutClient::SoftcutClient() : JackClient<2, 2>("softcut") {
     for (unsigned int i = 0; i < NumVoices; ++i) {
         cut.voice((int)i)->setBuffer(buf[i & 1], BufFrames);
-        cut.setInputBus(input[i].buf[0], (int)i);
-        cut.setOutputBus(output[i].buf[0], (int)i);
+        cut.setInputBus((int)i, input[i].buf[0]);
+        cut.setOutputBus((int)i, output[i].buf[0]);
     }
     bufIdx[0] = BufDiskWorker::registerBuffer(buf[0], BufFrames);
     bufIdx[1] = BufDiskWorker::registerBuffer(buf[1], BufFrames);
@@ -73,7 +73,7 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
         //-- client routing and levels
         case Commands::Id::SET_ENABLED_CUT:
             //enabled[p->idx_0] = p->value > 0.f;
-            cut.setVoiceEnabled(p->idx_1, p->value > 0.f);
+            cut.setVoiceEnabled(p->idx_0, p->value > 0.f);
             break;
         case Commands::Id::SET_LEVEL_IN_CUT:
             inLevel[p->idx_0][p->idx_1].setTarget(p->value);

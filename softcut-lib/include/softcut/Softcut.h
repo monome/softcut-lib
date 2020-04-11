@@ -43,17 +43,20 @@ namespace softcut {
         }
 
         void processBlock(int numFrames) {
-//            for (int i=0; i<numVoices; ++i) {
-//                voices[i].processBlockMono(input[i], output[i], numFrames);
-//            }
             for (int i=0; i<numVoices; ++i) {
-                voices[i].updatePositions(numFrames);
+                if (voiceEnabled[i]) {
+                    voices[i].updatePositions(numFrames);
+                }
             }
             for (int i=0; i<numVoices; ++i) {
-                voices[i].performReads(output[i], numFrames);
+                if (voiceEnabled[i]) {
+                    voices[i].performReads(output[i], numFrames);
+                }
             }
             for (int i=0; i<numVoices; ++i) {
-                voices[i].performWrites(input[i], numFrames);
+                if (voiceEnabled[i]) {
+                    voices[i].performWrites(input[i], numFrames);
+                }
             }
         }
 
@@ -76,14 +79,14 @@ namespace softcut {
             // TODO
         }
 
-        void setInputBus(float* src, int voiceIndex) {
-            input[voiceIndex] = src;
+        void setInputBus( int vIdx, float* src) {
+            input[vIdx] = src;
         }
-        void setOutputBus(float* dst, int voiceIndex) {
-            output[voiceIndex] = dst;
+        void setOutputBus(int vIdx, float* dst) {
+            output[vIdx] = dst;
         }
-        void setVoiceEnabled(int voiceIndex, bool val) {
-            voiceEnabled[voiceIndex] = val;
+        void setVoiceEnabled(int vIdx, bool val) {
+            voiceEnabled[vIdx] = val;
         }
     };
 }
