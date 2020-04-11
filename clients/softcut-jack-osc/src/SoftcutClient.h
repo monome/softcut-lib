@@ -42,8 +42,6 @@ namespace softcut_jack_osc {
         LogRamp outLevel[NumVoices];
         LogRamp outPan[NumVoices];
         LogRamp fbLevel[NumVoices][NumVoices];
-        // enabled flags
-        bool enabled[NumVoices];
         softcut::phase_t quantPhase[NumVoices];
 
     private:
