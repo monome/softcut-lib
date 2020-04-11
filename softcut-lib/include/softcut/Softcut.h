@@ -44,8 +44,17 @@ namespace softcut {
         }
 
         void processBlock(int numFrames) {
+//            for (int i=0; i<numVoices; ++i) {
+//                voices[i].processBlockMono(input[i], output[i], numFrames);
+//            }
             for (int i=0; i<numVoices; ++i) {
-                voices[i].processBlockMono(input[i], output[i], numFrames);
+                voices[i].updatePositions(numFrames);
+            }
+            for (int i=0; i<numVoices; ++i) {
+                voices[i].performReads(output[i], numFrames);
+            }
+            for (int i=0; i<numVoices; ++i) {
+                voices[i].performWrites(input[i], numFrames);
             }
         }
 

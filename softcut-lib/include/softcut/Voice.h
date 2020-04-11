@@ -79,7 +79,10 @@ namespace softcut {
         void setPosition(float sec);
 
         // process a single channel
-        void processBlockMono(float *in, float *out, size_t numFrames);
+        //void processBlockMono(float *in, float *out, size_t numFrames);
+        void updatePositions(size_t numFrames);
+        void performReads(float *out, size_t numFrames);
+        void performWrites(float *in, size_t numFrames);
 
         void setRecOffset(float d);
 

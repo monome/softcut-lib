@@ -52,6 +52,7 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     }
 }
 
+/*
 void Voice::processBlockMono(float *in, float *out, size_t numFrames) {
 
     for (size_t fr = 0; fr < numFrames; ++fr) {
@@ -93,6 +94,7 @@ void Voice::processBlockMono(float *in, float *out, size_t numFrames) {
         rwh.performSubheadWrites(src, numFrames);
     }
 }
+ */
 
 void Voice::setSampleRate(float hz) {
     sampleRate = hz;
@@ -284,4 +286,51 @@ float Voice::calcPhaseDuck(double a, double b, float r, float p) {
         return 0.f;
     }
     return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
+}
+
+
+void Voice::updatePositions(size_t numFrames) {
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        rwh.setRate(fr, rateRamp.update());
+    }
+
+    // TODO: use other voice for `follow`
+    rwh.updateSubheadPositions(numFrames);
+}
+
+
+void Voice::performReads(float *out, size_t numFrames) {
+    if (playEnabled) {
+        // TODO: use other voice for `duck`
+        rwh.performSubheadReads(out, numFrames);
+        // TODO: post-filter, phase poll
+    }
+
+    if (duckTarget != nullptr) {
+        if (duckTarget->getRecFlag()) {
+            applyDucking(out, numFrames);
+        }
+    }
+}
+
+void Voice::performWrites(float *in, size_t numFrames) {
+    if (recEnabled) {
+        // NB: could move filter outside of recEnabled,
+        // consuming CPU but reducing clicks on rec toggle
+        float *src;
+        if (preFilterEnabled) {
+            src = preFilterInputBuf.data();
+            processInputFilter(in, src, numFrames);
+        } else {
+            src = in;
+        }
+
+        for (size_t fr = 0; fr < numFrames; ++fr) {
+            rwh.setPre(fr, preRamp.update());
+            rwh.setRec(fr, recRamp.update());
+            // TODO: pre-filter?
+        }
+        rwh.updateSubheadWriteLevels(numFrames);
+        rwh.performSubheadWrites(src, numFrames);
+    }
 }
