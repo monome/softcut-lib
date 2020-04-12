@@ -6,6 +6,9 @@
 #define SOFTCUT_READWRITEHEAD_H
 
 #include <cstdint>
+
+#include "dsp-kit/Smoother.hpp"
+
 #include "SubHead.h"
 #include "Types.h"
 
@@ -15,7 +18,9 @@ namespace softcut {
 
     protected:
         friend class Voice;
+
         friend class SubHead;
+
         friend class TestBuffers;
 
         template<typename T>
@@ -30,13 +35,19 @@ namespace softcut {
         size_t frameIdx; // last used index into processing block
 
         void enqueuePositionChange(phase_t pos);
+
         int dequeuePositionChange(size_t fr);
+
         void checkPositionChange(frame_t fr_1, frame_t fr);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // we don't actually want equal power since we are summing!
-            return x*a + y*b;
+            return x * a + y * b;
         }
+
+        static float computeReadDuckLevel(const SubHead *a, const SubHead *b, size_t frame);
+
+        static float computeWriteDuckLevel(const SubHead *a, const SubHead *b, size_t frame);
 
 
     protected:
@@ -62,9 +73,23 @@ namespace softcut {
         // index of active subhead
         SubHead::StateBuffer<int> active{-1};
 
+        // ducking levels. 0 == no ducking, 1 == full ducking
+        SubHead::StateBuffer<float> readDuck{0};
+        SubHead::StateBuffer<float> writeDuck{0};
+
+        // smoothers for ducking
+#if 0
+        dspkit::AudioLevelSmoother readDuckRamp;
+        dspkit::AudioLevelSmoother writeDuckRamp;
+#else
+        dspkit::OnePoleSmoother<float> readDuckRamp;
+        dspkit::OnePoleSmoother<float> writeDuckRamp;
+#endif
+
     public:
 
         ReadWriteHead();
+
         void init();
 
         // queue a position change
@@ -76,9 +101,20 @@ namespace softcut {
         void performSubheadReads(float *output, size_t numFrames);
 
         void updateSubheadPositions(size_t numFrames);
+
         void copySubheadPositions(const ReadWriteHead &other, size_t numFrames);
 
         void updateSubheadWriteLevels(size_t numFrames);
+
+        void computeReadDuckLevels(const ReadWriteHead *other, size_t numFrames);
+
+        // read ducking affects output level
+        void applyReadDuckLevels(float *output, size_t numFrames);
+
+        void computeWriteDuckLevels(const ReadWriteHead *other, size_t numFrames);
+
+        // write ducking affects internal rec/pre buffer
+        void applyWriteDuckLevels(size_t numFrames);
 
         void setSampleRate(float sr);
 

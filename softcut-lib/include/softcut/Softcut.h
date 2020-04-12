@@ -35,9 +35,8 @@ namespace softcut {
 
         void reset() {
             for (int i=0; i<numVoices; ++i) {
+                voiceEnabled[i] = false;
                 voices[i].reset();
-                /// test: set each voice to duck the next one, in a loop
-                voices[i].setReadDuckTarget(&(voices[(i + 1) % numVoices]) );
             };
 
         }
@@ -75,11 +74,9 @@ namespace softcut {
             }
         }
 
-
         void syncVoice(int follower, int leader, float offset) {
             voices[follower].syncPosition(voices[leader], offset);
         }
-
 
         void setInputBus( int vIdx, float* src) {
             input[vIdx] = src;
@@ -89,6 +86,9 @@ namespace softcut {
         }
         void setVoiceEnabled(int vIdx, bool val) {
             voiceEnabled[vIdx] = val;
+        }
+        bool getVoiceEnabled(int vIdx) {
+            return voiceEnabled[vIdx];
         }
 
     };

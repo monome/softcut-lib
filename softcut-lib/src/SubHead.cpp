@@ -138,7 +138,7 @@ static float calcPreFadeCurve(float fade) {
 
 static float calcRecFadeCurve(float fade) {
     // time parameter is delay before opening, when fading in
-    // FIXME: make this dynamic
+    // FIXME: make this dynamic?
     //static constexpr float t = 0.f;
     //static constexpr float t = 0.0625f;
     //static constexpr float t = 0.125f;
