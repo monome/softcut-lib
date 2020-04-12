@@ -169,7 +169,6 @@ void Voice::setRecPreSlewTime(float d) {
 }
 
 void Voice::setRateSlewTime(float d) {
-    std::cout << "set rate time " << d << std::endl;
     rateRamp.setTime(d);
 }
 
