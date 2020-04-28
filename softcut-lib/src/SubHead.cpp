@@ -16,10 +16,10 @@ void SubHead::init(ReadWriteHead *parent) {
     rwh = parent;
     resamp.setPhase(0);
     resamp.clearBuffers();
-    frame_t w = rwh->recOffsetSamples;
+    frame_t w = static_cast<frame_t>(rwh->recOffsetSamples);
     while (w < 0) { w += maxBlockSize; }
     while (w > maxBlockSize) { w -= maxBlockSize; }
-    for (int i = 0; i < maxBlockSize; ++i) {
+    for (unsigned int i = 0; i < maxBlockSize; ++i) {
         phase[i] = 0.0;
         wrIdx[i] = w;
         opState[i] = Stopped;
