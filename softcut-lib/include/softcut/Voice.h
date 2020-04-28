@@ -154,7 +154,7 @@ namespace softcut {
 
         // post-filter mix and parameter ramps
         enum { SVF_LP, SVF_HP, SVF_BP, SVF_BR, SVF_DRY, SVF_OUTPUTS };
-        dspkit::EnvelopeSmoother postFilterLevelRamp[SVF_OUTPUTS];
+        dspkit::AudioLevelSmoother postFilterLevelRamp[SVF_OUTPUTS];
         dspkit::EnvelopeSmoother postFilterFcRamp;
         dspkit::EnvelopeSmoother postFilterRqRamp;
 
