@@ -10,29 +10,39 @@
 
 using namespace softcut;
 
-Voice::Voice() :
-        rateRamp(48000, 0.1),
-        preRamp(48000, 0.1),
-        recRamp(48000, 0.1),
-        preFilterFcBase(12000),
-        preFilterFcMod(1.0),
-        preFilterEnabled(true) {}
+Voice::Voice() {
+    setSampleRate(48000);
+    reset();
+}
 
 void Voice::reset() {
-    preFilter.setCutoff(preFilterFcBase);
-    preFilter.setQ(1.0);
+    preFilterFcBase = sampleRate * 3 / 8;
     preFilterFcMod = 1.0;
+    preFilterEnabled = true;
+    preFilter.setQ(1.0);
 
-    postFilter.setLpMix(0.0);
-    postFilter.setHpMix(0.0);
-    postFilter.setBpMix(0.0);
-    postFilter.setBrMix(0.0);
-    postFilter.setInverseQ(4.0);
-    postFilter.setCutoff(12000);
-    postFilterDryLevel = 1.0;
+    postFilterFcRamp.setTime(0.1f);
+    postFilterFcRamp.setTarget(sampleRate * 3 / 8);
 
-    setRecPreSlewTime(0.001);
-    setRateSlewTime(0.001);
+    postFilterLevelRamp[SVF_LP].setTime(0.1);
+    postFilterLevelRamp[SVF_HP].setTime(0.1);
+    postFilterLevelRamp[SVF_BP].setTime(0.1);
+    postFilterLevelRamp[SVF_BR].setTime(0.1);
+    postFilterLevelRamp[SVF_DRY].setTime(0.1);
+
+    postFilterLevelRamp[SVF_LP].setTarget(0);
+    postFilterLevelRamp[SVF_HP].setTarget(0);
+    postFilterLevelRamp[SVF_BP].setTarget(0);
+    postFilterLevelRamp[SVF_BR].setTarget(0);
+    postFilterLevelRamp[SVF_DRY].setTarget(1.f);
+
+    postFilterEnabled = true;
+    rateRamp.setTime(0.1);
+    preRamp.setTime(0.1);
+    recRamp.setTime(0.1);
+
+    setRecPreSlewTime(0.01);
+    setRateSlewTime(0.01);
 
     recEnabled = false;
     playEnabled = false;
@@ -44,30 +54,116 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     float fc, fcMod;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         fcMod = std::fabs(rwh.getRateBuffer(fr));
-        // FIXME: refactor
-        fc = (preFilterFcMod*(preFilterFcBase*fcMod)) + ((1.f-preFilterFcMod)*preFilterFcBase);
-
-        preFilter.setCutoff(std::fmax(0.f, std::fmin(16000.f, fc)));
+        // FIXME: refactor, magic numbers
+        fc = (preFilterFcMod * (preFilterFcBase * fcMod)) + ((1.f - preFilterFcMod) * preFilterFcBase);
+        preFilter.setCutoff(std::fmax(0.f, std::fmin(sampleRate * 3 / 8.f, fc)));
         dst[fr] = preFilter.processSample(src[fr]);
     }
 }
 
-void Voice::setSampleRate(float hz) {
+void Voice::updatePositions(size_t numFrames) {
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        rwh.setRate(fr, rateRamp.getNextValue());
+    }
+    const Voice *target = followTarget.load();
+    if (target == nullptr) {
+        rwh.updateSubheadPositions(numFrames);
+    } else {
+        rwh.copySubheadPositions(target->rwh, numFrames);
+    }
+}
 
+
+void Voice::performReads(float *out, size_t numFrames) {
+    if (playEnabled) {
+        rwh.performSubheadReads(out, numFrames);
+    }
+
+    const Voice *target = readDuckTarget.load();
+    if (target != nullptr) {
+        if (target->getRecFlag()) {
+            rwh.computeReadDuckLevels(&(target->rwh), numFrames);
+            rwh.applyReadDuckLevels(out, numFrames);
+        }
+    }
+    if (postFilterEnabled) {
+        processOutputFilter(out, numFrames);
+    }
+}
+
+void Voice::performWrites(float *in, size_t numFrames) {
+    if (recEnabled) {
+        // NB: could move filter outside of recEnabled,
+        // consuming CPU but reducing clicks on rec toggle
+        float *src;
+        if (preFilterEnabled) {
+            src = preFilterInputBuf.data();
+            processInputFilter(in, src, numFrames);
+        } else {
+            src = in;
+        }
+
+        for (size_t fr = 0; fr < numFrames; ++fr) {
+            src[fr] = dcBlocker.processSample(src[fr]);
+        }
+        for (size_t fr = 0; fr < numFrames; ++fr) {
+            rwh.setPre(fr, preRamp.getNextValue());
+            rwh.setRec(fr, recRamp.getNextValue());
+        }
+
+        rwh.updateSubheadWriteLevels(numFrames);
+
+        const Voice *target = writeDuckTarget.load();
+        if (target != nullptr) {
+            if (target->getRecFlag()) {
+                rwh.computeWriteDuckLevels(&(target->rwh), numFrames);
+                rwh.applyWriteDuckLevels(numFrames);
+            }
+        }
+
+        rwh.performSubheadWrites(src, numFrames);
+    }
+}
+
+void Voice::syncPosition(const Voice &target, float offset) {
+    phase_t newPhase = target.rwh.getActivePhase() + offset;
+    // NB: relying on position change function to perform phase wrapping if needed
+    rwh.enqueuePositionChange(newPhase);
+}
+
+
+void Voice::updateQuantPhase() {
+    if (phaseQuant == 0) {
+        quantPhase = rwh.getActivePhase() / sampleRate;
+    } else {
+        quantPhase = std::floor((rwh.getActivePhase() + phaseOffset) /
+                                (sampleRate * phaseQuant)) * phaseQuant;
+    }
+}
+
+//=====================================
+//==== setters
+
+
+void Voice::setSampleRate(float hz) {
     sampleRate = hz;
-    rateRamp.setSampleRate(hz);
-    preRamp.setSampleRate(hz);
-    recRamp.setSampleRate(hz);
     rwh.setSampleRate(hz);
     preFilter.init(hz);
     postFilter.setSampleRate(hz);
+    dcBlocker.init(hz, 20);
+    for (auto &ramp : postFilterLevelRamp) {
+        ramp.setSampleRate(hz);
+    }
+    postFilterFcRamp.setSampleRate(hz);
+    postFilterRqRamp.setSampleRate(hz);
+    rateRamp.setSampleRate(hz);
+    preRamp.setSampleRate(hz);
+    recRamp.setSampleRate(hz);
 }
 
 void Voice::setRate(float rate) {
     std::cout << "set rate target " << rate << std::endl;
     rateRamp.setTarget(rate);
-    // FIXME: fix pre-filter smoothing
-    //updatePreSvfFc();
 }
 
 void Voice::setLoopStart(float sec) {
@@ -84,10 +180,6 @@ void Voice::setFadeTime(float sec) {
 
 void Voice::setPosition(float sec) {
     rwh.setPosition(sec);
-}
-
-void Voice::setPhase(phase_t phase) {
-    rwh.enqueuePositionChange(phase);
 }
 
 void Voice::setRecLevel(float amp) {
@@ -124,33 +216,36 @@ void Voice::setPreFilterEnabled(bool x) {
 }
 
 // output filter
+void Voice::setPostFilterEnabled(bool x) {
+    postFilterEnabled = x;
+}
+
 void Voice::setPostFilterFc(float x) {
-    postFilter.setCutoff(x);
+    postFilterFcRamp.setTarget(x);
 }
 
 void Voice::setPostFilterRq(float x) {
-    postFilter.setInverseQ(x);
+    postFilterRqRamp.setTarget(x);
 }
 
 void Voice::setPostFilterLp(float x) {
-    postFilter.setLpMix(x);
+    postFilterLevelRamp[SVF_LP].setTarget(x);
 }
 
 void Voice::setPostFilterHp(float x) {
-    postFilter.setHpMix(x);
+    postFilterLevelRamp[SVF_HP].setTarget(x);
 }
 
 void Voice::setPostFilterBp(float x) {
-    postFilter.setBpMix(x);
+    postFilterLevelRamp[SVF_BP].setTarget(x);
 }
 
 void Voice::setPostFilterBr(float x) {
-    postFilter.setBrMix(x);
+    postFilterLevelRamp[SVF_BR].setTarget(x);
 }
 
 void Voice::setPostFilterDry(float x) {
-    // FIXME
-    postFilterDryLevel = x;
+    postFilterLevelRamp[SVF_DRY].setTarget(x);
 }
 
 void Voice::setBuffer(float *b, size_t nf) {
@@ -171,6 +266,10 @@ void Voice::setRecPreSlewTime(float d) {
 void Voice::setRateSlewTime(float d) {
     rateRamp.setTime(d);
 }
+void Voice::setRateSlewShape(int shape) {
+    rateRamp.setRiseShape(static_cast<easing::function>(shape));
+    rateRamp.setFallShape(static_cast<easing::function>(shape));
+}
 
 void Voice::setPhaseQuant(float x) {
     phaseQuant = x;
@@ -184,15 +283,6 @@ phase_t Voice::getQuantPhase() {
     return quantPhase;
 }
 
-void Voice::updateQuantPhase() {
-    if (phaseQuant == 0) {
-        quantPhase = rwh.getActivePhase() / sampleRate;
-    } else {
-        quantPhase = std::floor((rwh.getActivePhase() + phaseOffset) /
-                                (sampleRate * phaseQuant)) * phaseQuant;
-    }
-}
-
 bool Voice::getPlayFlag() const {
     return playEnabled;
 }
@@ -201,159 +291,67 @@ bool Voice::getRecFlag() const {
     return recEnabled;
 }
 
-float Voice::getPos() const {
-    return static_cast<float>(rwh.getActivePhase() / sampleRate);
-}
-
 void Voice::setPreFilterQ(float x) {
     preFilter.setQ(x);
 }
 
-void Voice::applyReadDuck(float *out, size_t numFrames) {
-    const auto &phaseMine0 = rwh.head[0].phase.data();
-    const auto &phaseMine1 = rwh.head[1].phase.data();
-    const auto &fadeMine0 = rwh.head[0].fade.data();
-    const auto &fadeMine1 = rwh.head[1].fade.data();
-    const auto &phaseOther0 = readDuckTarget->rwh.head[0].phase.data();
-    const auto &phaseOther1 = readDuckTarget->rwh.head[1].phase.data();
-    const auto &recOther0 = readDuckTarget->rwh.head[0].rec.data();
-    const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
-    const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
-    const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
-    for (size_t i=0; i<numFrames; ++i) {
-        out[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine0[i]);
-        out[i] *= calcReadDuckFromPhasePair(phaseMine0[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine0[i]);
-        out[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther0[i], recOther0[i], preOther0[i], fadeMine1[i]);
-        out[i] *= calcReadDuckFromPhasePair(phaseMine1[i], phaseOther1[i], recOther1[i], preOther1[i], fadeMine1[i]);
-    }
+void Voice::setReadDuckTarget(Voice *v) {
+    readDuckTarget.store(v);
 }
 
-void Voice::applyWriteDuck(float *in, size_t numFrames) {
-    const auto &phaseMine0 = rwh.head[0].phase.data();
-    const auto &phaseMine1 = rwh.head[1].phase.data();
-    const auto &phaseOther0 = readDuckTarget->rwh.head[0].phase.data();
-    const auto &phaseOther1 = readDuckTarget->rwh.head[1].phase.data();
-    const auto &recOther0 = readDuckTarget->rwh.head[0].rec.data();
-    const auto &recOther1 = readDuckTarget->rwh.head[1].rec.data();
-    const auto &preOther0 = readDuckTarget->rwh.head[0].pre.data();
-    const auto &preOther1 = readDuckTarget->rwh.head[1].pre.data();
-    const auto &recMine0 = rwh.head[0].rec.data();
-    const auto &recMine1 = rwh.head[1].rec.data();
-    const auto &preMine0 = rwh.head[0].pre.data();
-    const auto &preMine1 = rwh.head[1].pre.data();
-    for (size_t i=0; i<numFrames; ++i) {
-        in[i] *= calcWriteDuckFromPhasePair(phaseMine0[i], phaseOther0[i], preMine0[i], preOther0[i], recMine0[i], recOther0[i]);
-        in[i] *= calcWriteDuckFromPhasePair(phaseMine0[i], phaseOther1[i], preMine0[i], preOther1[i], recMine0[i], recOther1[i]);
-        in[i] *= calcWriteDuckFromPhasePair(phaseMine1[i], phaseOther0[i], preMine1[i], preOther0[i], recMine1[i], recOther0[i]);
-        in[i] *= calcWriteDuckFromPhasePair(phaseMine1[i], phaseOther1[i], preMine1[i], preOther1[i], recMine1[i], recOther1[i]);
-    }
+void Voice::setWriteDuckTarget(Voice *v) {
+    writeDuckTarget.store(v);
 }
 
-
-
-float Voice::calcReadDuckFromPhasePair(double a, double b, float r, float p, float f) {
-    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
-    static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
-    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
-
-    if (f <= fadeMin) { return 1.f; }
-    if (r <= recMin && p >= preMax) { return 1.f; }
-
-    phase_t d = fabs(a - b);
-
-    // FIXME: these are in samples!
-    // should be dynamic..?
-    /// and probably scale with rate??
-    static constexpr phase_t dmax = 1000;
-    static constexpr phase_t dmin = 500;
-    if (d > dmax) {
-        return 1.f;
-    }
-    if (d < dmin) {
-        return 0.f;
-    }
-    return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
+void Voice::setFollowTarget(Voice *v) {
+    followTarget.store(v);
 }
 
-float Voice::calcWriteDuckFromPhasePair(double a, double b, float ra, float rb, float pa, float pb) {
-    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
-    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
-
-    if ((ra <= recMin && pa >= preMax) || (rb <= recMin && pb >= preMax)) { return 1.f; }
-
-    phase_t d = fabs(a - b);
-
-    // FIXME: these are in samples!
-    // should be dynamic..?
-    /// and probably scale with rate??
-    static constexpr phase_t dmax = 1000;
-    static constexpr phase_t dmin = 500;
-    if (d > dmax) {
-        return 1.f;
-    }
-    if (d < dmin) {
-        return 0.f;
-    }
-    return Fades::raisedCosFadeIn(static_cast<float>(d-dmin)/static_cast<float>(dmax-dmin));
-}
-
-
-void Voice::updatePositions(size_t numFrames) {
+void Voice::processOutputFilter(float *buf, size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        rwh.setRate(fr, rateRamp.update());
-    }
-
-    if (followTarget == nullptr) {
-        rwh.updateSubheadPositions(numFrames);
-    } else {
-        rwh.copySubheadPositions(followTarget->rwh, numFrames);
-    }
-}
-
-
-void Voice::performReads(float *out, size_t numFrames) {
-    if (playEnabled) {
-        // TODO: use other voice for `duck`
-        rwh.performSubheadReads(out, numFrames);
-        // TODO: post-filter, phase poll
-    }
-
-    if (readDuckTarget != nullptr) {
-        if (readDuckTarget->getRecFlag()) {
-            applyReadDuck(out, numFrames);
-        }
+        postFilter.setLpMix(postFilterLevelRamp[SVF_LP].getNextValue());
+        postFilter.setHpMix(postFilterLevelRamp[SVF_HP].getNextValue());
+        postFilter.setBpMix(postFilterLevelRamp[SVF_BP].getNextValue());
+        postFilter.setBrMix(postFilterLevelRamp[SVF_BR].getNextValue());
+        // FIXME: could be more efficient
+        /// - use SVF pitch table
+        /// - combine RQ and FC setting into one coefficient calc
+        postFilter.setCutoff(postFilterFcRamp.getNextValue());
+        postFilter.setInverseQ(postFilterRqRamp.getNextValue());
+        float dryLevel = postFilterLevelRamp[SVF_DRY].getNextValue();
+        buf[fr] = buf[fr] * dryLevel + postFilter.processSample(buf[fr]);
     }
 }
 
-void Voice::performWrites(float *in, size_t numFrames) {
-    if (recEnabled) {
-        // NB: could move filter outside of recEnabled,
-        // consuming CPU but reducing clicks on rec toggle
-        float *src;
-        if (preFilterEnabled) {
-            src = preFilterInputBuf.data();
-            processInputFilter(in, src, numFrames);
-        } else {
-            src = in;
-        }
-
-        for (size_t fr = 0; fr < numFrames; ++fr) {
-            rwh.setPre(fr, preRamp.update());
-            rwh.setRec(fr, recRamp.update());
-        }
-
-        if (writeDuckTarget != nullptr) {
-            if (writeDuckTarget->getRecFlag()) {
-                applyWriteDuck(in, numFrames);
-            }
-        }
-        rwh.updateSubheadWriteLevels(numFrames);
-        rwh.performSubheadWrites(src, numFrames);
-    }
+void Voice::setLevelSlewTime(float t) {
+    postFilterLevelRamp[SVF_LP].setTime(t);
+    postFilterLevelRamp[SVF_HP].setTime(t);
+    postFilterLevelRamp[SVF_BP].setTime(t);
+    postFilterLevelRamp[SVF_BR].setTime(t);
+    postFilterLevelRamp[SVF_DRY].setTime(t);
 }
 
-void Voice::syncPosition(const Voice &target, float offset) {
-    phase_t newPhase = target.rwh.getActivePhase() + offset;
-    // NB: relying on position change function to perform phase wrapping if needed
-    rwh.enqueuePositionChange(newPhase);
+void Voice::setPostFilterFcSlewTime(float t) {
+    postFilterFcRamp.setTime(t);
+}
+
+void Voice::setPostFilterRqSlewTime(float t) {
+    postFilterRqRamp.setTime(t);
+}
+
+void Voice::setPostFilterFcRiseShape(int shape) {
+    postFilterFcRamp.setRiseShape(static_cast<easing::function>(shape));
+}
+
+void Voice::setPostFilterFcFallShape(int shape) {
+    postFilterFcRamp.setFallShape(static_cast<easing::function>(shape));
+}
+
+void Voice::setPostFilterRqRiseShape(int shape) {
+    postFilterRqRamp.setRiseShape(static_cast<easing::function>(shape));
+}
+
+void Voice::setPostFilterRqFallShape(int shape) {
+    postFilterRqRamp.setFallShape(static_cast<easing::function>(shape));
+
 }

@@ -47,10 +47,10 @@ namespace softcut {
             DoneFadeOut = 6
         } OpAction;
 
-        static constexpr size_t maxBlockSize = 1024;
+	using frame_t = long int;
+	static constexpr frame_t maxBlockSize = 1024;
         template<typename T>
         using StateBuffer = std::array<T, maxBlockSize>;
-        using frame_t = long int;
 
     protected:
         ReadWriteHead *rwh{};
