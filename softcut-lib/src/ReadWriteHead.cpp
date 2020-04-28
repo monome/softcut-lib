@@ -3,6 +3,7 @@
 //
 #include <algorithm>
 #include <cmath>
+#include <softcut/Fades.h>
 
 #include "softcut/Resampler.h"
 #include "softcut/ReadWriteHead.h"
@@ -17,6 +18,10 @@ ReadWriteHead::ReadWriteHead() {
     rec.fill(0.f);
     active.fill(-1);
     frameIdx = 0;
+    readDuckRamp.setSampleRate(48000.f);
+    readDuckRamp.setTime(0.01);
+    writeDuckRamp.setSampleRate(48000.f);
+    writeDuckRamp.setTime(0.01);
 }
 
 void ReadWriteHead::init() {
@@ -24,6 +29,11 @@ void ReadWriteHead::init() {
     end = maxBlockSize * 2;
     head[0].init(this);
     head[1].init(this);
+    rate.fill(1.f);
+    pre.fill(0.f);
+    rec.fill(0.f);
+    active.fill(-1);
+    frameIdx = 0;
 }
 
 void ReadWriteHead::enqueuePositionChange(phase_t pos) {
@@ -105,10 +115,10 @@ void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
         active0 = static_cast<unsigned int>(
                 (head[0].opState[fr] != SubHead::Stopped)
-                && (head[0].fade[fr] > 0.f) );
+                && (head[0].fade[fr] > 0.f));
         active1 = static_cast<unsigned int>(
                 (head[1].opState[fr] != SubHead::Stopped)
-                && (head[1].fade[fr] > 0.f) );
+                && (head[1].fade[fr] > 0.f));
         activeHeadBits = active0 | (active1 << 1u);
         switch (activeHeadBits) {
             case 0:
@@ -215,3 +225,72 @@ void ReadWriteHead::copySubheadPositions(const ReadWriteHead &src, size_t numFra
     }
 }
 
+void ReadWriteHead::computeReadDuckLevels(const ReadWriteHead *other, size_t numFrames) {
+    float x;
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        x = computeReadDuckLevel(&(head[0]), &(other->head[0]), fr);
+        x = fmax(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
+        x = fmax(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
+        x = fmax(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
+        readDuck[fr] = x;
+    }
+}
+
+void ReadWriteHead::applyReadDuckLevels(float* output, size_t numFrames) {
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        output[fr] *= readDuckRamp.getNextValue(1.f- readDuck[fr]);
+        //output[fr] *= (1.f- readDuck[fr]);
+    }
+}
+
+void ReadWriteHead::computeWriteDuckLevels(const ReadWriteHead *other, size_t numFrames) {
+    float x;
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        x = computeWriteDuckLevel(&(head[0]), &(other->head[0]), fr);
+        x = fmax(x, computeWriteDuckLevel(&(head[0]), &(other->head[1]), fr));
+        x = fmax(x, computeWriteDuckLevel(&(head[1]), &(other->head[0]), fr));
+        x = fmax(x, computeWriteDuckLevel(&(head[1]), &(other->head[1]), fr));
+        writeDuck[fr] = x;
+    }
+}
+
+void ReadWriteHead::applyWriteDuckLevels(size_t numFrames) {
+    float x, y;
+    for (size_t fr = 0; fr < numFrames; ++fr) {
+        x = writeDuck[fr];
+        y = writeDuckRamp.getNextValue(x);
+        // testing..
+        //std::cerr << x << ", " << y << std::endl;
+        rec[fr] *= (1.f - y);
+        pre[fr] += (1.f - pre[fr]) * y;
+    }
+}
+
+
+float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, size_t frame) {
+    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+    static constexpr phase_t dmax = 480*2;
+    static constexpr phase_t dmin = 480;
+    if (a->fade[frame] < fadeMin) { return 0.f; }
+    if ((b->rec[frame] < recMin) && (b->pre[frame] > preMax)) { return 0.f; }
+    const phase_t dabs = fabs(a->phase[frame] - b->phase[frame]);
+    if (dabs >= dmax) { return 0.f; }
+    if (dabs <= dmin) { return 1.f; }
+    return Fades::raisedCosFadeOut(static_cast<float>((dabs-dmin) / (dmax-dmin)));
+}
+
+
+float ReadWriteHead::computeWriteDuckLevel(const SubHead* a, const SubHead* b, size_t frame) {
+    static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
+    static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+    static constexpr phase_t dmax = 480*2;
+    static constexpr phase_t dmin = 480;
+    if (a->rec[frame] < recMin && a->pre[frame] > preMax) { return 0.f; }
+    if (b->rec[frame] < recMin && b->pre[frame] > preMax) { return 0.f; }
+    const phase_t dabs = fabs(a->phase[frame] - b->phase[frame]);
+    if (dabs >= dmax) { return 0.f; }
+    if (dabs <= dmin) { return 1.f; }
+    return Fades::raisedCosFadeOut(static_cast<float>((dabs-dmin) / (dmax-dmin)));
+}

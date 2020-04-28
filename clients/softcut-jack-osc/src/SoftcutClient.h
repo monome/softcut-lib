@@ -108,7 +108,7 @@ namespace softcut_jack_osc {
             cut.voice(i)->setPhaseOffset(sec);
         }
 
-        [[nodiscard]] int getNumVoices() const { return NumVoices; }
+        int getNumVoices() const { return NumVoices; }
 
 	void reset();
 
