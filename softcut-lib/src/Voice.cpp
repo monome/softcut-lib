@@ -315,9 +315,9 @@ void Voice::processOutputFilter(float *buf, size_t numFrames) {
         postFilter.setBrMix(postFilterLevelRamp[SVF_BR].getNextValue());
         // FIXME: could be more efficient
         /// - use SVF pitch table
-        /// - combine RQ and FC setting into one coefficient calc
-        postFilter.setCutoff(postFilterFcRamp.getNextValue());
-        postFilter.setInverseQ(postFilterRqRamp.getNextValue());
+        postFilter.setCutoffNoCalc(postFilterFcRamp.getNextValue());
+        postFilter.setInverseQNoCalc(postFilterRqRamp.getNextValue());
+        postFilter.calcCoeffs();
         float dryLevel = postFilterLevelRamp[SVF_DRY].getNextValue();
         buf[fr] = buf[fr] * dryLevel + postFilter.processSample(buf[fr]);
     }
