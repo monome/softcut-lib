@@ -12,4 +12,8 @@ set(SRC
 
 include_directories(include src)
 
+if(APPLE)
+    include_directories(/usr/local/include)
+endif()
+
 add_library(softcut STATIC ${SRC})
