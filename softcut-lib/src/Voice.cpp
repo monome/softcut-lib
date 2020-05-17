@@ -3,8 +3,10 @@
 //
 
 #include <functional>
-#include <softcut/Fades.h>
 
+#include "dsp-kit/clamp.hpp"
+
+#include "softcut/Fades.h"
 #include "softcut/Voice.h"
 #include "softcut/Resampler.h"
 
@@ -56,7 +58,7 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
         fcMod = std::fabs(rwh.getRateBuffer(fr));
         // FIXME: refactor, magic numbers
         fc = (preFilterFcMod * (preFilterFcBase * fcMod)) + ((1.f - preFilterFcMod) * preFilterFcBase);
-        preFilter.setCutoff(std::fmax(0.f, std::fmin(sampleRate * 3 / 8.f, fc)));
+	preFilter.setCutoff(dspkit::clamp<float>(fc, 1.f, sampleRate * 3 / 8.f));
         dst[fr] = preFilter.processSample(src[fr]);
     }
 }
