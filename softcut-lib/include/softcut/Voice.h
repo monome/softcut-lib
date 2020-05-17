@@ -88,7 +88,6 @@ namespace softcut {
         void setLevelSlewTime(float value);
         void setRecPreSlewTime(float d);
 
-
         // rate has variable shape
         void setRateSlewTime(float t);
         void setRateSlewShape(int shape);
@@ -103,25 +102,20 @@ namespace softcut {
 
         void setPhaseQuant(float x);
         void setPhaseOffset(float x);
-
+       
+        void updateQuantPhase();
         phase_t getQuantPhase();
 
         bool getPlayFlag() const;
-
         bool getRecFlag() const;
 
         void setReadDuckTarget(Voice* v);
         void setWriteDuckTarget(Voice* v);
 
         void setFollowTarget(Voice* v);
-
         void syncPosition(const Voice &v, float offset);
 
-
         void reset();
-
-        void updateQuantPhase();
-
 
     private:
         void processInputFilter(float* src, float *dst, size_t numFrames);
