@@ -2,15 +2,18 @@
 // Created by ezra on 12/6/17.
 //
 #include <algorithm>
-#include <cmath>
-#include <softcut/Fades.h>
 
+#include "dsp-kit/clamp.hpp"
+
+#include "softcut/Fades.h"
 #include "softcut/Resampler.h"
 #include "softcut/ReadWriteHead.h"
 #include "softcut/DebugLog.h"
 
+
 using namespace softcut;
 using namespace std;
+using namespace dspkit;
 
 ReadWriteHead::ReadWriteHead() {
     rate.fill(1.f);
@@ -229,9 +232,9 @@ void ReadWriteHead::computeReadDuckLevels(const ReadWriteHead *other, size_t num
     float x;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         x = computeReadDuckLevel(&(head[0]), &(other->head[0]), fr);
-        x = fmax(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
-        x = fmax(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
-        x = fmax(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
+        x = clamp_hi<float>(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
+        x = clamp_hi<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
+        x = clamp_hi<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
         readDuck[fr] = x;
     }
 }
@@ -247,9 +250,9 @@ void ReadWriteHead::computeWriteDuckLevels(const ReadWriteHead *other, size_t nu
     float x;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         x = computeWriteDuckLevel(&(head[0]), &(other->head[0]), fr);
-        x = fmax(x, computeWriteDuckLevel(&(head[0]), &(other->head[1]), fr));
-        x = fmax(x, computeWriteDuckLevel(&(head[1]), &(other->head[0]), fr));
-        x = fmax(x, computeWriteDuckLevel(&(head[1]), &(other->head[1]), fr));
+        x = clamp_hi<float>(x, computeWriteDuckLevel(&(head[0]), &(other->head[1]), fr));
+        x = clamp_hi<float>(x, computeWriteDuckLevel(&(head[1]), &(other->head[0]), fr));
+        x = clamp_hi<float>(x, computeWriteDuckLevel(&(head[1]), &(other->head[1]), fr));
         writeDuck[fr] = x;
     }
 }
@@ -259,8 +262,6 @@ void ReadWriteHead::applyWriteDuckLevels(size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
         x = writeDuck[fr];
         y = writeDuckRamp.getNextValue(x);
-        // testing..
-        //std::cerr << x << ", " << y << std::endl;
         rec[fr] *= (1.f - y);
         pre[fr] += (1.f - pre[fr]) * y;
     }

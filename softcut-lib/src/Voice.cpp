@@ -267,8 +267,8 @@ void Voice::setRateSlewTime(float d) {
     rateRamp.setTime(d);
 }
 void Voice::setRateSlewShape(int shape) {
-    rateRamp.setRiseShape(static_cast<easing::function>(shape));
-    rateRamp.setFallShape(static_cast<easing::function>(shape));
+    rateRamp.setRiseShape(shape);
+    rateRamp.setFallShape(shape);
 }
 
 void Voice::setPhaseQuant(float x) {
@@ -340,18 +340,18 @@ void Voice::setPostFilterRqSlewTime(float t) {
 }
 
 void Voice::setPostFilterFcRiseShape(int shape) {
-    postFilterFcRamp.setRiseShape(static_cast<easing::function>(shape));
+    postFilterFcRamp.setRiseShape(shape);
 }
 
 void Voice::setPostFilterFcFallShape(int shape) {
-    postFilterFcRamp.setFallShape(static_cast<easing::function>(shape));
+    postFilterFcRamp.setFallShape(shape);
 }
 
 void Voice::setPostFilterRqRiseShape(int shape) {
-    postFilterRqRamp.setRiseShape(static_cast<easing::function>(shape));
+    postFilterRqRamp.setRiseShape(shape);
 }
 
 void Voice::setPostFilterRqFallShape(int shape) {
-    postFilterRqRamp.setFallShape(static_cast<easing::function>(shape));
+    postFilterRqRamp.setFallShape(shape);
 
 }

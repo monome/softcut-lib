@@ -9,10 +9,11 @@
 #include <atomic>
 
 #include "dsp-kit/DcBlocker.hpp"
-#include "dsp-kit/Envelope.hpp"
 #include "dsp-kit/LadderLpf.hpp"
 #include "dsp-kit/Smoother.hpp"
 #include "dsp-kit/Svf.hpp"
+#include "dsp-kit/FastMover.hpp"
+#include "dsp-kit/FastFader.hpp"
 
 #include "ReadWriteHead.h"
 
@@ -146,17 +147,17 @@ namespace softcut {
         dspkit::Svf postFilter;
 
         // rate ramp
-        dspkit::EnvelopeSmoother rateRamp;
+        dspkit::FastMover rateRamp;
         // pre-level ramp
-        dspkit::AudioLevelSmoother preRamp;
+        dspkit::FastFader preRamp;
         // record-level ramp
-        dspkit::AudioLevelSmoother recRamp;
+        dspkit::FastFader recRamp;
 
         // post-filter mix and parameter ramps
         enum { SVF_LP, SVF_HP, SVF_BP, SVF_BR, SVF_DRY, SVF_OUTPUTS };
-        dspkit::AudioLevelSmoother postFilterLevelRamp[SVF_OUTPUTS];
-        dspkit::EnvelopeSmoother postFilterFcRamp;
-        dspkit::EnvelopeSmoother postFilterRqRamp;
+        dspkit::FastFader postFilterLevelRamp[SVF_OUTPUTS];
+        dspkit::FastMover postFilterFcRamp;
+        dspkit::FastMover postFilterRqRamp;
 
         // default frequency for SVF
         // reduced automatically when setting rate
