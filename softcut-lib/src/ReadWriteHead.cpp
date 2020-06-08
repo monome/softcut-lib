@@ -236,7 +236,7 @@ void ReadWriteHead::computeReadDuckLevels(const ReadWriteHead *other, size_t num
         x = clamp_lo<float>(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
         x = clamp_lo<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
         x = clamp_lo<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
-        readDuck[fr] = readDuckRamp.getNextValue(1.f- x);;
+        readDuck[fr] = readDuckRamp.getNextValue(1.f- x);
     }
 }
 
@@ -280,8 +280,11 @@ float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, si
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
     static constexpr phase_t dmax = 480*2;
     static constexpr phase_t dmin = 480;
+    // if `a` fade level is ~0, no ducking is needed
     if (a->fade[frame] < fadeMin) { return 0.f; }
+    // if `b` record level is ~0, and pre level is ~1, no ducking is needed
     if ((b->rec[frame] < recMin) && (b->pre[frame] > preMax)) { return 0.f; }
+    // FIXME: this is where we probably need to compute distance modulo loop points...
     const auto dabs = dspkit::abs<phase_t>(a->phase[frame] - b->phase[frame]);
     if (dabs >= dmax) { return 0.f; }
     if (dabs <= dmin) { return 1.f; }
