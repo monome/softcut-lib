@@ -7,12 +7,16 @@
 #include "dsp-kit/clamp.hpp"
 
 #include "softcut/Fades.h"
-#include "softcut/Voice.h"
 #include "softcut/Resampler.h"
+#include "softcut/Tables.h"
+#include "softcut/Voice.h"
 
 using namespace softcut;
 
 Voice::Voice() {
+    auto &tables = Tables::shared();
+    preFilter.setGTable(tables.getLadderLpfGTable(), Tables::ladderLpfGTableSize);
+    postFilter.setGTable(tables.getSvfGTable(), Tables::svfGTableSize);
     setSampleRate(48000);
     reset();
 }
@@ -315,9 +319,7 @@ void Voice::processOutputFilter(float *buf, size_t numFrames) {
         postFilter.setHpMix(postFilterLevelRamp[SVF_HP].getNextValue());
         postFilter.setBpMix(postFilterLevelRamp[SVF_BP].getNextValue());
         postFilter.setBrMix(postFilterLevelRamp[SVF_BR].getNextValue());
-        // FIXME: could be more efficient
-        /// - use SVF pitch table
-        postFilter.setCutoffNoCalc(postFilterFcRamp.getNextValue());
+        postFilter.setCutoffPitchNoCalc(postFilterFcRamp.getNextValue());
         postFilter.setInverseQNoCalc(postFilterRqRamp.getNextValue());
         postFilter.calcCoeffs();
         float dryLevel = postFilterLevelRamp[SVF_DRY].getNextValue();
