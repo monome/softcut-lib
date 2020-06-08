@@ -2,6 +2,7 @@
 // Created by ezra on 12/6/17.
 //
 #include <algorithm>
+#include <dsp-kit/abs.hpp>
 
 #include "dsp-kit/clamp.hpp"
 
@@ -242,7 +243,6 @@ void ReadWriteHead::computeReadDuckLevels(const ReadWriteHead *other, size_t num
 void ReadWriteHead::applyReadDuckLevels(float* output, size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
         output[fr] *= readDuckRamp.getNextValue(1.f- readDuck[fr]);
-        //output[fr] *= (1.f- readDuck[fr]);
     }
 }
 
@@ -276,7 +276,7 @@ float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, si
     static constexpr phase_t dmin = 480;
     if (a->fade[frame] < fadeMin) { return 0.f; }
     if ((b->rec[frame] < recMin) && (b->pre[frame] > preMax)) { return 0.f; }
-    const phase_t dabs = fabs(a->phase[frame] - b->phase[frame]);
+    const auto dabs = dspkit::abs<phase_t>(a->phase[frame] - b->phase[frame]);
     if (dabs >= dmax) { return 0.f; }
     if (dabs <= dmin) { return 1.f; }
     return Fades::raisedCosFadeOut(static_cast<float>((dabs-dmin) / (dmax-dmin)));
@@ -290,7 +290,7 @@ float ReadWriteHead::computeWriteDuckLevel(const SubHead* a, const SubHead* b, s
     static constexpr phase_t dmin = 480;
     if (a->rec[frame] < recMin && a->pre[frame] > preMax) { return 0.f; }
     if (b->rec[frame] < recMin && b->pre[frame] > preMax) { return 0.f; }
-    const phase_t dabs = fabs(a->phase[frame] - b->phase[frame]);
+    const auto dabs = dspkit::abs<phase_t>(a->phase[frame] - b->phase[frame]);
     if (dabs >= dmax) { return 0.f; }
     if (dabs <= dmin) { return 1.f; }
     return Fades::raisedCosFadeOut(static_cast<float>((dabs-dmin) / (dmax-dmin)));

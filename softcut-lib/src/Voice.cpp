@@ -3,6 +3,7 @@
 //
 
 #include <functional>
+#include <dsp-kit/abs.hpp>
 
 #include "dsp-kit/clamp.hpp"
 
@@ -22,7 +23,6 @@ Voice::Voice() {
 }
 
 void Voice::reset() {
-    preFilterFcBase = sampleRate * 3 / 8;
     preFilterFcMod = 1.0;
     preFilterEnabled = true;
     preFilter.setQ(1.0);
@@ -59,10 +59,13 @@ void Voice::reset() {
 void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     float fc, fcMod;
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        fcMod = std::fabs(rwh.getRateBuffer(fr));
-        // FIXME: refactor, magic numbers
-        fc = (preFilterFcMod * (preFilterFcBase * fcMod)) + ((1.f - preFilterFcMod) * preFilterFcBase);
-	preFilter.setCutoff(dspkit::clamp<float>(fc, 1.f, sampleRate * 3 / 8.f));
+        fcMod = dspkit::abs<phase_t>(rwh.getRateBuffer(fr));
+        // fc = preFilterFcMod * fcMod * preFilterFcBase + (1 - preFilterFcMod) * preFilterFcBase;
+	    // refactored:
+        //fc = preFilterFcBase*preFilterFcMod*fcMod + preFilterFcBase - preFilterFcBase*preFilterFcMod;
+        //fc = preFilterFcBase*(preFilterFcMod*fcMod + 1 - preFilterFcMod);
+        fc = preFilterFcBase * (preFilterFcMod * (fcMod - 1) + 1);
+	    preFilter.setCutoffPitch(fc);
         dst[fr] = preFilter.processSample(src[fr]);
     }
 }

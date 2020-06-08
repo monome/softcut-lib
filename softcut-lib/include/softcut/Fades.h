@@ -10,6 +10,7 @@
 namespace softcut {
 
     class Fades {
+        // FIXME: may want to use LUTs (needs benchmark)
         public:
         static float raisedCosFadeIn(float unitphase) {
             return 0.5f * (cosf(M_PI * (1.f + unitphase)) + 1.f);

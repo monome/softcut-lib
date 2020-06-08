@@ -153,10 +153,11 @@ namespace softcut {
         dspkit::FastMover postFilterFcRamp;
         dspkit::FastMover postFilterRqRamp;
 
-        // default frequency for SVF
-        // reduced automatically when setting rate
-        float preFilterFcBase;
-        // the amount by which SVF frequency is modulated by rate
+
+
+        // base cutoff frequency as normalized pitch
+        float preFilterFcBase = 1.0;
+        // amount by which SVF frequency is modulated by rate
         float preFilterFcMod = 1.0;
         // phase quantization unit, in fractional frames
         phase_t phaseQuant{};
