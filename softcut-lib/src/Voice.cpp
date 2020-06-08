@@ -27,8 +27,13 @@ void Voice::reset() {
     preFilterEnabled = true;
     preFilter.setQ(1.0);
 
+    filterParamEnvFrameCount = 0;
+    filterLevelEnvFrameCount = 0;
+
     postFilterFcRamp.setTime(0.1f);
-    postFilterFcRamp.setTarget(sampleRate * 3 / 8);
+    postFilterFcRamp.setTarget(1.0);
+    postFilterRqRamp.setTime(0.1f);
+    postFilterRqRamp.setTarget(1.0);
 
     postFilterLevelRamp[SVF_LP].setTime(0.1);
     postFilterLevelRamp[SVF_HP].setTime(0.1);
@@ -161,10 +166,10 @@ void Voice::setSampleRate(float hz) {
     postFilter.setSampleRate(hz);
     dcBlocker.init(hz, 20);
     for (auto &ramp : postFilterLevelRamp) {
-        ramp.setSampleRate(hz);
+        ramp.setSampleRate(hz / FILTER_LEVEL_ENV_SR_DIVISOR);
     }
-    postFilterFcRamp.setSampleRate(hz);
-    postFilterRqRamp.setSampleRate(hz);
+    postFilterFcRamp.setSampleRate(hz / FILTER_PARAM_ENV_SR_DIVISOR);
+    postFilterRqRamp.setSampleRate(hz / FILTER_PARAM_ENV_SR_DIVISOR);
     rateRamp.setSampleRate(hz);
     preRamp.setSampleRate(hz);
     recRamp.setSampleRate(hz);
@@ -211,7 +216,9 @@ void Voice::setLoopFlag(bool val) {
     rwh.setLoopFlag(val);
 }
 
-// input filter
+
+//-------------------------------------------------------------
+//--- input filter
 void Voice::setPreFilterFc(float x) {
     preFilterFcBase = x;
 }
@@ -224,7 +231,9 @@ void Voice::setPreFilterEnabled(bool x) {
     preFilterEnabled = x;
 }
 
-// output filter
+//-------------------------------------------------------------
+//--- output filter
+
 void Voice::setPostFilterEnabled(bool x) {
     postFilterEnabled = x;
 }
@@ -257,12 +266,17 @@ void Voice::setPostFilterDry(float x) {
     postFilterLevelRamp[SVF_DRY].setTarget(x);
 }
 
+//-------------------------------------------------------------
+//--- buffer
 void Voice::setBuffer(float *b, size_t nf) {
     buf = b;
     bufFrames = nf;
     rwh.setBuffer(buf, bufFrames);
 }
 
+
+//-------------------------------------------------------------
+//--- record parameters
 void Voice::setRecOffset(float d) {
     rwh.setRecOffsetSamples(static_cast<int>(d * sampleRate));
 }
@@ -280,6 +294,9 @@ void Voice::setRateSlewShape(int shape) {
     rateRamp.setFallShape(shape);
 }
 
+
+//-------------------------------------------------------------
+//--- phase update parameteres
 void Voice::setPhaseQuant(float x) {
     phaseQuant = x;
 }
@@ -318,15 +335,21 @@ void Voice::setFollowTarget(Voice *v) {
 
 void Voice::processOutputFilter(float *buf, size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        postFilter.setLpMix(postFilterLevelRamp[SVF_LP].getNextValue());
-        postFilter.setHpMix(postFilterLevelRamp[SVF_HP].getNextValue());
-        postFilter.setBpMix(postFilterLevelRamp[SVF_BP].getNextValue());
-        postFilter.setBrMix(postFilterLevelRamp[SVF_BR].getNextValue());
-        postFilter.setCutoffPitchNoCalc(postFilterFcRamp.getNextValue());
-        postFilter.setInverseQNoCalc(postFilterRqRamp.getNextValue());
-        postFilter.calcCoeffs();
-        float dryLevel = postFilterLevelRamp[SVF_DRY].getNextValue();
-        buf[fr] = buf[fr] * dryLevel + postFilter.processSample(buf[fr]);
+        if (++filterLevelEnvFrameCount == FILTER_LEVEL_ENV_SR_DIVISOR) {
+            filterLevelEnvFrameCount = 0;
+            postFilterDryLevel = postFilterLevelRamp[SVF_DRY].getNextValue();
+            postFilter.setLpMix(postFilterLevelRamp[SVF_LP].getNextValue());
+            postFilter.setHpMix(postFilterLevelRamp[SVF_HP].getNextValue());
+            postFilter.setBpMix(postFilterLevelRamp[SVF_BP].getNextValue());
+            postFilter.setBrMix(postFilterLevelRamp[SVF_BR].getNextValue());
+        }
+        if (++filterParamEnvFrameCount == FILTER_PARAM_ENV_SR_DIVISOR) {
+            filterParamEnvFrameCount = 0;
+            postFilter.setCutoffPitchNoCalc(postFilterFcRamp.getNextValue());
+            postFilter.setInverseQNoCalc(postFilterRqRamp.getNextValue());
+            postFilter.calcCoeffs();
+        }
+        buf[fr] = buf[fr] * postFilterDryLevel + postFilter.processSample(buf[fr]);
     }
 }
 
@@ -360,5 +383,4 @@ void Voice::setPostFilterRqRiseShape(int shape) {
 
 void Voice::setPostFilterRqFallShape(int shape) {
     postFilterRqRamp.setFallShape(shape);
-
 }

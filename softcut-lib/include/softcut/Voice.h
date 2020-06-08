@@ -123,6 +123,10 @@ namespace softcut {
 
 
     private:
+
+        //---------------------------------------------------------------
+        //-- core state
+
         // audio buffer
         float *buf{};
         // size of buffer in frames
@@ -133,12 +137,19 @@ namespace softcut {
         // crossfaded read/write head
         ReadWriteHead rwh;
 
-        // pre-write filter
-        dspkit::LadderLpf<float> preFilter;
-        dspkit::DcBlocker<float> dcBlocker;
-        std::array<float, ReadWriteHead::maxBlockSize> preFilterInputBuf{0};
-        // post-read filter
-        dspkit::Svf postFilter;
+        // flags
+        bool playEnabled{};
+        bool recEnabled{};
+        bool preFilterEnabled;
+        bool postFilterEnabled;
+
+        // targets
+        std::atomic<const Voice *> readDuckTarget{nullptr};
+        std::atomic<const Voice *> writeDuckTarget{nullptr};
+        std::atomic<const Voice *> followTarget{nullptr};
+
+        //---------------------------------------------------------------
+        //-- ramps
 
         // rate ramp
         dspkit::FastMover rateRamp;
@@ -147,18 +158,36 @@ namespace softcut {
         // record-level ramp
         dspkit::FastFader recRamp;
 
+        //---------------------------------------------------------------
+        //-- filters
+        // pre-write filter
+        dspkit::LadderLpf<float> preFilter;
+        dspkit::DcBlocker<float> dcBlocker;
+        std::array<float, ReadWriteHead::maxBlockSize> preFilterInputBuf{0};
+        // post-read filter
+        dspkit::Svf postFilter;
+
+
         // post-filter mix and parameter ramps
         enum { SVF_LP, SVF_HP, SVF_BP, SVF_BR, SVF_DRY, SVF_OUTPUTS };
         dspkit::FastFader postFilterLevelRamp[SVF_OUTPUTS];
+
+        // divide the samplerate for filter updates
+        static constexpr int FILTER_PARAM_ENV_SR_DIVISOR = 8;
+        static constexpr int FILTER_LEVEL_ENV_SR_DIVISOR = 8;
+        int filterParamEnvFrameCount;
+        int filterLevelEnvFrameCount;
         dspkit::FastMover postFilterFcRamp;
         dspkit::FastMover postFilterRqRamp;
-
-
+        float postFilterDryLevel = 1.f;
 
         // base cutoff frequency as normalized pitch
         float preFilterFcBase = 1.0;
         // amount by which SVF frequency is modulated by rate
         float preFilterFcMod = 1.0;
+
+        //---------------------------------------------------------------
+        //-- phase
         // phase quantization unit, in fractional frames
         phase_t phaseQuant{};
         // phase offset in sec
@@ -168,14 +197,6 @@ namespace softcut {
 
 
     private:
-        bool playEnabled{};
-        bool recEnabled{};
-        bool preFilterEnabled;
-        bool postFilterEnabled;
-
-        std::atomic<const Voice *> readDuckTarget{nullptr};
-        std::atomic<const Voice *> writeDuckTarget{nullptr};
-        std::atomic<const Voice *> followTarget{nullptr};
     };
 }
 
