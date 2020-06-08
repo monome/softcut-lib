@@ -233,26 +233,28 @@ void ReadWriteHead::computeReadDuckLevels(const ReadWriteHead *other, size_t num
     float x;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         x = computeReadDuckLevel(&(head[0]), &(other->head[0]), fr);
-        x = clamp_hi<float>(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
-        x = clamp_hi<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
-        x = clamp_hi<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
-        readDuck[fr] = x;
+        x = clamp_lo<float>(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
+        x = clamp_lo<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
+        x = clamp_lo<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
+        readDuck[fr] = readDuckRamp.getNextValue(1.f- x);;
     }
 }
 
 void ReadWriteHead::applyReadDuckLevels(float* output, size_t numFrames) {
+#if 1
     for (size_t fr = 0; fr < numFrames; ++fr) {
-        output[fr] *= readDuckRamp.getNextValue(1.f- readDuck[fr]);
+        output[fr] *= readDuck[fr];
     }
+#endif
 }
 
 void ReadWriteHead::computeWriteDuckLevels(const ReadWriteHead *other, size_t numFrames) {
     float x;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         x = computeWriteDuckLevel(&(head[0]), &(other->head[0]), fr);
-        x = clamp_hi<float>(x, computeWriteDuckLevel(&(head[0]), &(other->head[1]), fr));
-        x = clamp_hi<float>(x, computeWriteDuckLevel(&(head[1]), &(other->head[0]), fr));
-        x = clamp_hi<float>(x, computeWriteDuckLevel(&(head[1]), &(other->head[1]), fr));
+        x = clamp_lo<float>(x, computeWriteDuckLevel(&(head[0]), &(other->head[1]), fr));
+        x = clamp_lo<float>(x, computeWriteDuckLevel(&(head[1]), &(other->head[0]), fr));
+        x = clamp_lo<float>(x, computeWriteDuckLevel(&(head[1]), &(other->head[1]), fr));
         writeDuck[fr] = x;
     }
 }
@@ -269,6 +271,10 @@ void ReadWriteHead::applyWriteDuckLevels(size_t numFrames) {
 
 
 float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, size_t frame) {
+    /// FIXME: for this to really work, position needs to be calculated modulo loop points.
+    //// as it is, we get artifacts when one or both voices cross the loop point,
+    //// while being near each other on one side of it.
+    //// running the duck level through a smoother is an attempt to mitigate these artifacts...
     static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
