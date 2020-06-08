@@ -216,7 +216,6 @@ void Voice::setLoopFlag(bool val) {
     rwh.setLoopFlag(val);
 }
 
-
 //-------------------------------------------------------------
 //--- input filter
 void Voice::setPreFilterFc(float x) {
