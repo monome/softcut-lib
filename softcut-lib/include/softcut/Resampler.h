@@ -2,8 +2,8 @@
 // Created by ezra on 4/21/18.
 //
 
-#ifndef SoftcutHEAD_RESAMPLER_H
-#define SoftcutHEAD_RESAMPLER_H
+#ifndef SOFTCUT_RESAMPLER_H
+#define SOFTCUT_RESAMPLER_H
 
 #include <cassert>
 #include <cmath>

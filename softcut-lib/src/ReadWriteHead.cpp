@@ -11,7 +11,6 @@
 #include "softcut/ReadWriteHead.h"
 #include "softcut/DebugLog.h"
 
-
 using namespace softcut;
 using namespace std;
 using namespace dspkit;
@@ -278,6 +277,7 @@ float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, si
     static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
+    // FIXME: these magic numbers are unaffected by sample rate :/
     static constexpr phase_t dmax = 480*2;
     static constexpr phase_t dmin = 480;
     // if `a` fade level is ~0, no ducking is needed

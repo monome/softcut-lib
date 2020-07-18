@@ -65,12 +65,9 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     float fc, fcMod;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         fcMod = dspkit::abs<phase_t>(rwh.getRateBuffer(fr));
-        // fc = preFilterFcMod * fcMod * preFilterFcBase + (1 - preFilterFcMod) * preFilterFcBase;
-	    // refactored:
-        //fc = preFilterFcBase*preFilterFcMod*fcMod + preFilterFcBase - preFilterFcBase*preFilterFcMod;
-        //fc = preFilterFcBase*(preFilterFcMod*fcMod + 1 - preFilterFcMod);
+        // fc = preFilterFcMod * fcMod * preFilterFcBase + (1 - preFilterFcMod) * preFilterFcBase;		// refactored:
         fc = preFilterFcBase * (preFilterFcMod * (fcMod - 1) + 1);
-	    preFilter.setCutoffPitch(fc);
+        preFilter.setCutoffPitch(fc);
         dst[fr] = preFilter.processSample(src[fr]);
     }
 }

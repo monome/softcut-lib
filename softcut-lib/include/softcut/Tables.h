@@ -25,8 +25,7 @@ namespace softcut {
             static Tables instance;
             return instance;
         }
-        Tables() {}
-
+        Tables() = default;
         Tables(Tables const&) = delete;
         void operator=(Tables const&) = delete;
 
@@ -35,10 +34,10 @@ namespace softcut {
         static constexpr int svfGTableSize = 1024;
         static constexpr int ladderLpfGTableSize = 1024;
     private:
-        std::array<float, svfGTableSize> svfGTable;
-        std::array<float, ladderLpfGTableSize> ladderLpfGTable;
+        std::array<float, svfGTableSize> svfGTable{};
+        std::array<float, ladderLpfGTableSize> ladderLpfGTable{};
     public:
-        //-- accessors, etc
+        //-- accessors
         const float* getSvfGTable() { return svfGTable.data(); }
         const float* getLadderLpfGTable() { return ladderLpfGTable.data(); }
         void setSampleRate(float sr) {
@@ -46,7 +45,6 @@ namespace softcut {
             dspkit::LadderLpf<float>::fillGTable(ladderLpfGTable.data(), ladderLpfGTableSize,
                     sr, 8, 11);
         }
-
     };
 }
 
