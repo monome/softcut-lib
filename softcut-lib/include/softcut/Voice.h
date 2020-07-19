@@ -9,10 +9,11 @@
 #include <atomic>
 
 #include "dsp-kit/DcBlocker.hpp"
-#include "dsp-kit/Envelope.hpp"
 #include "dsp-kit/LadderLpf.hpp"
 #include "dsp-kit/Smoother.hpp"
 #include "dsp-kit/Svf.hpp"
+#include "dsp-kit/FastMover.hpp"
+#include "dsp-kit/FastFader.hpp"
 
 #include "ReadWriteHead.h"
 
@@ -87,7 +88,6 @@ namespace softcut {
         void setLevelSlewTime(float value);
         void setRecPreSlewTime(float d);
 
-
         // rate has variable shape
         void setRateSlewTime(float t);
         void setRateSlewShape(int shape);
@@ -102,25 +102,20 @@ namespace softcut {
 
         void setPhaseQuant(float x);
         void setPhaseOffset(float x);
-
+       
+        void updateQuantPhase();
         phase_t getQuantPhase();
 
         bool getPlayFlag() const;
-
         bool getRecFlag() const;
 
         void setReadDuckTarget(Voice* v);
         void setWriteDuckTarget(Voice* v);
 
         void setFollowTarget(Voice* v);
-
         void syncPosition(const Voice &v, float offset);
 
-
         void reset();
-
-        void updateQuantPhase();
-
 
     private:
         void processInputFilter(float* src, float *dst, size_t numFrames);
@@ -128,6 +123,10 @@ namespace softcut {
 
 
     private:
+
+        //---------------------------------------------------------------
+        //-- core state
+
         // audio buffer
         float *buf{};
         // size of buffer in frames
@@ -138,6 +137,29 @@ namespace softcut {
         // crossfaded read/write head
         ReadWriteHead rwh;
 
+        // flags
+        bool playEnabled{};
+        bool recEnabled{};
+        bool preFilterEnabled;
+        bool postFilterEnabled;
+
+        // targets
+        std::atomic<const Voice *> readDuckTarget{nullptr};
+        std::atomic<const Voice *> writeDuckTarget{nullptr};
+        std::atomic<const Voice *> followTarget{nullptr};
+
+        //---------------------------------------------------------------
+        //-- ramps
+
+        // rate ramp
+        dspkit::FastMover rateRamp;
+        // pre-level ramp
+        dspkit::FastFader preRamp;
+        // record-level ramp
+        dspkit::FastFader recRamp;
+
+        //---------------------------------------------------------------
+        //-- filters
         // pre-write filter
         dspkit::LadderLpf<float> preFilter;
         dspkit::DcBlocker<float> dcBlocker;
@@ -145,24 +167,27 @@ namespace softcut {
         // post-read filter
         dspkit::Svf postFilter;
 
-        // rate ramp
-        dspkit::EnvelopeSmoother rateRamp;
-        // pre-level ramp
-        dspkit::AudioLevelSmoother preRamp;
-        // record-level ramp
-        dspkit::AudioLevelSmoother recRamp;
 
         // post-filter mix and parameter ramps
         enum { SVF_LP, SVF_HP, SVF_BP, SVF_BR, SVF_DRY, SVF_OUTPUTS };
-        dspkit::EnvelopeSmoother postFilterLevelRamp[SVF_OUTPUTS];
-        dspkit::EnvelopeSmoother postFilterFcRamp;
-        dspkit::EnvelopeSmoother postFilterRqRamp;
+        dspkit::FastFader postFilterLevelRamp[SVF_OUTPUTS];
 
-        // default frequency for SVF
-        // reduced automatically when setting rate
-        float preFilterFcBase;
-        // the amount by which SVF frequency is modulated by rate
+        // divide the samplerate for filter updates
+        static constexpr int FILTER_PARAM_ENV_SR_DIVISOR = 8;
+        static constexpr int FILTER_LEVEL_ENV_SR_DIVISOR = 8;
+        int filterParamEnvFrameCount;
+        int filterLevelEnvFrameCount;
+        dspkit::FastMover postFilterFcRamp;
+        dspkit::FastMover postFilterRqRamp;
+        float postFilterDryLevel = 1.f;
+
+        // base cutoff frequency as normalized pitch
+        float preFilterFcBase = 1.0;
+        // amount by which SVF frequency is modulated by rate
         float preFilterFcMod = 1.0;
+
+        //---------------------------------------------------------------
+        //-- phase
         // phase quantization unit, in fractional frames
         phase_t phaseQuant{};
         // phase offset in sec
@@ -172,14 +197,6 @@ namespace softcut {
 
 
     private:
-        bool playEnabled{};
-        bool recEnabled{};
-        bool preFilterEnabled;
-        bool postFilterEnabled;
-
-        std::atomic<const Voice *> readDuckTarget{nullptr};
-        std::atomic<const Voice *> writeDuckTarget{nullptr};
-        std::atomic<const Voice *> followTarget{nullptr};
     };
 }
 

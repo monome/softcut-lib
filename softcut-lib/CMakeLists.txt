@@ -9,7 +9,9 @@ set(SRC
         src/Voice.cpp
         lib/dsp-kit/Envelope.cpp
         lib/dsp-kit/Svf.cpp
-        lib/dsp-kit/Taper.cpp)
+        lib/dsp-kit/Taper.cpp
+        lib/dsp-kit/FastFader.cpp
+        lib/dsp-kit/FastMover.cpp)
 
 include_directories(include src lib)
 

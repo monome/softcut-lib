@@ -8,6 +8,8 @@
 #include "softcut/SubHead.h"
 #include "softcut/ReadWriteHead.h"
 
+#include "dsp-kit/abs.hpp"
+
 using namespace softcut;
 
 SubHead::SubHead() {}
@@ -121,7 +123,7 @@ SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
 
 static float calcPreFadeCurve(float fade) {
     // time parameter is when to finish closing, when fading in
-    // FIXME: make this dynamic
+    // FIXME: make this dynamic?
     // static constexpr float t = 0;
     static constexpr float t = 1.f/32;
    // static constexpr float t = 1.f/64;
@@ -169,7 +171,7 @@ void SubHead::calcFrameLevels(frame_t i) {
 }
 
 void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
-    resamp.setRate(std::fabs(rwh->rate[i]));
+    resamp.setRate(dspkit::abs<rate_t>(rwh->rate[i]));
     // push to resampler, even if stopped; avoids possible glitch when restarting
     int nsubframes = resamp.processFrame(input);
     if (opState[i] == Stopped) {
@@ -221,11 +223,9 @@ SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
     frame_t y = x;
     while (y >= bufFrames) {
         y -= bufFrames;
-        //std::cout << "wrapped high: " << x << " -> " << y << std::endl;
     }
     while (y < 0) {
         y += bufFrames;
-        //std::cout << "wrapped low: " << x << " -> " << y << std::endl;
     }
     return y;
 }
@@ -239,7 +239,7 @@ void SubHead::setBuffer(float *b, frame_t fr) {
 void SubHead::applyRateDeadzone(SubHead::frame_t i) {
     static constexpr float deadzoneBound = 1.f/32.f;
     static constexpr float deadzoneBound_2 = 1.f/64.f;
-    const float r = fabs(rwh->rate[i]);
+    const float r = dspkit::abs<rate_t>(rwh->rate[i]);
     if (r > deadzoneBound) { return; }
     if (r < deadzoneBound_2) { rec[i] = 0.f; return; }
     const float f = (r - deadzoneBound_2) / deadzoneBound_2;

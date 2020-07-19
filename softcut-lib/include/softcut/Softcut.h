@@ -9,6 +9,7 @@
 #include <memory>
 #include <thread>
 
+#include "Tables.h"
 #include "Types.h"
 #include "Voice.h"
 
@@ -64,6 +65,7 @@ namespace softcut {
             for (auto &v : voices) {
                 v.setSampleRate(hz);
             }
+            Tables::shared().setSampleRate(hz);
         }
 
         Voice *voice(int i) {
