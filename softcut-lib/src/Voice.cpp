@@ -216,7 +216,10 @@ void Voice::setLoopFlag(bool val) {
 //-------------------------------------------------------------
 //--- input filter
 void Voice::setPreFilterFc(float x) {
-    preFilterFcBase = x;
+    /// FIXME: we are pretending that the pre-filter cutoff is MIDI-scaled, but it's not really
+    /// (it's kinda close)
+    x /= 127.f;
+    preFilterFcBase = x < 0 ? 0 : (x > 1.f ? 1.f : x);
 }
 
 void Voice::setPreFilterFcMod(float x) {
@@ -235,7 +238,8 @@ void Voice::setPostFilterEnabled(bool x) {
 }
 
 void Voice::setPostFilterFc(float x) {
-    postFilterFcRamp.setTarget(x);
+    /// NB: magic here because we know that the FC gain table is midi-scaled
+    postFilterFcRamp.setTarget(x / 127.f);
 }
 
 void Voice::setPostFilterRq(float x) {
@@ -341,11 +345,20 @@ void Voice::processOutputFilter(float *buf, size_t numFrames) {
         }
         if (++filterParamEnvFrameCount == FILTER_PARAM_ENV_SR_DIVISOR) {
             filterParamEnvFrameCount = 0;
+#if 0 // testing..
+            //float hz = 110.f * powf(2.f, 4.f * postFilterFcRamp.getNextValue());
+            float pitch = postFilterFcRamp.getNextValue();
+            float hz = dspkit::Conversion<float>::midihz(pitch * 127.f);
+            hz = std::fmax(0, std::min(12000.f, hz));
+            postFilter.setCutoff(hz);
+            postFilter.setInverseQ(postFilterRqRamp.getNextValue());
+#else
             postFilter.setCutoffPitchNoCalc(postFilterFcRamp.getNextValue());
             postFilter.setInverseQNoCalc(postFilterRqRamp.getNextValue());
-            postFilter.calcCoeffs();
+            postFilter.calcSecondaryCoeffs();
+#endif
         }
-        buf[fr] = buf[fr] * postFilterDryLevel + postFilter.processSample(buf[fr]);
+        buf[fr] = (buf[fr] * postFilterDryLevel) + postFilter.processSample(buf[fr]);
     }
 }
 
