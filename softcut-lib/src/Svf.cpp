@@ -21,7 +21,9 @@ void Svf::setFc(float fc) {
 }
 
 void Svf::setRq(float rq) {
-    svf_set_rq(&svf, rq);
+    if(rq>=0.f) {
+        svf_set_rq(&svf, rq);
+    }
 }
 
 void Svf::setLpMix(float mix) {
