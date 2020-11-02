@@ -39,6 +39,7 @@ void Voice::reset() {
 
     setRecPreSlewTime(0.001);
     setRateSlewTime(0.001);
+    sch.setRecOffsetSamples(-8);
 
     recFlag = false;
     playFlag = false;
