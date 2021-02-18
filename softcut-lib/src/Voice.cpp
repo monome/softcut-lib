@@ -37,8 +37,10 @@ void Voice::reset() {
     svfPost.setFc(12000);
     svfPostDryLevel = 1.0;
 
+    rateRamp.reset(1.0);
     setRecPreSlewTime(0.001);
     setRateSlewTime(0.001);
+
     sch.setRecOffsetSamples(-8);
 
     recFlag = false;
