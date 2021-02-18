@@ -181,8 +181,13 @@ namespace softcut {
             return this->update();
         }
 
-        float getTarget() {
+        float getTarget() const {
             return x0;
+        }
+
+        void reset(float x) {
+            x0 = x;
+            y0 = x;
         }
 
     };
