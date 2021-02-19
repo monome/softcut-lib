@@ -40,7 +40,8 @@ void Voice::reset() {
     rateRamp.reset(1.0);
     recRamp.reset(0.0);
     preRamp.reset(0.0);
-    
+
+    setFadeTime(0.01);
     setRecPreSlewTime(0.001);
     setRateSlewTime(0.001);
 
