@@ -85,11 +85,13 @@ void ReadWriteHead::setRate(rate_t x)
 void ReadWriteHead::setLoopStartSeconds(float x)
 {
     start = x * sr;
+    queuedCrossfadeFlag = false;
 }
 
 void ReadWriteHead::setLoopEndSeconds(float x)
 {
     end = x * sr;
+    queuedCrossfadeFlag = false;
 }
 
 void ReadWriteHead::takeAction(Action act)
@@ -109,7 +111,6 @@ void ReadWriteHead::takeAction(Action act)
 }
 
 void ReadWriteHead::enqueueCrossfade(phase_t pos) {
-    // std::cout <<"enqueuing crossfade\n";
     queuedCrossfade = pos;
     queuedCrossfadeFlag = true;
 }
@@ -118,7 +119,6 @@ void ReadWriteHead::dequeueCrossfade() {
     State s = head[active].state();
     if(! (s == State::FadeIn || s == State::FadeOut)) {
 	if(queuedCrossfadeFlag ) {
-	    // std::cout <<"dequeuing crossfade\n";
 	    cutToPhase(queuedCrossfade);
 	}
 	queuedCrossfadeFlag = false;
@@ -131,7 +131,7 @@ void ReadWriteHead::cutToPhase(phase_t pos) {
 
     if(s == State::FadeIn || s == State::FadeOut) {
 	// should never enter this condition
-	// cout << "bleeeeaaaaaaaaaaaaargh!!!!\n";
+	// std::cerr << "badness! we performed a cut while still fading" << std::endl;
 	return;
     }
 
@@ -191,7 +191,12 @@ phase_t ReadWriteHead::getActivePhase() {
 }
 
 void ReadWriteHead::cutToPos(float seconds) {
-    enqueueCrossfade(seconds * sr);
+    auto s = head[active].state();
+    if (s == State::FadeIn || s == State::FadeOut) {	
+	enqueueCrossfade(seconds * sr);
+    } else {
+	cutToPhase(seconds * sr);
+    }
 }
 
 rate_t ReadWriteHead::getRate() {
