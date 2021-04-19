@@ -211,6 +211,10 @@ void setRecFadeShape(float x) {
             scv[id].setBuffer(buf, bufFrames);
         }
 
+        float getPos(int i) {
+            return scv[i].getPos();
+        }
+
     private:
         Voice scv[numVoices];
     };
