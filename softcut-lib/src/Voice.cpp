@@ -89,6 +89,8 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
 	    out[i] = svfPost.getNextSample(y) + y*svfPostDryLevel;
         updateQuantPhase();
     }
+
+    position = getPos();
 }
 
 void Voice::setSampleRate(float hz) {

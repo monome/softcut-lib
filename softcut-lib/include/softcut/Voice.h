@@ -136,6 +136,8 @@ namespace softcut {
         float phaseOffset = 0;
         // quantized phase
         std::atomic<phase_t> quantPhase;
+        // position
+        float position;
 
 
     private:
