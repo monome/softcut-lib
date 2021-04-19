@@ -267,3 +267,7 @@ bool Voice::getRecFlag() {
 float Voice::getPos() {
     return static_cast<float>(sch.getActivePhase() / sampleRate);
 }
+
+float Voice::getPosition() {
+    return position;
+}

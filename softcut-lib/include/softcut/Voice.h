@@ -95,6 +95,8 @@ namespace softcut {
 
         float getPos();
 
+        float getPosition();
+
         void reset();
 
     private:

@@ -212,7 +212,7 @@ void setRecFadeShape(float x) {
         }
 
         float getPosition(int i) {
-            return scv[i].position;
+            return scv[i].getPosition();
         }
 
     private:
