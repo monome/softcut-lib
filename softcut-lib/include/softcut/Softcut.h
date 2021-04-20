@@ -137,36 +137,6 @@ namespace softcut {
             scv[voice].setPostFilterDry(x);
         }
 
-#if 0 // not allowing realtime manipulation of fade logic params
-        void setPreFadeWindow(float x) {
-    auto t = std::thread([x] {
-        FadeCurves::setPreWindowRatio(x);
-    });
-    t.detach();
-}
-
-void setRecFadeDelay(float x) {
-    auto t = std::thread([x] {
-        FadeCurves::setRecDelayRatio(x);
-    });
-    t.detach();
-}
-
-void setPreFadeShape(float x) {
-    auto t = std::thread([x] {
-        FadeCurves::setPreShape(static_cast<FadeCurves::Shape>(x));
-    });
-    t.detach();
-}
-
-void setRecFadeShape(float x) {
-    auto t = std::thread([x] {
-        FadeCurves::setRecShape(static_cast<FadeCurves::Shape>(x));
-    });
-    t.detach();
-}
-#endif
-
         void setRecOffset(int i, float d) {
             scv[i].setRecOffset(d);
         }
@@ -204,11 +174,16 @@ void setRecFadeShape(float x) {
         }
 
         void syncVoice(int follow, int lead, float offset) {
-            scv[follow].cutToPos(scv[lead].getPos() + offset);
+            scv[follow].cutToPos(scv[lead].getActivePosition() + offset);
         }
 
         void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
             scv[id].setBuffer(buf, bufFrames);
+        }
+
+	// can be called from non-audio threads
+        float getSavedPosition(int i) {
+            return scv[i].getSavedPosition();
         }
 
     private:
@@ -217,4 +192,4 @@ void setRecFadeShape(float x) {
 }
 
 
-#endif //Softcut_Softcut_H2
+#endif //Softcut_Softcut_H

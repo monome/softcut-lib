@@ -89,6 +89,9 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
 	    out[i] = svfPost.getNextSample(y) + y*svfPostDryLevel;
         updateQuantPhase();
     }
+
+    
+    rawPhase.store(sch.getActivePhase(), std::memory_order_relaxed);
 }
 
 void Voice::setSampleRate(float hz) {
@@ -242,15 +245,15 @@ void Voice::setPhaseOffset(float x) {
 
 
 phase_t Voice::getQuantPhase() {
-    return quantPhase;
+    return quantPhase.load(std::memory_order_relaxed);
 }
 
 void Voice::updateQuantPhase() {
     if (phaseQuant == 0) {
-        quantPhase = sch.getActivePhase() / sampleRate;
+        quantPhase.store(sch.getActivePhase() / sampleRate, std::memory_order_relaxed);
     } else {
-        quantPhase = std::floor( (sch.getActivePhase() + phaseOffset) /
-            (sampleRate *phaseQuant)) * phaseQuant;
+	const phase_t tmp = (sch.getActivePhase() + phaseOffset) / (sampleRate *phaseQuant);
+        quantPhase.store(std::floor(tmp) * phaseQuant, std::memory_order_relaxed);
     }
 }
 
@@ -262,6 +265,10 @@ bool Voice::getRecFlag() {
     return recFlag;
 }
 
-float Voice::getPos() {
+float Voice::getActivePosition() {
     return static_cast<float>(sch.getActivePhase() / sampleRate);
+}
+
+float Voice::getSavedPosition() {
+    return static_cast<float>(rawPhase.load(std::memory_order_relaxed) / sampleRate);
 }
