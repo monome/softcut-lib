@@ -91,7 +91,7 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
     }
 
     
-    rawPhase.store(sch.getActivePhase());
+    rawPhase.store(sch.getActivePhase(), std::memory_order_relaxed);
 }
 
 void Voice::setSampleRate(float hz) {
@@ -250,10 +250,10 @@ phase_t Voice::getQuantPhase() {
 
 void Voice::updateQuantPhase() {
     if (phaseQuant == 0) {
-        quantPhase = sch.getActivePhase() / sampleRate;
+        quantPhase.store(sch.getActivePhase() / sampleRate, std::memory_order_relaxed);
     } else {
-        quantPhase = std::floor( (sch.getActivePhase() + phaseOffset) /
-            (sampleRate *phaseQuant)) * phaseQuant;
+	const phase_t tmp = (sch.getActivePhase() + phaseOffset) / (sampleRate *phaseQuant);
+        quantPhase.store(std::floor(tmp) * phaseQuant, std::memory_order_relaxed);
     }
 }
 
