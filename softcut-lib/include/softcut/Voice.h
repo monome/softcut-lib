@@ -93,9 +93,10 @@ namespace softcut {
 
         bool getRecFlag();
 
-        float getPos();
+	float getActivePosition();
 
-        float getPosition();
+	// use this from non-audio threads
+        float getSavedPosition();
 
         void reset();
 
@@ -136,11 +137,11 @@ namespace softcut {
         phase_t phaseQuant;
         // phase offset in sec
         float phaseOffset = 0;
-        // quantized phase
+	
+	//-- these stored phases are for access from non-audio threads,
+	// and are updated once per block:
+	std::atomic<phase_t> rawPhase;
         std::atomic<phase_t> quantPhase;
-        // position
-        float position;
-
 
     private:
 

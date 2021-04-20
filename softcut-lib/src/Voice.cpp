@@ -90,7 +90,8 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
         updateQuantPhase();
     }
 
-    position = getPos();
+    
+    rawPhase.store(sch.getActivePhase());
 }
 
 void Voice::setSampleRate(float hz) {
@@ -244,7 +245,7 @@ void Voice::setPhaseOffset(float x) {
 
 
 phase_t Voice::getQuantPhase() {
-    return quantPhase;
+    return quantPhase.load();
 }
 
 void Voice::updateQuantPhase() {
@@ -264,10 +265,10 @@ bool Voice::getRecFlag() {
     return recFlag;
 }
 
-float Voice::getPos() {
+float Voice::getActivePosition() {
     return static_cast<float>(sch.getActivePhase() / sampleRate);
 }
 
-float Voice::getPosition() {
-    return position;
+float Voice::getSavedPosition() {
+    return static_cast<float>(rawPhase.load() / sampleRate);
 }
