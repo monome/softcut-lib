@@ -245,7 +245,7 @@ void Voice::setPhaseOffset(float x) {
 
 
 phase_t Voice::getQuantPhase() {
-    return quantPhase.load();
+    return quantPhase.load(std::memory_order_relaxed);
 }
 
 void Voice::updateQuantPhase() {
@@ -270,5 +270,5 @@ float Voice::getActivePosition() {
 }
 
 float Voice::getSavedPosition() {
-    return static_cast<float>(rawPhase.load() / sampleRate);
+    return static_cast<float>(rawPhase.load(std::memory_order_relaxed) / sampleRate);
 }
