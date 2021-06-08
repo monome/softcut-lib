@@ -20,7 +20,7 @@ this library was developed at the behest of [monome](https://monome.org), origin
 
 `./softcut/` contains the library project itself.
 
-`./softcut/include/` contains headers that will need to be included by the client project. (since the header names are pretty generic, it's recommended to include with the full path: `include "softcut/Voice.h", &c)
+`./softcut/include/` contains headers that will need to be included by the client project. (since the header names are pretty generic, it's recommended to include with the full path: `include "softcut/Voice.h"`, &c)
 
 `./clients/` contains sample projects that use the library.
 
