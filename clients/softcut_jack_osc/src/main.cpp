@@ -24,6 +24,8 @@ int main() {
     //sc->init();
 
     sc = std::make_unique<SoftcutClient>();
+    
+    BufDiskWorker::init(48000);
 
     sc->setup();
     sc->start();
