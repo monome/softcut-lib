@@ -38,6 +38,8 @@ namespace softcut {
 
         phase_t getActivePhase();
         rate_t getRate();
+	// immediately put both subheads in stopped state
+	void stop();
 
     protected:
         friend class SubHead;

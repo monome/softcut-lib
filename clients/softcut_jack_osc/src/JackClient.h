@@ -113,7 +113,6 @@ namespace softcut_jack_osc {
             std::cout << "engine sample rate: " <<  sr << std::endl;
             this->setSampleRate( sr );
 
-
             for(int i=0; i<NumIns; ++i) {
                 std::ostringstream os;
                 os << "input_" << (i+1);
@@ -210,7 +209,6 @@ namespace softcut_jack_osc {
 
         int getNumSinks() { return NumIns/2; }
         int getNumSources() { return NumOuts/2; }
-
 
         // FIXME: surely there is a cleaner way to use templated class reference parameter, here
         template<int N, int M>

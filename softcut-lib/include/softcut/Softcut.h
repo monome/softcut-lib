@@ -186,6 +186,11 @@ namespace softcut {
             return scv[i].getSavedPosition();
         }
 
+
+	void stopVoice(int i) {
+	    scv[i].stop();
+	}
+	
     private:
         Voice scv[numVoices];
     };

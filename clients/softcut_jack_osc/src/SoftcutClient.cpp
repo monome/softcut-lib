@@ -40,6 +40,7 @@ void SoftcutClient::process(jack_nframes_t numFrames) {
 }
 
 void SoftcutClient::setSampleRate(jack_nframes_t sr) {
+    sampleRate = sr;
     cut.setSampleRate(sr);
 }
 

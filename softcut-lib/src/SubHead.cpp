@@ -184,7 +184,12 @@ void SubHead::setRate(rate_t rate) {
 }
 
 
-void SubHead::setState(State state) { state_ = state; }
+void SubHead::setState(State state) {
+    state_ = state;
+    if (state_ == Stopped) {
+	fade_ = 0.f;
+    }
+}
 
 void SubHead::setRecOffsetSamples(int d) {
     recOffset_  = d;
