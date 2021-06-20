@@ -46,6 +46,7 @@ namespace softcut_jack_osc {
         // enabled flags
         bool enabled[NumVoices];
         softcut::phase_t quantPhase[NumVoices];
+        float sampleRate;
 
     private:
         void process(jack_nframes_t numFrames) override;
@@ -109,6 +110,8 @@ namespace softcut_jack_osc {
         }
 
         int getNumVoices() const { return NumVoices; }
+
+        float getSampleRate() const { return sampleRate; }
 
 	void reset();
 
