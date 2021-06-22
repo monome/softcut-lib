@@ -11,8 +11,7 @@ add_executable(test-fade-curves src/test-fade-curves.cpp)
 include_directories(./lib)
 include_directories(../../softcut-lib/include)
 include_directories(../../softcut-lib/lib)
-
-add_subdirectory(lib/cnpy)
+include_directories(../../softcut-lib/lib/dsp-kit/lib)
 
 target_link_libraries(softcut_nrt_test softcut sndfile cnpy)
 
