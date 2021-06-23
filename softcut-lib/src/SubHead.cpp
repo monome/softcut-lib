@@ -42,6 +42,12 @@ void SubHead::setPosition(frame_t i, phase_t position) {
     syncWrIdx(i);
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
+
+    //------------------------------------
+    /// FIXME: somewhere, logic for non-looped position changes got broken.
+    /// seems like these are being skipped by the per-frame subhead position updates.
+    //--------------------------
+
     // resetting the resampler here seems correct:
     // if rate !=1, then each process frame can produce a different number of write-frame advances.
     // so to ensure each pass over a loop has identical write-frame history,
