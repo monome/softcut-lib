@@ -49,8 +49,11 @@ void Voice::reset() {
 
     postFilterEnabled = true;
     rateRamp.setTime(0.1);
+    rateRamp.setValue(1.0);
     preRamp.setTime(0.1);
+    preRamp.setPos(0.0);
     recRamp.setTime(0.1);
+    recRamp.setPos(0.0);
 
     setRecPreSlewTime(0.01);
     setRateSlewTime(0.01);

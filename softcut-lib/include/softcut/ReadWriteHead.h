@@ -5,6 +5,7 @@
 #ifndef SOFTCUT_READWRITEHEAD_H
 #define SOFTCUT_READWRITEHEAD_H
 
+#include <atomic>
 #include <cstdint>
 
 #include "dsp-kit/Smoother.hpp"
@@ -31,6 +32,9 @@ namespace softcut {
         // FIXME: should maybe use a proper queue (e.g. from dsp-kit)
         /// for now, only a single value can be queued,
         /// and a negative value indicates that the queue is empty.
+
+        // FIXME: this may need to be made atomic
+        /// (or at any rate, not written directly by OSC server thread)
         phase_t enqueuedPosition = -1.0;
         size_t frameIdx; // last used index into processing block
 
