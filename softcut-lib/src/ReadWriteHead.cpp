@@ -37,6 +37,7 @@ void ReadWriteHead::init() {
     rec.fill(0.f);
     active.fill(-1);
     frameIdx = 0;
+    fadeInc = 1.f;
 }
 
 int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
@@ -201,7 +202,11 @@ void ReadWriteHead::setLoopEndSeconds(float x) {
 }
 
 void ReadWriteHead::setFadeTime(float secs) {
-    this->fadeInc = 1.f / (secs * sr);
+    if (secs > 0.f) {
+        this->fadeInc = 1.f / (secs * sr);
+    } else {
+        this->fadeInc = 1.f;
+    }
 }
 
 void ReadWriteHead::setLoopFlag(bool val) {
