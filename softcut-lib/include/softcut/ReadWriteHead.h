@@ -30,16 +30,9 @@ namespace softcut {
 
     private:
         // set by the OSC server thread.
-        // if non-negative, an explicit position change request uis pending
+        // if non-negative, an explicit position change request is pending
         std::atomic<phase_t> requestedPosition = -1.0;
-        phase_t enqueuedPosition = -1.0;
         size_t frameIdx; // last used index into processing block
-//
-//        void enqueuePositionChange(phase_t pos);
-//
-//        int dequeuePositionChange(size_t fr);
-//
-//        void checkPositionChange(frame_t fr_1, frame_t fr);
 
         // attempt to perform any pending position change requests
         // return the index of the subhead that just became active,
@@ -47,6 +40,7 @@ namespace softcut {
         int checkPositionRequest(size_t fr_1, size_t fr);
 
         void jumpToPosition(int newHeadIdx, size_t fr, phase_t pos);
+
         void loopToPosition(int oldHeadIdx, size_t fr, phase_t pos);
 
 
@@ -149,8 +143,6 @@ namespace softcut {
         void setRecOffsetSamples(int d);
 
         phase_t getActivePhase() const;
-
-        phase_t wrapPhaseToLoop(phase_t p);
 
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
 

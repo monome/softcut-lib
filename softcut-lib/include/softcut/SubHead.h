@@ -29,7 +29,9 @@ namespace softcut {
     //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
+
         friend class Voice;
+
         friend class TestBuffers;
 
     public:
@@ -47,8 +49,8 @@ namespace softcut {
             DoneFadeOut = 6
         } OpAction;
 
-	using frame_t = long int;
-	static constexpr frame_t maxBlockSize = 1024;
+        using frame_t = long int;
+        static constexpr frame_t maxBlockSize = 1024;
         template<typename T>
         using StateBuffer = std::array<T, maxBlockSize>;
 

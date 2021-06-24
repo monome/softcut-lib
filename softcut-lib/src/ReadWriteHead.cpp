@@ -39,62 +39,25 @@ void ReadWriteHead::init() {
     frameIdx = 0;
 }
 
-//void ReadWriteHead::enqueuePositionChange(phase_t pos) {
-//    enqueuedPosition = pos;
-//}
-//
-//int ReadWriteHead::dequeuePositionChange(size_t fr) {
-//    if (enqueuedPosition < 0) {
-//        return -1;
-//    }
-//    for (int headIdx = 0; headIdx < 2; ++headIdx) {
-//        if (head[headIdx].opState[fr] == SubHead::Stopped) {
-//            head[headIdx].setPosition(fr, enqueuedPosition);
-//            enqueuedPosition = -1.0;
-//            return headIdx;
-//        }
-//    }
-//    return -1;
-//}
-//
-//void ReadWriteHead::checkPositionChange(frame_t fr_1, frame_t fr) {
-//    // change positions if needed
-//    int headMoved = dequeuePositionChange(fr);
-//    if (headMoved >= 0) {
-//        active[fr] = headMoved;
-//    } else {
-//        active[fr] = active[fr_1];
-//    }
-//}
-
-
 int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
     // check for pos change request
     phase_t pos = requestedPosition.load();
     if (pos >= 0.0) {
         for (int headIdx = 0; headIdx < 2; ++headIdx) {
             if (head[headIdx].opState[fr_1] == SubHead::Stopped) {
-                //std::cerr << "performing position request: " << pos << std::endl;
                 requestedPosition.store(-1.0);
                 jumpToPosition(headIdx, fr_1, pos);
                 auto outIdx = 1 - headIdx;
                 head[outIdx].opState[fr_1] = SubHead::OpState::FadeOut;
                 head[outIdx].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
-//                head[headIdx].setPosition(static_cast<long>(fr), pos);
                 return headIdx;
             }
         }
-        //std::cerr << "no available subhead; bail on position request" << std::endl;
     }
     return -1;
 }
 
 void ReadWriteHead::jumpToPosition(int newHead, size_t fr, phase_t pos) {
-    /// .. if this is true, there will be a click.
-    // this should only happen if fade times are longer than loop intervals.
-    /// just gonna let that condition be, since it can be checked by the lib user... maybe it's a choice
-    //assert (head[newHead].opState[fr] == SubHead::Stoppedmp);
-    //std::cerr << "jump to pos: " << newHead << ", " << fr <<", " << pos << std::endl;
     head[newHead].setPosition(static_cast<long>(fr), pos);
     active[fr] = newHead;
 }
@@ -114,29 +77,19 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     while (fr < numFrames) {
         int loopHead = -1;
         int loopDir = 0;
-        // update phase/action/state for each subhead
-        // this may result in a position change being enqueued
-        for (int headIdx=0; headIdx<2; ++headIdx) {
+        for (int headIdx = 0; headIdx < 2; ++headIdx) {
             action = head[headIdx].calcFramePosition(fr_1, fr);
             if (action == SubHead::OpAction::LoopPositive) {
-//                enqueuePositionChange(start);
-                //std::cerr << "loop fwd: " <<headIdx<<", "<<fr<<", "<<start<<std::endl;
-                //std::cerr << "  (last phase: " << head[headIdx].phase[fr_1] << ")"<<std::endl;
                 loopHead = headIdx;
                 loopDir = 1;
-//                jumpToPosition(headIdx ? 0 : 1, fr, start);
             } else if (action == SubHead::OpAction::LoopNegative) {
-                //enqueuePositionChange(end);
-                //std::cerr << "loop rev: " <<headIdx<<", "<<fr<<", "<<end<<std::endl;
                 loopHead = headIdx;
                 loopDir = -1;
-                //loopToPosition(headIdx, fr, end);
-//                jumpToPosition(headIdx ? 0 : 1, fr, end);
             }
         }
         if (loopHead >= 0) {
             loopToPosition(loopHead, fr, loopDir > 0 ? start : end);
-        }  else {
+        } else {
             auto changed = checkPositionRequest(fr_1, fr);
             if (changed >= 0) {
                 active[fr] = changed;
@@ -144,7 +97,6 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
                 active[fr] = active[fr_1];
             }
         }
-//        checkPositionChange(fr_1, fr);
         fr_1 = fr;
         ++fr;
     }
@@ -297,11 +249,11 @@ void ReadWriteHead::computeReadDuckLevels(const ReadWriteHead *other, size_t num
         x = clamp_lo<float>(x, computeReadDuckLevel(&(head[0]), &(other->head[1]), fr));
         x = clamp_lo<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[0]), fr));
         x = clamp_lo<float>(x, computeReadDuckLevel(&(head[1]), &(other->head[1]), fr));
-        readDuck[fr] = readDuckRamp.getNextValue(1.f- x);
+        readDuck[fr] = readDuckRamp.getNextValue(1.f - x);
     }
 }
 
-void ReadWriteHead::applyReadDuckLevels(float* output, size_t numFrames) {
+void ReadWriteHead::applyReadDuckLevels(float *output, size_t numFrames) {
 #if 1
     for (size_t fr = 0; fr < numFrames; ++fr) {
         output[fr] *= readDuck[fr];
@@ -331,7 +283,7 @@ void ReadWriteHead::applyWriteDuckLevels(size_t numFrames) {
 }
 
 
-float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, size_t frame) {
+float ReadWriteHead::computeReadDuckLevel(const SubHead *a, const SubHead *b, size_t frame) {
     /// FIXME: for this to really work, position needs to be calculated modulo loop points.
     //// as it is, we get artifacts when one or both voices cross the loop point,
     //// while being near each other on one side of it.
@@ -340,7 +292,7 @@ float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, si
     static constexpr float fadeMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
     // FIXME: these magic numbers are unaffected by sample rate :/
-    static constexpr phase_t dmax = 480*2;
+    static constexpr phase_t dmax = 480 * 2;
     static constexpr phase_t dmin = 480;
     // if `a` fade level is ~0, no ducking is needed
     if (a->fade[frame] < fadeMin) { return 0.f; }
@@ -350,19 +302,19 @@ float ReadWriteHead::computeReadDuckLevel(const SubHead* a, const SubHead* b, si
     const auto dabs = dspkit::abs<phase_t>(a->phase[frame] - b->phase[frame]);
     if (dabs >= dmax) { return 0.f; }
     if (dabs <= dmin) { return 1.f; }
-    return Fades::raisedCosFadeOut(static_cast<float>((dabs-dmin) / (dmax-dmin)));
+    return Fades::raisedCosFadeOut(static_cast<float>((dabs - dmin) / (dmax - dmin)));
 }
 
 
-float ReadWriteHead::computeWriteDuckLevel(const SubHead* a, const SubHead* b, size_t frame) {
+float ReadWriteHead::computeWriteDuckLevel(const SubHead *a, const SubHead *b, size_t frame) {
     static constexpr float recMin = std::numeric_limits<float>::epsilon() * 2.f;
     static constexpr float preMax = 1.f - (std::numeric_limits<float>::epsilon() * 2.f);
-    static constexpr phase_t dmax = 480*2;
+    static constexpr phase_t dmax = 480 * 2;
     static constexpr phase_t dmin = 480;
     if (a->rec[frame] < recMin && a->pre[frame] > preMax) { return 0.f; }
     if (b->rec[frame] < recMin && b->pre[frame] > preMax) { return 0.f; }
     const auto dabs = dspkit::abs<phase_t>(a->phase[frame] - b->phase[frame]);
     if (dabs >= dmax) { return 0.f; }
     if (dabs <= dmin) { return 1.f; }
-    return Fades::raisedCosFadeOut(static_cast<float>((dabs-dmin) / (dmax-dmin)));
+    return Fades::raisedCosFadeOut(static_cast<float>((dabs - dmin) / (dmax - dmin)));
 }
