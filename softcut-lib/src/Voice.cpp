@@ -141,8 +141,9 @@ void Voice::performWrites(float *in, size_t numFrames) {
 
 void Voice::syncPosition(const Voice &target, float offset) {
     phase_t newPhase = target.rwh.getActivePhase() + offset;
-    // NB: relying on position change function to perform phase wrapping if needed
-    rwh.enqueuePositionChange(newPhase);
+//    // NB: relying on position change function to perform phase wrapping if needed
+//    rwh.enqueuePositionChange(newPhase);
+    /// ehh, FIXME
 }
 
 
@@ -193,7 +194,7 @@ void Voice::setFadeTime(float sec) {
 }
 
 void Voice::setPosition(float sec) {
-    rwh.setPosition(sec);
+    rwh.requestPosition(sec);
 }
 
 void Voice::setRecLevel(float amp) {

@@ -87,7 +87,9 @@ namespace softcut {
 
         void setBuffer(float *b, frame_t fr);
 
-        frame_t wrapBufIndex(frame_t x);
+        frame_t wrapBufIndex(frame_t x) const;
+
+        phase_t wrapPhaseToBuffer(phase_t p) const;
 
     private:
         Resampler resamp;   // resampler

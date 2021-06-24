@@ -39,51 +39,109 @@ void ReadWriteHead::init() {
     frameIdx = 0;
 }
 
-void ReadWriteHead::enqueuePositionChange(phase_t pos) {
-    enqueuedPosition = pos;
-}
+//void ReadWriteHead::enqueuePositionChange(phase_t pos) {
+//    enqueuedPosition = pos;
+//}
+//
+//int ReadWriteHead::dequeuePositionChange(size_t fr) {
+//    if (enqueuedPosition < 0) {
+//        return -1;
+//    }
+//    for (int headIdx = 0; headIdx < 2; ++headIdx) {
+//        if (head[headIdx].opState[fr] == SubHead::Stopped) {
+//            head[headIdx].setPosition(fr, enqueuedPosition);
+//            enqueuedPosition = -1.0;
+//            return headIdx;
+//        }
+//    }
+//    return -1;
+//}
+//
+//void ReadWriteHead::checkPositionChange(frame_t fr_1, frame_t fr) {
+//    // change positions if needed
+//    int headMoved = dequeuePositionChange(fr);
+//    if (headMoved >= 0) {
+//        active[fr] = headMoved;
+//    } else {
+//        active[fr] = active[fr_1];
+//    }
+//}
 
-int ReadWriteHead::dequeuePositionChange(size_t fr) {
-    if (enqueuedPosition < 0) {
-        return -1;
-    }
-    for (int headIdx = 0; headIdx < 2; ++headIdx) {
-        if (head[headIdx].opState[fr] == SubHead::Stopped) {
-            head[headIdx].setPosition(fr, enqueuedPosition);
-            enqueuedPosition = -1.0;
-            return headIdx;
+
+int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
+    // check for pos change request
+    phase_t pos = requestedPosition.load();
+    if (pos >= 0.0) {
+        for (int headIdx = 0; headIdx < 2; ++headIdx) {
+            if (head[headIdx].opState[fr_1] == SubHead::Stopped) {
+                std::cerr << "performing position request: " << pos << std::endl;
+                requestedPosition.store(-1.0);
+                jumpToPosition(headIdx, fr_1, pos);
+//                head[headIdx].setPosition(static_cast<long>(fr), pos);
+                return headIdx;
+            }
         }
+        std::cerr << "no available subhead; bail on position request" << std::endl;
     }
     return -1;
 }
 
-void ReadWriteHead::checkPositionChange(frame_t fr_1, frame_t fr) {
-    // change positions if needed
-    int headMoved = dequeuePositionChange(fr);
-    if (headMoved >= 0) {
-        active[fr] = headMoved;
-    } else {
-        active[fr] = active[fr_1];
-    }
+void ReadWriteHead::jumpToPosition(int newHead, size_t fr, phase_t pos) {
+    /// .. if this is true, there will be a click.
+    // this should only happen if fade times are longer than loop intervals.
+    /// just gonna let that condition be, since it can be checked by the lib user... maybe it's a choice
+    //assert (head[newHead].opState[fr] == SubHead::Stoppedmp);
+    std::cerr << "jump to pos: " << newHead << ", " << fr <<", " << pos << std::endl;
+    head[newHead].setPosition(static_cast<long>(fr), pos);
+    active[fr] = newHead;
+}
+
+void ReadWriteHead::loopToPosition(int oldHead, size_t fr, phase_t pos) {
+    int newHead = oldHead > 0 ? 0 : 1;
+    jumpToPosition(newHead, fr, pos);
 }
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     size_t fr_1 = frameIdx;
     size_t fr = 0;
     SubHead::OpAction action;
-    checkPositionChange(fr_1, fr);
+
+    checkPositionRequest(fr_1, fr);
+
     while (fr < numFrames) {
+        int loopHead = -1;
+        int loopDir = 0;
         // update phase/action/state for each subhead
         // this may result in a position change being enqueued
-        for (auto &h  : head) {
-            action = h.calcFramePosition(fr_1, fr);
+        for (int headIdx=0; headIdx<2; ++headIdx) {
+            action = head[headIdx].calcFramePosition(fr_1, fr);
             if (action == SubHead::OpAction::LoopPositive) {
-                enqueuePositionChange(start);
+//                enqueuePositionChange(start);
+                std::cerr << "loop fwd: " <<headIdx<<", "<<fr<<", "<<start<<std::endl;
+                std::cerr << "  (last phase: " << head[headIdx].phase[fr_1] << ")"<<std::endl;
+                loopHead = headIdx;
+                loopDir = 1;
+//                jumpToPosition(headIdx ? 0 : 1, fr, start);
             } else if (action == SubHead::OpAction::LoopNegative) {
-                enqueuePositionChange(end);
+                //enqueuePositionChange(end);
+                std::cerr << "loop rev: " <<headIdx<<", "<<fr<<", "<<end<<std::endl;
+                loopHead = headIdx;
+                loopDir = -1;
+                //loopToPosition(headIdx, fr, end);
+//                jumpToPosition(headIdx ? 0 : 1, fr, end);
             }
         }
-        checkPositionChange(fr_1, fr);
+        if (loopHead >= 0) {
+            loopToPosition(loopHead, fr, loopDir > 0 ? start : end);
+        }  else {
+            auto changed = checkPositionRequest(fr_1, fr);
+            if (changed >= 0) {
+                active[fr] = changed;
+            } else {
+                active[fr] = active[fr_1];
+            }
+        }
+//        checkPositionChange(fr_1, fr);
         fr_1 = fr;
         ++fr;
     }
@@ -98,8 +156,8 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
 }
 
 void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
-    size_t fr_1 = frameIdx;
-    size_t fr = 0;
+    frame_t fr_1 = static_cast<frame_t>(frameIdx);
+    frame_t fr = 0;
     while (fr < numFrames) {
         head[0].performFrameWrite(fr_1, fr, input[fr]);
         head[1].performFrameWrite(fr_1, fr, input[fr]);
@@ -123,19 +181,20 @@ void ReadWriteHead::performSubheadReads(float *output, size_t numFrames) {
                 (head[1].opState[fr] != SubHead::Stopped)
                 && (head[1].fade[fr] > 0.f));
         activeHeadBits = active0 | (active1 << 1u);
+        auto frIdx = static_cast<frame_t>(fr);
         switch (activeHeadBits) {
             case 0:
                 output[fr] = 0.f;
                 break;
             case 1:
-                output[fr] = head[0].fade[fr] * head[0].performFrameRead(fr);
+                output[fr] = head[0].fade[fr] * head[0].performFrameRead(frIdx);
                 break;
             case 2:
-                output[fr] = head[1].fade[fr] * head[1].performFrameRead(fr);
+                output[fr] = head[1].fade[fr] * head[1].performFrameRead(frIdx);
                 break;
             case 3:
-                out0 = this->head[0].performFrameRead(fr);
-                out1 = this->head[1].performFrameRead(fr);
+                out0 = this->head[0].performFrameRead(frIdx);
+                out1 = this->head[1].performFrameRead(frIdx);
                 output[fr] = mixFade(out0, out1, head[0].fade[fr], head[1].fade[fr]);
                 break;
             default:
@@ -189,8 +248,8 @@ void ReadWriteHead::setPre(size_t i, float x) {
     pre[i] = x;
 }
 
-void ReadWriteHead::setPosition(float seconds) {
-    enqueuePositionChange(seconds * sr);
+void ReadWriteHead::requestPosition(float seconds) {
+    requestedPosition.store(seconds * sr, std::memory_order_relaxed);
 }
 
 phase_t ReadWriteHead::getActivePhase() const {

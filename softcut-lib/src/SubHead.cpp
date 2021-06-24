@@ -35,18 +35,16 @@ void SubHead::init(ReadWriteHead *parent) {
 void SubHead::setPosition(frame_t i, phase_t position) {
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
-        assert(false);
+//        assert(false);
+        return;
     }
-    phase_t p = rwh->wrapPhaseToLoop(position);
+    // what? no..
+    //phase_t p = rwh->wrapPhaseToLoop(position);
+    phase_t p = wrapPhaseToBuffer(position);
     phase[i] = p;
     syncWrIdx(i);
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
-
-    //------------------------------------
-    /// FIXME: somewhere, logic for non-looped position changes got broken.
-    /// seems like these are being skipped by the per-frame subhead position updates.
-    //--------------------------
 
     // resetting the resampler here seems correct:
     // if rate !=1, then each process frame can produce a different number of write-frame advances.
@@ -186,7 +184,7 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     }
     if (opAction[i] == OpAction::StartFadeIn) {
         // if we start a fadein on this frame, previous write index is not meaningful;
-        // assume current write index has already been updated (in setPosition())
+        // assume current write index has already been updated (in requestPosition())
         ;;
     } else {
         // otherwise, propagate last write position
@@ -224,7 +222,7 @@ float SubHead::performFrameRead(frame_t i) {
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
 }
 
-SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
+SubHead::frame_t SubHead::wrapBufIndex(frame_t x) const {
     assert(bufFrames != 0 && "buffer frame count must not be zero when running");
     frame_t y = x;
     while (y >= bufFrames) {
@@ -251,4 +249,16 @@ void SubHead::applyRateDeadzone(SubHead::frame_t i) {
     const float f = (r - deadzoneBound_2) / deadzoneBound_2;
     const float a = Fades::raisedCosFadeIn(f);
     rec[i] *= a;
+}
+
+phase_t SubHead::wrapPhaseToBuffer(phase_t p) const {
+    phase_t q = p;
+    const auto upper = static_cast<phase_t>(bufFrames + 1);
+    while (q < 0) {
+        q += upper;
+    }
+    while (q >= upper) {
+        q -= upper;
+    }
+    return q;
 }
