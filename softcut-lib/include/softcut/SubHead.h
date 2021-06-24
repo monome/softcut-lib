@@ -73,7 +73,7 @@ namespace softcut {
         StateBuffer<float> rec{0.f};
 
     protected:
-        void setPosition(frame_t i, phase_t position);
+        void setPosition(frame_t i_1, frame_t i, phase_t position);
 
         // update phase, opState, and opAction
         OpAction calcFramePosition(frame_t i_1, frame_t i);

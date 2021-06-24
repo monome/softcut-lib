@@ -32,7 +32,7 @@ void SubHead::init(ReadWriteHead *parent) {
     }
 }
 
-void SubHead::setPosition(frame_t i, phase_t position) {
+void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position) {
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
         // ... let's just see what happens. don't think this should ever occur anyway.
@@ -40,8 +40,11 @@ void SubHead::setPosition(frame_t i, phase_t position) {
         // return;
     }
     phase_t p = wrapPhaseToBuffer(position);
+    phase_t p_1 = wrapPhaseToBuffer(p - rwh->rate[i]);
+    phase[i_1] = p_1;
     phase[i] = p;
     syncWrIdx(i);
+    opState[i_1] = SubHead::FadeIn;
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
 
@@ -58,9 +61,12 @@ void SubHead::syncWrIdx(frame_t i) {
 }
 
 SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
+    //// dbg
+    phase_t p_1 = phase[i_1];
+    /////
     switch (opState[i_1]) {
         case FadeIn:
-            phase[i] = phase[i_1] + rwh->rate[i];
+            phase[i] = p_1 + rwh->rate[i];
             fade[i] = fade[i_1] + rwh->fadeInc;
             if (fade[i] >= 1.f) {
                 fade[i] = 1.f;
