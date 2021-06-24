@@ -74,14 +74,17 @@ int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
     if (pos >= 0.0) {
         for (int headIdx = 0; headIdx < 2; ++headIdx) {
             if (head[headIdx].opState[fr_1] == SubHead::Stopped) {
-                std::cerr << "performing position request: " << pos << std::endl;
+                //std::cerr << "performing position request: " << pos << std::endl;
                 requestedPosition.store(-1.0);
                 jumpToPosition(headIdx, fr_1, pos);
+                auto outIdx = 1 - headIdx;
+                head[outIdx].opState[fr_1] = SubHead::OpState::FadeOut;
+                head[outIdx].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
 //                head[headIdx].setPosition(static_cast<long>(fr), pos);
                 return headIdx;
             }
         }
-        std::cerr << "no available subhead; bail on position request" << std::endl;
+        //std::cerr << "no available subhead; bail on position request" << std::endl;
     }
     return -1;
 }
@@ -91,7 +94,7 @@ void ReadWriteHead::jumpToPosition(int newHead, size_t fr, phase_t pos) {
     // this should only happen if fade times are longer than loop intervals.
     /// just gonna let that condition be, since it can be checked by the lib user... maybe it's a choice
     //assert (head[newHead].opState[fr] == SubHead::Stoppedmp);
-    std::cerr << "jump to pos: " << newHead << ", " << fr <<", " << pos << std::endl;
+    //std::cerr << "jump to pos: " << newHead << ", " << fr <<", " << pos << std::endl;
     head[newHead].setPosition(static_cast<long>(fr), pos);
     active[fr] = newHead;
 }
@@ -117,14 +120,14 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
             action = head[headIdx].calcFramePosition(fr_1, fr);
             if (action == SubHead::OpAction::LoopPositive) {
 //                enqueuePositionChange(start);
-                std::cerr << "loop fwd: " <<headIdx<<", "<<fr<<", "<<start<<std::endl;
-                std::cerr << "  (last phase: " << head[headIdx].phase[fr_1] << ")"<<std::endl;
+                //std::cerr << "loop fwd: " <<headIdx<<", "<<fr<<", "<<start<<std::endl;
+                //std::cerr << "  (last phase: " << head[headIdx].phase[fr_1] << ")"<<std::endl;
                 loopHead = headIdx;
                 loopDir = 1;
 //                jumpToPosition(headIdx ? 0 : 1, fr, start);
             } else if (action == SubHead::OpAction::LoopNegative) {
                 //enqueuePositionChange(end);
-                std::cerr << "loop rev: " <<headIdx<<", "<<fr<<", "<<end<<std::endl;
+                //std::cerr << "loop rev: " <<headIdx<<", "<<fr<<", "<<end<<std::endl;
                 loopHead = headIdx;
                 loopDir = -1;
                 //loopToPosition(headIdx, fr, end);
