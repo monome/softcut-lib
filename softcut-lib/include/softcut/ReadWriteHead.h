@@ -55,7 +55,7 @@ namespace softcut {
 
 
     protected:
-        SubHead head[3];         // sub-processors
+        SubHead head[2];         // sub-processors
         //-------------------
         //--- state variables (unbuffered)
         sample_t *buf{nullptr}; // audio buffer (allocated elsewhere)
