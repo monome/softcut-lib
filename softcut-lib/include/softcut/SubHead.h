@@ -29,7 +29,9 @@ namespace softcut {
     //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
+
         friend class Voice;
+
         friend class TestBuffers;
 
     public:
@@ -47,8 +49,8 @@ namespace softcut {
             DoneFadeOut = 6
         } OpAction;
 
-	using frame_t = long int;
-	static constexpr frame_t maxBlockSize = 1024;
+        using frame_t = long int;
+        static constexpr frame_t maxBlockSize = 1024;
         template<typename T>
         using StateBuffer = std::array<T, maxBlockSize>;
 
@@ -87,7 +89,9 @@ namespace softcut {
 
         void setBuffer(float *b, frame_t fr);
 
-        frame_t wrapBufIndex(frame_t x);
+        frame_t wrapBufIndex(frame_t x) const;
+
+        phase_t wrapPhaseToBuffer(phase_t p) const;
 
     private:
         Resampler resamp;   // resampler
@@ -95,8 +99,6 @@ namespace softcut {
         frame_t bufFrames{};   // total buffer size
 
         void init(ReadWriteHead *rwh);
-
-        void setRwh(ReadWriteHead *rwh) { this->rwh = rwh; }
 
         void applyRateDeadzone(frame_t i);
 

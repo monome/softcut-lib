@@ -35,18 +35,15 @@ void SubHead::init(ReadWriteHead *parent) {
 void SubHead::setPosition(frame_t i, phase_t position) {
     if (opState[i] != Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
-        assert(false);
+        // ... let's just see what happens. don't think this should ever occur anyway.
+        // assert(false);
+        // return;
     }
-    phase_t p = rwh->wrapPhaseToLoop(position);
+    phase_t p = wrapPhaseToBuffer(position);
     phase[i] = p;
     syncWrIdx(i);
     opState[i] = SubHead::FadeIn;
     opAction[i] = SubHead::OpAction::StartFadeIn;
-
-    //------------------------------------
-    /// FIXME: somewhere, logic for non-looped position changes got broken.
-    /// seems like these are being skipped by the per-frame subhead position updates.
-    //--------------------------
 
     // resetting the resampler here seems correct:
     // if rate !=1, then each process frame can produce a different number of write-frame advances.
@@ -56,8 +53,8 @@ void SubHead::setPosition(frame_t i, phase_t position) {
     resamp.clearBuffers();
 }
 
-void SubHead::syncWrIdx(frame_t i){
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i])  + rwh->dir[i] * rwh->recOffsetSamples);
+void SubHead::syncWrIdx(frame_t i) {
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i]) + rwh->dir[i] * rwh->recOffsetSamples);
 }
 
 SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
@@ -131,16 +128,15 @@ static float calcPreFadeCurve(float fade) {
     // time parameter is when to finish closing, when fading in
     // FIXME: make this dynamic?
     // static constexpr float t = 0;
-    static constexpr float t = 1.f/32;
-   // static constexpr float t = 1.f/64;
+    static constexpr float t = 1.f / 32;
+    // static constexpr float t = 1.f/64;
     //static constexpr float t = 1.f/8;
     //static constexpr float t = 1.f;
     if (fade > t) {
         return 0.f;
-    }
-    else {
+    } else {
 
-        return Fades::fastCosFadeOut(fade/t);
+        return Fades::fastCosFadeOut(fade / t);
     }
 }
 
@@ -153,8 +149,8 @@ static float calcRecFadeCurve(float fade) {
     static constexpr float t = 0.25f;
     //static constexpr float t = 0.5f;
     static constexpr float nt = 1.f - t;
-    if (fade <= t) {  return 0.f; }
-    else { return Fades::raisedCosFadeIn((fade-t)/nt); }
+    if (fade <= t) { return 0.f; }
+    else { return Fades::raisedCosFadeIn((fade - t) / nt); }
 }
 
 void SubHead::calcFrameLevels(frame_t i) {
@@ -186,7 +182,7 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     }
     if (opAction[i] == OpAction::StartFadeIn) {
         // if we start a fadein on this frame, previous write index is not meaningful;
-        // assume current write index has already been updated (in setPosition())
+        // assume current write index has already been updated (in requestPosition())
         ;;
     } else {
         // otherwise, propagate last write position
@@ -224,7 +220,7 @@ float SubHead::performFrameRead(frame_t i) {
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
 }
 
-SubHead::frame_t SubHead::wrapBufIndex(frame_t x) {
+SubHead::frame_t SubHead::wrapBufIndex(frame_t x) const {
     assert(bufFrames != 0 && "buffer frame count must not be zero when running");
     frame_t y = x;
     while (y >= bufFrames) {
@@ -243,12 +239,27 @@ void SubHead::setBuffer(float *b, frame_t fr) {
 }
 
 void SubHead::applyRateDeadzone(SubHead::frame_t i) {
-    static constexpr float deadzoneBound = 1.f/32.f;
-    static constexpr float deadzoneBound_2 = 1.f/64.f;
+    static constexpr float deadzoneBound = 1.f / 32.f;
+    static constexpr float deadzoneBound_2 = 1.f / 64.f;
     const float r = dspkit::abs<rate_t>(rwh->rate[i]);
     if (r > deadzoneBound) { return; }
-    if (r < deadzoneBound_2) { rec[i] = 0.f; return; }
+    if (r < deadzoneBound_2) {
+        rec[i] = 0.f;
+        return;
+    }
     const float f = (r - deadzoneBound_2) / deadzoneBound_2;
     const float a = Fades::raisedCosFadeIn(f);
     rec[i] *= a;
+}
+
+phase_t SubHead::wrapPhaseToBuffer(phase_t p) const {
+    phase_t q = p;
+    const auto upper = static_cast<phase_t>(bufFrames + 1);
+    while (q < 0) {
+        q += upper;
+    }
+    while (q >= upper) {
+        q -= upper;
+    }
+    return q;
 }

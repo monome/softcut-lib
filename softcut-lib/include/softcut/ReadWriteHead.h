@@ -29,20 +29,20 @@ namespace softcut {
         using frame_t = SubHead::frame_t;
 
     private:
-        // FIXME: should maybe use a proper queue (e.g. from dsp-kit)
-        /// for now, only a single value can be queued,
-        /// and a negative value indicates that the queue is empty.
-
-        // FIXME: this may need to be made atomic
-        /// (or at any rate, not written directly by OSC server thread)
-        phase_t enqueuedPosition = -1.0;
+        // set by the OSC server thread.
+        // if non-negative, an explicit position change request is pending
+        std::atomic<phase_t> requestedPosition = -1.0;
         size_t frameIdx; // last used index into processing block
 
-        void enqueuePositionChange(phase_t pos);
+        // attempt to perform any pending position change requests
+        // return the index of the subhead that just became active,
+        // or -1 if nothing happened
+        int checkPositionRequest(size_t fr_1, size_t fr);
 
-        int dequeuePositionChange(size_t fr);
+        void jumpToPosition(int newHeadIdx, size_t fr, phase_t pos);
 
-        void checkPositionChange(frame_t fr_1, frame_t fr);
+        void loopToPosition(int oldHeadIdx, size_t fr, phase_t pos);
+
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // we don't actually want equal power since we are summing!
@@ -58,7 +58,7 @@ namespace softcut {
         SubHead head[2];         // sub-processors
         //-------------------
         //--- state variables (unbuffered)
-        sample_t *buf{nullptr}; // audio buffer (allocated elsewhere)
+        sample_t *buf{nullptr}; // audio buffe r (allocated elsewhere)
         float sr{0};            // sample rate
         phase_t start{0};       // start/end points
         phase_t end{0};
@@ -74,7 +74,8 @@ namespace softcut {
         // preserve and record levels, pre-fade
         SubHead::StateBuffer<float> pre{0.f};
         SubHead::StateBuffer<float> rec{0.f};
-        // index of active subhead
+
+        // bitfield of active subhead
         SubHead::StateBuffer<int> active{-1};
 
         // ducking levels. 0 == no ducking, 1 == full ducking
@@ -96,8 +97,8 @@ namespace softcut {
 
         void init();
 
-        // queue a position change
-        void setPosition(float seconds);
+        // request a position change
+        void requestPosition(float seconds);
 
         // update all position, state, and action buffers for both subheads
         void performSubheadWrites(const float *input, size_t numFrames);
@@ -142,8 +143,6 @@ namespace softcut {
         void setRecOffsetSamples(int d);
 
         phase_t getActivePhase() const;
-
-        phase_t wrapPhaseToLoop(phase_t p);
 
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
 
