@@ -212,17 +212,6 @@ phase_t ReadWriteHead::getActivePhase() const {
     return head[active[frameIdx]].phase[frameIdx];
 }
 
-
-phase_t ReadWriteHead::wrapPhaseToLoop(phase_t p) {
-    if (p < start) {
-        return p + end - start;
-    } else if (p > end) {
-        return p - end + start;
-    } else {
-        return p;
-    }
-}
-
 float ReadWriteHead::getRateBuffer(size_t i) {
     return rate[i];
 }
