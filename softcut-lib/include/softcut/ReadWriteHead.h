@@ -58,7 +58,7 @@ namespace softcut {
         SubHead head[2];         // sub-processors
         //-------------------
         //--- state variables (unbuffered)
-        sample_t *buf{nullptr}; // audio buffer (allocated elsewhere)
+        sample_t *buf{nullptr}; // audio buffe r (allocated elsewhere)
         float sr{0};            // sample rate
         phase_t start{0};       // start/end points
         phase_t end{0};

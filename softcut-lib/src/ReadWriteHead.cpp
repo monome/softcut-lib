@@ -46,10 +46,13 @@ int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
         for (int headIdx = 0; headIdx < 2; ++headIdx) {
             if (head[headIdx].opState[fr_1] == SubHead::Stopped) {
                 requestedPosition.store(-1.0);
-                jumpToPosition(headIdx, fr_1, pos);
-                auto outIdx = 1 - headIdx;
-                head[outIdx].opState[fr_1] = SubHead::OpState::FadeOut;
-                head[outIdx].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
+                // std::cerr<<"handling position request; new head: "<<headIdx<<"; frame="<<fr_1 <<std::endl;
+                jumpToPosition(headIdx, fr, pos);
+                // hack...
+                head[headIdx].opState[fr_1] = SubHead::OpState::FadeIn;
+                auto oldHeadIdx = 1 - headIdx;
+                head[oldHeadIdx].opState[fr_1] = SubHead::OpState::FadeOut;
+                head[oldHeadIdx].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
                 return headIdx;
             }
         }
@@ -64,6 +67,8 @@ void ReadWriteHead::jumpToPosition(int newHead, size_t fr, phase_t pos) {
 
 void ReadWriteHead::loopToPosition(int oldHead, size_t fr, phase_t pos) {
     int newHead = oldHead > 0 ? 0 : 1;
+    active[fr] = newHead;
+    // std::cerr << "looping to position: " << pos << "(old: "<<oldHead<<"; new: "<<newHead<<")"<<std::endl;
     jumpToPosition(newHead, fr, pos);
 }
 
@@ -72,7 +77,11 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
     size_t fr = 0;
     SubHead::OpAction action;
 
-    checkPositionRequest(fr_1, fr);
+    auto newActive = checkPositionRequest(fr_1, fr);
+    if (newActive >= 0) {
+        // std::cerr << "new active head, top of block: " << newActive << std::endl;
+        active[fr_1] = newActive;
+    }
 
     while (fr < numFrames) {
         int loopHead = -1;
@@ -87,12 +96,14 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
                 loopDir = -1;
             }
         }
-        if (loopHead >= 0) {
-            loopToPosition(loopHead, fr, loopDir > 0 ? start : end);
+
+        newActive = checkPositionRequest(fr_1, fr);
+        if (newActive >= 0) {
+            // std::cerr << "new active head (frame " <<fr << " in block): "<< newActive << std::endl;
+            active[fr] = active[fr_1] = newActive;
         } else {
-            auto changed = checkPositionRequest(fr_1, fr);
-            if (changed >= 0) {
-                active[fr] = changed;
+            if (loopHead >= 0) {
+                loopToPosition(loopHead, fr, loopDir > 0 ? start : end);
             } else {
                 active[fr] = active[fr_1];
             }
@@ -100,7 +111,14 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
         fr_1 = fr;
         ++fr;
     }
+    // never happens:
+//    newActive = checkPositionRequest(fr_1, 0);
+//    if (newActive >= 0) {
+//        std::cerr << "new active head, end of block: " << newActive << std::endl;
+//        active[0] = newActive;
+//    }
     frameIdx = fr_1;
+
 }
 
 void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
