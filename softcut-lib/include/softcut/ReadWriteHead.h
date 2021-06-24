@@ -39,9 +39,9 @@ namespace softcut {
         // or -1 if nothing happened
         int checkPositionRequest(size_t fr_1, size_t fr);
 
-        void jumpToPosition(int newHeadIdx, size_t fr, phase_t pos);
+        void jumpToPosition(int newHeadIdx, size_t fr_1, size_t fr, phase_t pos);
 
-        void loopToPosition(int oldHeadIdx, size_t fr, phase_t pos);
+        void loopToPosition(int oldHeadIdx, size_t fr_1, size_t fr, phase_t pos);
 
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
@@ -75,7 +75,7 @@ namespace softcut {
         SubHead::StateBuffer<float> pre{0.f};
         SubHead::StateBuffer<float> rec{0.f};
 
-        // bitfield of active subhead
+        // index of logically-active subhead
         SubHead::StateBuffer<int> active{-1};
 
         // ducking levels. 0 == no ducking, 1 == full ducking
@@ -107,7 +107,7 @@ namespace softcut {
 
         void updateSubheadPositions(size_t numFrames);
 
-        void copySubheadPositions(const ReadWriteHead &other, size_t numFrames);
+        void copySubheadPosition(const ReadWriteHead &src, size_t numFrames);
 
         void updateSubheadWriteLevels(size_t numFrames);
 

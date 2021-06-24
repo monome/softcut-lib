@@ -16,15 +16,12 @@ using namespace std;
 using namespace dspkit;
 
 ReadWriteHead::ReadWriteHead() {
-    rate.fill(1.f);
-    pre.fill(0.f);
-    rec.fill(0.f);
-    active.fill(-1);
     frameIdx = 0;
     readDuckRamp.setSampleRate(48000.f);
     readDuckRamp.setTime(0.01);
     writeDuckRamp.setSampleRate(48000.f);
     writeDuckRamp.setTime(0.01);
+    this->init();
 }
 
 void ReadWriteHead::init() {
@@ -44,33 +41,42 @@ int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
     // check for pos change request
     phase_t pos = requestedPosition.load();
     if (pos >= 0.0) {
+        int newHead = -1;
         for (int headIdx = 0; headIdx < 2; ++headIdx) {
             if (head[headIdx].opState[fr_1] == SubHead::Stopped) {
-                requestedPosition.store(-1.0);
-                // std::cerr<<"handling position request; new head: "<<headIdx<<"; frame="<<fr_1 <<std::endl;
-                jumpToPosition(headIdx, fr, pos);
-                // hack...
-                head[headIdx].opState[fr_1] = SubHead::OpState::FadeIn;
-                auto oldHeadIdx = 1 - headIdx;
-                head[oldHeadIdx].opState[fr_1] = SubHead::OpState::FadeOut;
-                head[oldHeadIdx].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
-                return headIdx;
+                newHead = headIdx;
+                break;
             }
+        }
+
+        if (newHead != -1) {
+            requestedPosition.store(-1.0);
+            // std::cerr << "performing position request; head=" << newHead << "; fr=" << fr << "; pos=" << pos
+                      //<< std::endl;
+            jumpToPosition(newHead, fr_1, fr, pos);
+            // hack...
+            head[newHead].opState[fr_1] = SubHead::OpState::FadeIn;
+            auto oldHead = 1 - newHead;
+            if (head[oldHead].opState[fr_1] != SubHead::OpState::Stopped) {
+                head[oldHead].opState[fr_1] = SubHead::OpState::FadeOut;
+                head[oldHead].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
+            }
+            return newHead;
         }
     }
     return -1;
 }
 
-void ReadWriteHead::jumpToPosition(int newHead, size_t fr, phase_t pos) {
-    head[newHead].setPosition(static_cast<long>(fr), pos);
+void ReadWriteHead::jumpToPosition(int newHead, size_t fr_1, size_t fr, phase_t pos) {
+    head[newHead].setPosition(static_cast<long>(fr_1), static_cast<long>(fr), pos);
     active[fr] = newHead;
 }
 
-void ReadWriteHead::loopToPosition(int oldHead, size_t fr, phase_t pos) {
+void ReadWriteHead::loopToPosition(int oldHead, size_t fr_1, size_t fr, phase_t pos) {
     int newHead = oldHead > 0 ? 0 : 1;
     active[fr] = newHead;
     // std::cerr << "looping to position: " << pos << "(old: "<<oldHead<<"; new: "<<newHead<<")"<<std::endl;
-    jumpToPosition(newHead, fr, pos);
+    jumpToPosition(newHead, fr_1, fr, pos);
 }
 
 void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
@@ -104,7 +110,7 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
             active[fr] = active[fr_1] = newActive;
         } else {
             if (loopHead >= 0) {
-                loopToPosition(loopHead, fr, loopDir > 0 ? start : end);
+                loopToPosition(loopHead, fr_1, fr, loopDir > 0 ? start : end);
             } else {
                 active[fr] = active[fr_1];
             }
@@ -130,7 +136,7 @@ void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
 }
 
 void ReadWriteHead::performSubheadWrites(const float *input, size_t numFrames) {
-    frame_t fr_1 = static_cast<frame_t>(frameIdx);
+    auto fr_1 = static_cast<frame_t>(frameIdx);
     frame_t fr = 0;
     while (fr < numFrames) {
         head[0].performFrameWrite(fr_1, fr, input[fr]);
@@ -239,15 +245,20 @@ float ReadWriteHead::getRateBuffer(size_t i) {
     return rate[i];
 }
 
-void ReadWriteHead::copySubheadPositions(const ReadWriteHead &src, size_t numFrames) {
+void ReadWriteHead::copySubheadPosition(const ReadWriteHead &src, size_t numFrames) {
+    frameIdx = src.frameIdx;
+    fadeInc = src.fadeInc;
+    loopFlag = src.loopFlag;
+    recOffsetSamples = src.recOffsetSamples;
+    start = src.start;
+    end = src.end;
+    sr  = src.sr;
     std::copy_n(src.rate.begin(), numFrames, rate.begin());
     std::copy_n(src.dir.begin(), numFrames, dir.begin());
     std::copy_n(src.active.begin(), numFrames, active.begin());
     for (int h = 0; h < 2; ++h) {
         std::copy_n(src.head[h].phase.begin(), numFrames, head[h].phase.begin());
         std::copy_n(src.head[h].wrIdx.begin(), numFrames, head[h].wrIdx.begin());
-        std::copy_n(src.head[h].rec.begin(), numFrames, head[h].rec.begin());
-        std::copy_n(src.head[h].pre.begin(), numFrames, head[h].pre.begin());
         std::copy_n(src.head[h].fade.begin(), numFrames, head[h].fade.begin());
         std::copy_n(src.head[h].opState.begin(), numFrames, head[h].opState.begin());
         std::copy_n(src.head[h].opAction.begin(), numFrames, head[h].opAction.begin());

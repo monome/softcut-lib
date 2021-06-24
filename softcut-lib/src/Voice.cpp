@@ -83,7 +83,7 @@ void Voice::updatePositions(size_t numFrames) {
     if (target == nullptr) {
         rwh.updateSubheadPositions(numFrames);
     } else {
-        rwh.copySubheadPositions(target->rwh, numFrames);
+        rwh.copySubheadPosition(target->rwh, numFrames);
     }
 }
 
