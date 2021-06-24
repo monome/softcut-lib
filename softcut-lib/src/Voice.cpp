@@ -177,7 +177,6 @@ void Voice::setSampleRate(float hz) {
 }
 
 void Voice::setRate(float rate) {
-    std::cout << "set rate target " << rate << std::endl;
     rateRamp.setTarget(rate);
 }
 
