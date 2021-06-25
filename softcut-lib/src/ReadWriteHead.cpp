@@ -130,12 +130,13 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
             }
             for (int h = 0; h < 2; ++h) {
                 if (res[h] == SubHead::PhaseResult::WasStopped || res[h] == SubHead::PhaseResult::DoneFadeOut) {
+                    // this head is ready to be re-used
                     head[h].setPosition(fr, requestedPosition);
                     head[h].playState[fr] = SubHead::PlayState::FadeIn;
                     active[fr] = h;
-                    requestedPosition = -1.0;
                     int k = h > 0 ? 0 : 1;
                     head[k].playState[fr] = SubHead::PlayState::FadeOut;
+                    requestedPosition = -1.0;
                     break;
                 }
             }

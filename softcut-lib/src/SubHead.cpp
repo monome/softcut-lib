@@ -28,6 +28,7 @@ void SubHead::init(ReadWriteHead *parent) {
         fade[i] = 0.f;
         pre[i] = 0.f;
         rec[i] = 0.f;
+        rateDirMul[i] = 1;
     }
 }
 
@@ -51,10 +52,17 @@ void SubHead::syncWrIdx(frame_t i) {
     wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i] + (rateSign[i] * rwh->recOffsetSamples)));
 }
 
+void SubHead::incrementPhase(frame_t fr) {
+    double inc = rwh->rate[fr] * rateDirMul[fr];
+    rateSign[fr] = inc >= 0 ? 1 : -1;
+    phase[fr] = phase[fr] + inc;
+}
+
 SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
+    rateDirMul[i] = rateDirMul[i_1];
     switch (playState[i_1]) {
         case PlayState::FadeIn:
-            phase[i] = phase[i_1] + rwh->rate[i_1] * rateDirMul[i_1];
+            incrementPhase(i_1);
             // TODO: might be cool to have fade time that varies by play/loop state
             fade[i] = fade[i_1] + rwh->fadeInc;
             if (fade[i] >= 1.f) {
@@ -63,7 +71,7 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
             }
             break;
         case PlayState::FadeOut:
-            phase[i] = phase[i_1] + rwh->rate[i_1] * rateDirMul[i_1];
+            incrementPhase(i_1);
             fade[i] = fade[i_1] - rwh->fadeInc;
             if (fade[i] <= 0.f) {
                 fade[i] = 0.f;
@@ -71,7 +79,7 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
             }
             break;
         case PlayState::Playing:
-            phase[i] = phase[i_1] + rwh->rate[i_1] * rateDirMul[i_1];
+            incrementPhase(i_1);
             fade[i] = 1.f;
             if (rwh->rate[i] > 0.f) { // positive rate
                 // if we're playing forwards, only loop at endpoint
@@ -87,6 +95,7 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
         case PlayState::Stopped:
             phase[i] = phase[i_1];
             fade[i] = 0.f;
+            rateSign[i] = rateSign[i_1];
             playState[i] = PlayState::Stopped;
             return PhaseResult::WasStopped;
     }
@@ -219,15 +228,16 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         // if we're stopped, don't touch the buffer at all.
         return;
     }
-    if (playState[i] == PlayState::FadeIn && playState[i_1] != PlayState::FadeIn) {
+    if ((playState[i] == PlayState::FadeIn)
+        && (playState[i_1] != PlayState::FadeIn)) {
         // if we start a fadein on this frame, previous write index is not meaningful;
-        // assume current write index has already been updated (in requestPosition())
+        // assume current write index has already been updated (in `setPosition()`)
         ;;
     } else {
         // otherwise, propagate last write position
         wrIdx[i] = wrIdx[i_1];
     }
-    if (rateDirMul[i] != rateDirMul[i_1]) {
+    if (rateSign[i] != rateSign[i_1]) {
         // if rate sign was just flipped, we need to re-apply the record offset!
         syncWrIdx(i);
     }

@@ -106,6 +106,8 @@ namespace softcut {
         void applyRateDeadzone(frame_t i);
 
         void syncWrIdx(frame_t i);
+
+        void incrementPhase(frame_t fr);
     };
 }
 
