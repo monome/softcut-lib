@@ -163,7 +163,7 @@ void ReadWriteHead::updateSubheadState(size_t numFrames) {
         }
     }
     updateActiveState(fr);
-    lastFrameIdx = fr;
+    lastFrameIdx = fr_1;
 }
 
 
@@ -184,7 +184,7 @@ void ReadWriteHead::updateActiveState(frame_t fr) {
 
 
 void ReadWriteHead::performPositionChange(int h, frame_t fr, phase_t pos, const SubHead::PhaseResult *res) {
-    head[h].setPosition(fr, requestedPosition);
+    head[h].setPosition(fr, pos);
     head[h].playState[fr] = SubHead::PlayState::FadeIn;
     int k = h > 0 ? 0 : 1;
     switch (res[k]) {
