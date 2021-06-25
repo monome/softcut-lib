@@ -113,15 +113,15 @@ public:
         // FIXME: would be nice to put this in TestBuffers, but that creates a `cnpy` dependency in the lib.
         /// TestBuffers kinda has to be in the lib itself so it can get access to protected fields.
         cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
-        cnpy::npy_save("rateDirMul.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
+        //cnpy::npy_save("rateDirMul.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
         cnpy::npy_save("active.npy", testBuffers.getBuffer(softcut::TestBuffers::Active), {1, numFrames}, "w");
         cnpy::npy_save("frameInBlock.npy", testBuffers.getBuffer(softcut::TestBuffers::FrameInBlock), {1, numFrames}, "w");
         cnpy::npy_save("phase0.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase0), {1, numFrames}, "w");
         cnpy::npy_save("phase1.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase1), {1, numFrames}, "w");
         cnpy::npy_save("state0.npy", testBuffers.getBuffer(softcut::TestBuffers::State0), {1, numFrames}, "w");
         cnpy::npy_save("state1.npy", testBuffers.getBuffer(softcut::TestBuffers::State1), {1, numFrames}, "w");
-        cnpy::npy_save("action0.npy", testBuffers.getBuffer(softcut::TestBuffers::Action0), {1, numFrames}, "w");
-        cnpy::npy_save("action1.npy", testBuffers.getBuffer(softcut::TestBuffers::Action1), {1, numFrames}, "w");
+        // cnpy::npy_save("action0.npy", testBuffers.getBuffer(softcut::TestBuffers::Action0), {1, numFrames}, "w");
+        // cnpy::npy_save("action1.npy", testBuffers.getBuffer(softcut::TestBuffers::Action1), {1, numFrames}, "w");
         cnpy::npy_save("fade0.npy", testBuffers.getBuffer(softcut::TestBuffers::Fade0), {1, numFrames}, "w");
         cnpy::npy_save("fade1.npy", testBuffers.getBuffer(softcut::TestBuffers::Fade1), {1, numFrames}, "w");
         cnpy::npy_save("rec0.npy", testBuffers.getBuffer(softcut::TestBuffers::Rec0), {1, numFrames}, "w");

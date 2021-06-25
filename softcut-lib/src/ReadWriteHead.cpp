@@ -36,48 +36,6 @@ void ReadWriteHead::init() {
     lastFrameIdx = 0;
     fadeInc = 1.f;
 }
-//
-//int ReadWriteHead::checkPositionRequest(size_t fr_1, size_t fr) {
-//    // check for pos change request
-//    if (requestedPosition >= 0.0) {
-//        int newHead = -1;
-//        for (int headIdx = 0; headIdx < 2; ++headIdx) {
-//            if (head[headIdx].playState[fr_1] == SubHead::Stopped) {
-//                newHead = headIdx;
-//                break;
-//            }
-//        }
-//
-//        if (newHead != -1) {
-//            requestedPosition = -1.0;
-//            // std::cerr << "performing position request; head=" << newHead << "; fr=" << fr << "; pos=" << pos
-//            //<< std::endl;
-//            performPositionChange(newHead, fr_1, fr, requestedPosition);
-//            // hack...
-//            head[newHead].playState[fr_1] = SubHead::PlayState::FadeIn;
-//            auto oldHead = 1 - newHead;
-//            if (head[oldHead].playState[fr_1] != SubHead::PlayState::Stopped) {
-//                head[oldHead].playState[fr_1] = SubHead::PlayState::FadeOut;
-//                head[oldHead].opAction[fr_1] = SubHead::OpAction::FadeOutAndStop;
-//            }
-//            return newHead;
-//        }
-//    }
-//    return -1;
-//}
-//
-//void ReadWriteHead::performPositionChange(int newHead, size_t fr_1, size_t fr, phase_t pos) {
-//    head[newHead].setPosition(static_cast<long>(fr), pos);
-//    active[fr] = newHead;
-//}
-
-//void ReadWriteHead::loopToPosition(int oldHead, size_t fr_1, size_t fr, phase_t pos) {
-//    int newHead = oldHead > 0 ? 0 : 1;
-//    active[fr] = newHead;
-//    // std::cerr << "looping to position: " << pos << "(old: "<<oldHead<<"; new: "<<newHead<<")"<<std::endl;
-//    performPositionChange(newHead, fr_1, fr, pos);
-//}
-
 
 void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *res) {
     bool breakout = false;

@@ -41,11 +41,15 @@ void SubHead::setPosition(frame_t i, phase_t position) {
     // so to ensure each pass over a loop has identical write-frame history,
     // resampler should always start each loop with internal phase=0
     resamp.setPhase(0);
+    fade[i] = 0.f;
     resamp.clearBuffers();
 }
 
 void SubHead::syncWrIdx(frame_t i) {
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i] + (rateSign[i] * rwh->recOffsetSamples)));
+    frame_t off = rwh->recOffsetSamples;
+    off *= rateSign[i];
+    auto f = static_cast<frame_t>(phase[i] + off);
+    wrIdx[i] = wrapBufIndex(f);
 }
 
 void SubHead::incrementPhase(frame_t fr_1, frame_t fr) {
@@ -106,77 +110,8 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
     return PhaseResult::Stopped;
 }
 
-//SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
-//    //// dbg
-//    phase_t p_1 = phase[i_1];
-//    /////
-//    switch (playState[i_1]) {
-//        case FadeIn:
-//            phase[i] = p_1 + rwh->rate[i];
-//            fade[i] = fade[i_1] + rwh->fadeInc;
-//            if (fade[i] >= 1.f) {
-//                fade[i] = 1.f;
-//                playState[i] = Playing;
-//                opAction[i] = DoneFadeIn;
-//            } else {
-//                playState[i] = FadeIn;
-//                opAction[i] = None;
-//            }
-//            break;
-//        case FadeOut:
-//            phase[i] = phase[i_1] + rwh->rate[i];
-//            fade[i] = fade[i_1] - rwh->fadeInc;
-//            if (fade[i] <= 0.f) {
-//                fade[i] = 0.f;
-//                playState[i] = Stopped;
-//                opAction[i] = DoneFadeOut;
-//            } else { // still fading
-//                playState[i] = FadeOut;
-//                opAction[i] = None;
-//            }
-//            break;
-//        case Playing:
-//            phase[i] = phase[i_1] + rwh->rate[i];
-//            fade[i] = 1.f;
-//            if (rwh->rate[i] > 0.f) { // positive rate
-//                // if we're playing forwards, only loop at endpoint
-//                if (phase[i] > rwh->end) { // out of loop bounds
-//                    playState[i] = FadeOut;
-//                    if (rwh->loopFlag) {
-//                        opAction[i] = LoopPositive;
-//                    } else {
-//                        opAction[i] = FadeOutAndStop;
-//                    }
-//                } else { // in loop bounds
-//                    opAction[i] = None;
-//                    playState[i] = Playing;
-//                }
-//            } else { // negative rate
-//                if (phase[i] < rwh->start) {
-//                    playState[i] = FadeOut;
-//                    if (rwh->loopFlag) {
-//                        opAction[i] = LoopNegative;
-//                    } else {
-//                        opAction[i] = FadeOutAndStop;
-//                    }
-//                } else { // in loop bounds
-//                    opAction[i] = None;
-//                    playState[i] = Playing;
-//                }
-//            }
-//            break;
-//        case Stopped:
-//            phase[i] = phase[i_1];
-//            fade[i] = 0.f;
-//            opAction[i] = None;
-//            playState[i] = Stopped;
-//    }
-//
-//    return opAction[i];
-//}
-
-
 static float calcPreFadeCurve(float fade) {
+
     // time parameter is when to finish closing, when fading in
     // FIXME: make this dynamic?
     // static constexpr float t = 0;
@@ -187,8 +122,7 @@ static float calcPreFadeCurve(float fade) {
     if (fade > t) {
         return 0.f;
     } else {
-
-        return Fades::fastCosFadeOut(fade / t);
+        return Fades::cosFadeOut(fade / t);
     }
 }
 
@@ -230,12 +164,17 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     int nsubframes = resamp.processFrame(input);
     if (playState[i] == PlayState::Stopped) {
         // if we're stopped, don't touch the buffer at all.
+        // (but our record levels should be very low anyway)
         return;
     }
     if ((playState[i] == PlayState::FadeIn)
         && (playState[i_1] != PlayState::FadeIn)) {
         // if we start a fadein on this frame, previous write index is not meaningful;
         // assume current write index has already been updated (in `setPosition()`)
+
+        ///dbg hook
+        int dum=0;
+        ++dum;
         ;;
     } else {
         // otherwise, propagate last write position
@@ -273,18 +212,6 @@ float SubHead::performFrameRead(frame_t i) {
     return Interpolate::hermite<float>(x, y0, y1, y2, y3);
 }
 
-SubHead::frame_t SubHead::wrapBufIndex(frame_t x) const {
-    assert(bufFrames != 0 && "buffer frame count must not be zero when running");
-    frame_t y = x;
-    while (y >= bufFrames) {
-        y -= bufFrames;
-    }
-    while (y < 0) {
-        y += bufFrames;
-    }
-    return y;
-}
-
 
 void SubHead::setBuffer(float *b, frame_t fr) {
     this->buf = b;
@@ -294,7 +221,7 @@ void SubHead::setBuffer(float *b, frame_t fr) {
 void SubHead::applyRateDeadzone(SubHead::frame_t i) {
     static constexpr float deadzoneBound = 1.f / 32.f;
     static constexpr float deadzoneBound_2 = 1.f / 64.f;
-    const float r = dspkit::abs<rate_t>(rwh->rate[i]);
+    const auto r = static_cast<float>(dspkit::abs<rate_t>(rwh->rate[i]));
     if (r > deadzoneBound) { return; }
     if (r < deadzoneBound_2) {
         rec[i] = 0.f;
@@ -305,14 +232,25 @@ void SubHead::applyRateDeadzone(SubHead::frame_t i) {
     rec[i] *= a;
 }
 
+SubHead::frame_t SubHead::wrapBufIndex(frame_t x) const {
+    frame_t y = x;
+    while (y >= bufFrames) {
+        y -= bufFrames;
+    }
+    while (y < 0) {
+        y += bufFrames;
+    }
+    return y;
+}
+
 phase_t SubHead::wrapPhaseToBuffer(phase_t p) const {
     phase_t q = p;
     const auto upper = static_cast<phase_t>(bufFrames + 1);
-    while (q < 0) {
-        q += upper;
-    }
     while (q >= upper) {
         q -= upper;
+    }
+    while (q < 0) {
+        q += upper;
     }
     return q;
 }

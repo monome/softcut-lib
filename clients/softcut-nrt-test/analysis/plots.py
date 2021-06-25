@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+data_location = '../../../cmake-build-debug/clients/softcut-nrt-test/'
 def load_file(key):
-    return np.load('../output/{}.npy'.format(key))
+    #return np.load('../output/{}.npy'.format(key))
+    return np.load('{}/{}.npy'.format(data_location, key))
 
 def plot_keys(keys, M, N, output_name="output.png"):
     nkeys = len(keys)
@@ -25,7 +27,7 @@ def plot_keys(keys, M, N, output_name="output.png"):
             ax[i].set_title('{} [{}, {}]'.format(k, min, max))
             ax[i].plot(arr[M:N], marker='.', linewidth=1, markersize=2)
             data[k] = arr
-    plt.savefig('../output/{}'.format(output_name))
-    # plt.show()
+    plt.savefig('{}/{}'.format(data_location, output_name))
+    #plt.show()
 
     return data

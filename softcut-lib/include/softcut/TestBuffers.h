@@ -32,14 +32,14 @@ namespace softcut {
         typedef enum {
             //-- ReadWriteHead parameters
             Rate,        // movement rate
-            Dir,        // movement direction (should just be sign of rate)
+//            Dir,        // movement direction (should just be sign of rate)
             Pre,         // preserve level
             Rec,         // record level
             Active,       // index of active subhead
             FrameInBlock, // current offset into audio block
             //--- each subhead:
             State0, State1,    // operational state for each subhead
-            Action0, Action1,  // operation actions taken, if any
+//            Action0, Action1,  // operation actions taken, if any
             Phase0, Phase1,    // phase in fractional samples
             Fade0, Fade1,      // fade position in [0, 1]
             Rec0, Rec1,        // record level (post-fade)
@@ -71,13 +71,13 @@ namespace softcut {
         void update(const ReadWriteHead &rwh, size_t numFrames) {
             appendToBuffer(Active, rwh.active.data(), numFrames);
             appendToBuffer(Rate, rwh.rate.data(), numFrames);
-            appendToBuffer(Dir, rwh.dir.data(), numFrames);
+//            appendToBuffer(Dir, rwh.dir.data(), numFrames);
             appendToBuffer(Rec, rwh.rec.data(), numFrames);
             appendToBuffer(Pre, rwh.pre.data(), numFrames);
             appendToBuffer(State0, rwh.head[0].playState.data(), numFrames);
             appendToBuffer(State1, rwh.head[1].playState.data(), numFrames);
-            appendToBuffer(Action0, rwh.head[0].opAction.data(), numFrames);
-            appendToBuffer(Action1, rwh.head[1].opAction.data(), numFrames);
+//            appendToBuffer(Action0, rwh.head[0].opAction.data(), numFrames);
+//            appendToBuffer(Action1, rwh.head[1].opAction.data(), numFrames);
             appendToBuffer(Phase0, rwh.head[0].phase.data(), numFrames);
             appendToBuffer(Phase1, rwh.head[1].phase.data(), numFrames);
             appendToBuffer(Fade0, rwh.head[0].fade.data(), numFrames);
