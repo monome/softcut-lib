@@ -33,10 +33,6 @@ void SubHead::init(ReadWriteHead *parent) {
 }
 
 void SubHead::setPosition(frame_t i, phase_t position) {
-    if (playState[i] != PlayState::Stopped) {
-        std::cerr << "error: setting position of moving subhead" << std::endl;
-        assert(false);
-    }
     phase_t p = wrapPhaseToBuffer(position);
     phase[i] = p;
     syncWrIdx(i);
@@ -52,17 +48,17 @@ void SubHead::syncWrIdx(frame_t i) {
     wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i] + (rateSign[i] * rwh->recOffsetSamples)));
 }
 
-void SubHead::incrementPhase(frame_t fr) {
+void SubHead::incrementPhase(frame_t fr_1, frame_t fr) {
     double inc = rwh->rate[fr] * rateDirMul[fr];
     rateSign[fr] = inc >= 0 ? 1 : -1;
-    phase[fr] = phase[fr] + inc;
+    phase[fr] = phase[fr_1] + inc;
 }
 
 SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
     rateDirMul[i] = rateDirMul[i_1]; /// <-- FIXME? for pingpong
     switch (playState[i_1]) {
         case PlayState::FadeIn:
-            incrementPhase(i_1);
+            incrementPhase(i_1, i);
             // TODO: might be cool to have fade time that varies by play/loop state
             fade[i] = fade[i_1] + rwh->fadeInc;
             if (fade[i] >= 1.f) {
@@ -72,7 +68,7 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
                 return PhaseResult::FadeIn;
             }
         case PlayState::FadeOut:
-            incrementPhase(i_1);
+            incrementPhase(i_1, i);
             fade[i] = fade[i_1] - rwh->fadeInc;
             if (fade[i] <= 0.f) {
                 fade[i] = 0.f;
@@ -81,9 +77,9 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
                 return PhaseResult::FadeOut;
             }
         case PlayState::Playing:
-            incrementPhase(i_1);
+            incrementPhase(i_1, i);
             fade[i] = 1.f;
-            if (rwh->rate[i] > 0.f) { // positive rate
+            if (rateSign[i] > 0) { // positive rate
                 // if we're playing forwards, only loop at endpoint
                 if (phase[i] > rwh->end) { // out of loop bounds
                     return PhaseResult::CrossLoopEnd;

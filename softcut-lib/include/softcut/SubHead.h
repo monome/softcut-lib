@@ -112,7 +112,7 @@ namespace softcut {
 
         void syncWrIdx(frame_t i);
 
-        void incrementPhase(frame_t fr);
+        void incrementPhase(frame_t fr_1, frame_t fr);
     };
 }
 
