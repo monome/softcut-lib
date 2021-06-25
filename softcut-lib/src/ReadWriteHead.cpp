@@ -80,7 +80,9 @@ void ReadWriteHead::init() {
 
 
 void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *res) {
+    bool breakout = false;
     for (int h = 0; h < 2; ++h) {
+        if (breakout) { break; }
         int k;
         switch (res[h]) {
             case SubHead::PhaseResult::Stopped:
@@ -106,18 +108,18 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
                 k = h > 0 ? 0 : 1;
                 assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
                        && (res[k] != SubHead::PhaseResult::CrossLoopStart));
-                // TODO: process ping-pong direction
-                head[k].setPosition(fr, end); // <--
+                head[k].setPosition(fr, start); // TODO: process ping-pong direction
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
+                breakout = true;
                 break;
             case SubHead::PhaseResult::CrossLoopStart:
                 head[h].playState[fr] = SubHead::PlayState::FadeOut;
                 k = h > 0 ? 0 : 1;
                 assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
                        && (res[k] != SubHead::PhaseResult::CrossLoopStart));
-                // TODO: process ping-pong direction
-                head[k].setPosition(fr, start);  // <--
+                head[k].setPosition(fr, end); // TODO: process ping-pong direction
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
+                breakout = true;
                 break;
             default:
                 assert(false); // nope
@@ -181,7 +183,6 @@ void ReadWriteHead::updateActiveState(frame_t fr) {
             break;
     }
 }
-
 
 void ReadWriteHead::performPositionChange(int h, frame_t fr, phase_t pos, const SubHead::PhaseResult *res) {
     head[h].setPosition(fr, pos);
