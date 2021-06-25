@@ -27,26 +27,31 @@ namespace softcut {
 
     class SubHead {
         friend class ReadWriteHead;
+
         friend class Voice;
+
         friend class TestBuffers;
+
     public:
         SubHead();
 
     public:
-         enum class PlayState {
-            Stopped, // stopped, fade down
-            FadeIn,  // moving, fading in
-            Playing, // moving, fade up
-            FadeOut  // moving, fading out
+        enum class PlayState {
+            Stopped // stopped, fade down
+            , Playing // moving, fade up
+            , FadeIn  // moving, fading in
+            , FadeOut  // moving, fading out
         };
 
         enum class PhaseResult {
-            WasStopped,
-            WasPlaying,
-            DoneFadeIn, // finished fading in
-            DoneFadeOut, // finished fading out
-            CrossLoopEnd, // crossed loop end, moving forward
-            CrossLoopStart // crossed loop start, moving backward
+            Stopped
+            , Playing
+            , FadeIn
+            , FadeOut
+            , DoneFadeIn
+            , DoneFadeOut
+            , CrossLoopEnd
+            , CrossLoopStart
         };
 
         using frame_t = long int;

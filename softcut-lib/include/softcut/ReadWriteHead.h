@@ -36,11 +36,10 @@ namespace softcut {
         // return the index of the subhead that just became active,
         // or -1 if nothing happened
 //        int checkPositionRequest(size_t fr_1, size_t fr);
-
-//        void jumpToPosition(int newHeadIdx, size_t fr_1, size_t fr, phase_t pos);
+        void performPositionChange(int headIdx, frame_t fr, phase_t pos, const SubHead::PhaseResult *res);
 //
+        void updateActiveState(frame_t fr);
 //        void loopToPosition(int oldHeadIdx, size_t fr_1, size_t fr, phase_t pos);
-
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // we don't actually want equal power since we are summing!
@@ -50,7 +49,6 @@ namespace softcut {
         static float computeReadDuckLevel(const SubHead *a, const SubHead *b, size_t frame);
 
         static float computeWriteDuckLevel(const SubHead *a, const SubHead *b, size_t frame);
-
 
     protected:
         SubHead head[2];         // sub-processors
@@ -103,7 +101,7 @@ namespace softcut {
 
         void performSubheadReads(float *output, size_t numFrames);
 
-        void updateSubheadPositions(size_t numFrames);
+        void updateSubheadState(size_t numFrames);
 
         void copySubheadPositions(const ReadWriteHead &src, size_t numFrames);
 

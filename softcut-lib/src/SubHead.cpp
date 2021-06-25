@@ -59,7 +59,7 @@ void SubHead::incrementPhase(frame_t fr) {
 }
 
 SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
-    rateDirMul[i] = rateDirMul[i_1];
+    rateDirMul[i] = rateDirMul[i_1]; /// <-- FIXME? for pingpong
     switch (playState[i_1]) {
         case PlayState::FadeIn:
             incrementPhase(i_1);
@@ -68,16 +68,18 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
             if (fade[i] >= 1.f) {
                 fade[i] = 1.f;
                 return PhaseResult::DoneFadeIn;
+            } else {
+                return PhaseResult::FadeIn;
             }
-            break;
         case PlayState::FadeOut:
             incrementPhase(i_1);
             fade[i] = fade[i_1] - rwh->fadeInc;
             if (fade[i] <= 0.f) {
                 fade[i] = 0.f;
                 return PhaseResult::DoneFadeOut;
+            } else {
+                return PhaseResult::FadeOut;
             }
-            break;
         case PlayState::Playing:
             incrementPhase(i_1);
             fade[i] = 1.f;
@@ -85,21 +87,27 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
                 // if we're playing forwards, only loop at endpoint
                 if (phase[i] > rwh->end) { // out of loop bounds
                     return PhaseResult::CrossLoopEnd;
+                } else {
+                    return PhaseResult::Playing;
                 }
             } else { // negative rate
                 if (phase[i] < rwh->start) {
                     return PhaseResult::CrossLoopStart;
+                } else {
+                    return PhaseResult::Playing;
                 }
             }
-            break;
         case PlayState::Stopped:
             phase[i] = phase[i_1];
             fade[i] = 0.f;
             rateSign[i] = rateSign[i_1];
             playState[i] = PlayState::Stopped;
-            return PhaseResult::WasStopped;
+            return PhaseResult::Stopped;
     }
-    return PhaseResult::WasPlaying;
+    // above cases should be exhaustive.
+    // but, gcc is warning? hm
+    assert(false);
+    return PhaseResult::Stopped;
 }
 
 //SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {

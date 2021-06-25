@@ -82,7 +82,7 @@ void Voice::updatePositions(size_t numFrames) {
     }
     const Voice *target = followTarget;
     if (target == nullptr) {
-        rwh.updateSubheadPositions(numFrames);
+        rwh.updateSubheadState(numFrames);
     } else {
         rwh.copySubheadPositions(target->rwh, numFrames);
     }

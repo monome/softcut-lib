@@ -52,7 +52,7 @@ void ReadWriteHead::init() {
 //            requestedPosition = -1.0;
 //            // std::cerr << "performing position request; head=" << newHead << "; fr=" << fr << "; pos=" << pos
 //            //<< std::endl;
-//            jumpToPosition(newHead, fr_1, fr, requestedPosition);
+//            performPositionChange(newHead, fr_1, fr, requestedPosition);
 //            // hack...
 //            head[newHead].playState[fr_1] = SubHead::PlayState::FadeIn;
 //            auto oldHead = 1 - newHead;
@@ -66,7 +66,7 @@ void ReadWriteHead::init() {
 //    return -1;
 //}
 //
-//void ReadWriteHead::jumpToPosition(int newHead, size_t fr_1, size_t fr, phase_t pos) {
+//void ReadWriteHead::performPositionChange(int newHead, size_t fr_1, size_t fr, phase_t pos) {
 //    head[newHead].setPosition(static_cast<long>(fr), pos);
 //    active[fr] = newHead;
 //}
@@ -75,22 +75,29 @@ void ReadWriteHead::init() {
 //    int newHead = oldHead > 0 ? 0 : 1;
 //    active[fr] = newHead;
 //    // std::cerr << "looping to position: " << pos << "(old: "<<oldHead<<"; new: "<<newHead<<")"<<std::endl;
-//    jumpToPosition(newHead, fr_1, fr, pos);
+//    performPositionChange(newHead, fr_1, fr, pos);
 //}
 
 
 void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *res) {
-
     for (int h = 0; h < 2; ++h) {
         int k;
         switch (res[h]) {
-            case SubHead::PhaseResult::WasStopped:
+            case SubHead::PhaseResult::Stopped:
                 head[h].playState[fr] = SubHead::PlayState::Stopped;
                 break;
-            case SubHead::PhaseResult::WasPlaying:
+            case SubHead::PhaseResult::Playing:
                 head[h].playState[fr] = SubHead::PlayState::Playing;
                 break;
+            case SubHead::PhaseResult::FadeIn:
+                head[h].playState[fr] = SubHead::PlayState::FadeIn;
+                break;
+            case SubHead::PhaseResult::FadeOut:
+                head[h].playState[fr] = SubHead::PlayState::FadeOut;
+                break;
             case SubHead::PhaseResult::DoneFadeIn:
+                head[h].playState[fr] = SubHead::PlayState::Playing;
+                break;
             case SubHead::PhaseResult::DoneFadeOut:
                 head[h].playState[fr] = SubHead::PlayState::Stopped;
                 break;
@@ -111,7 +118,6 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
                 // TODO: process ping-pong direction
                 head[k].setPosition(fr, start);  // <--
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
-                active[fr] = k;
                 break;
             default:
                 assert(false); // nope
@@ -119,28 +125,31 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
     }
 }
 
-void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
+void ReadWriteHead::updateSubheadState(size_t numFrames) {
     SubHead::PhaseResult res[2];
     frame_t fr_1 = lastFrameIdx;
     frame_t fr = 0;
     if (requestedPosition >= 0.0) {
+        bool didChangePosition = false;
         while (fr < numFrames) {
             for (int h = 0; h < 2; ++h) {
                 res[h] = head[h].updatePhase(fr_1, fr);
             }
-            for (int h = 0; h < 2; ++h) {
-                if (res[h] == SubHead::PhaseResult::WasStopped || res[h] == SubHead::PhaseResult::DoneFadeOut) {
-                    // this head is ready to be re-used
-                    head[h].setPosition(fr, requestedPosition);
-                    head[h].playState[fr] = SubHead::PlayState::FadeIn;
-                    active[fr] = h;
-                    int k = h > 0 ? 0 : 1;
-                    head[k].playState[fr] = SubHead::PlayState::FadeOut;
-                    requestedPosition = -1.0;
-                    break;
+            if (!didChangePosition) {
+                for (int h = 0; h < 2; ++h) {
+                    if (res[h] == SubHead::PhaseResult::Stopped || res[h] == SubHead::PhaseResult::DoneFadeOut) {
+                        performPositionChange(h, fr, requestedPosition, res);
+                        requestedPosition = -1.0;
+                        didChangePosition = true;
+                        break;
+                    }
                 }
+                if (!didChangePosition) {
+                    handlePhaseResult(fr, res);
+                }
+            } else {
+                handlePhaseResult(fr, res);
             }
-            handlePhaseResult(fr, res);
             fr_1 = fr++;
         }
     } else {
@@ -153,7 +162,45 @@ void ReadWriteHead::updateSubheadPositions(size_t numFrames) {
             fr_1 = fr++;
         }
     }
+    updateActiveState(fr);
     lastFrameIdx = fr;
+}
+
+
+void ReadWriteHead::updateActiveState(frame_t fr) {
+    switch (head[0].playState[fr]) {
+        case SubHead::PlayState::Stopped:
+        case SubHead::PlayState::FadeOut:
+            active[fr] = head[1].playState[fr] == SubHead::PlayState::Stopped ? -1 : 1;
+            break;
+        case SubHead::PlayState::Playing:
+        case SubHead::PlayState::FadeIn:
+            active[fr] = 0;
+            assert(head[1].playState[fr] == SubHead::PlayState::Stopped
+                   || head[1].playState[fr] == SubHead::PlayState::FadeOut);
+            break;
+    }
+}
+
+
+void ReadWriteHead::performPositionChange(int h, frame_t fr, phase_t pos, const SubHead::PhaseResult *res) {
+    head[h].setPosition(fr, requestedPosition);
+    head[h].playState[fr] = SubHead::PlayState::FadeIn;
+    int k = h > 0 ? 0 : 1;
+    switch (res[k]) {
+        case SubHead::PhaseResult::Playing:
+        case SubHead::PhaseResult::DoneFadeIn:
+        case SubHead::PhaseResult::CrossLoopStart:
+        case SubHead::PhaseResult::CrossLoopEnd:
+        case SubHead::PhaseResult::FadeOut:
+        case SubHead::PhaseResult::FadeIn: // <-- FIXME: could cause spiky envelope
+            head[k].playState[fr] = SubHead::PlayState::FadeOut;
+            break;
+        case SubHead::PhaseResult::Stopped:
+        case SubHead::PhaseResult::DoneFadeOut:
+            head[k].playState[fr] = SubHead::PlayState::Stopped;
+            break;
+    }
 }
 
 void ReadWriteHead::updateSubheadWriteLevels(size_t numFrames) {
@@ -370,3 +417,5 @@ float ReadWriteHead::computeWriteDuckLevel(const SubHead *a, const SubHead *b, s
     if (dabs <= dmin) { return 1.f; }
     return Fades::raisedCosFadeOut(static_cast<float>((dabs - dmin) / (dmax - dmin)));
 }
+
+
