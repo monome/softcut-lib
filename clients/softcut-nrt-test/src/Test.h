@@ -113,7 +113,7 @@ public:
         // FIXME: would be nice to put this in TestBuffers, but that creates a `cnpy` dependency in the lib.
         /// TestBuffers kinda has to be in the lib itself so it can get access to protected fields.
         cnpy::npy_save("rate.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
-        cnpy::npy_save("dir.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
+        cnpy::npy_save("rateDirMul.npy", testBuffers.getBuffer(softcut::TestBuffers::Rate), {1, numFrames}, "w");
         cnpy::npy_save("active.npy", testBuffers.getBuffer(softcut::TestBuffers::Active), {1, numFrames}, "w");
         cnpy::npy_save("frameInBlock.npy", testBuffers.getBuffer(softcut::TestBuffers::FrameInBlock), {1, numFrames}, "w");
         cnpy::npy_save("phase0.npy", testBuffers.getBuffer(softcut::TestBuffers::Phase0), {1, numFrames}, "w");

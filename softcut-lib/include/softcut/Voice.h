@@ -144,9 +144,9 @@ namespace softcut {
         bool postFilterEnabled;
 
         // targets
-        std::atomic<const Voice *> readDuckTarget{nullptr};
-        std::atomic<const Voice *> writeDuckTarget{nullptr};
-        std::atomic<const Voice *> followTarget{nullptr};
+        const Voice * readDuckTarget{nullptr};
+        const Voice * writeDuckTarget{nullptr};
+        const Voice * followTarget{nullptr};
 
         //---------------------------------------------------------------
         //-- ramps

@@ -12,42 +12,33 @@
 
 using namespace softcut;
 
-SubHead::SubHead() {}
+SubHead::SubHead() = default;
 
 void SubHead::init(ReadWriteHead *parent) {
     rwh = parent;
     resamp.setPhase(0);
     resamp.clearBuffers();
-    frame_t w = static_cast<frame_t>(rwh->recOffsetSamples);
+    auto w = static_cast<frame_t>(rwh->recOffsetSamples);
     while (w < 0) { w += maxBlockSize; }
     while (w > maxBlockSize) { w -= maxBlockSize; }
     for (unsigned int i = 0; i < maxBlockSize; ++i) {
         phase[i] = 0.0;
         wrIdx[i] = w;
-        opState[i] = Stopped;
-        opAction[i] = None;
+        playState[i] = PlayState::Stopped;
         fade[i] = 0.f;
         pre[i] = 0.f;
         rec[i] = 0.f;
     }
 }
 
-void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position) {
-    if (opState[i] != Stopped) {
+void SubHead::setPosition(frame_t i, phase_t position) {
+    if (playState[i] != PlayState::Stopped) {
         std::cerr << "error: setting position of moving subhead" << std::endl;
-        // ... let's just see what happens. don't think this should ever occur anyway.
-        // assert(false);
-        // return;
+        assert(false);
     }
     phase_t p = wrapPhaseToBuffer(position);
-    phase_t p_1 = wrapPhaseToBuffer(p - rwh->rate[i]);
-    phase[i_1] = p_1;
     phase[i] = p;
     syncWrIdx(i);
-    opState[i_1] = SubHead::FadeIn;
-    opState[i] = SubHead::FadeIn;
-    opAction[i] = SubHead::OpAction::StartFadeIn;
-
     // resetting the resampler here seems correct:
     // if rate !=1, then each process frame can produce a different number of write-frame advances.
     // so to ensure each pass over a loop has identical write-frame history,
@@ -57,77 +48,119 @@ void SubHead::setPosition(frame_t i_1, frame_t i, phase_t position) {
 }
 
 void SubHead::syncWrIdx(frame_t i) {
-    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i]) + rwh->dir[i] * rwh->recOffsetSamples);
+    wrIdx[i] = wrapBufIndex(static_cast<frame_t>(phase[i] + (rateSign[i] * rwh->recOffsetSamples)));
 }
 
-SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
-    //// dbg
-    phase_t p_1 = phase[i_1];
-    /////
-    switch (opState[i_1]) {
-        case FadeIn:
-            phase[i] = p_1 + rwh->rate[i];
+SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
+    switch (playState[i_1]) {
+        case PlayState::FadeIn:
+            phase[i] = phase[i_1] + rwh->rate[i_1] * rateDirMul[i_1];
+            // TODO: might be cool to have fade time that varies by play/loop state
             fade[i] = fade[i_1] + rwh->fadeInc;
             if (fade[i] >= 1.f) {
                 fade[i] = 1.f;
-                opState[i] = Playing;
-                opAction[i] = DoneFadeIn;
-            } else {
-                opState[i] = FadeIn;
-                opAction[i] = None;
+                return PhaseResult::DoneFadeIn;
             }
             break;
-        case FadeOut:
-            phase[i] = phase[i_1] + rwh->rate[i];
+        case PlayState::FadeOut:
+            phase[i] = phase[i_1] + rwh->rate[i_1] * rateDirMul[i_1];
             fade[i] = fade[i_1] - rwh->fadeInc;
             if (fade[i] <= 0.f) {
                 fade[i] = 0.f;
-                opState[i] = Stopped;
-                opAction[i] = DoneFadeOut;
-            } else { // still fading
-                opState[i] = FadeOut;
-                opAction[i] = None;
+                return PhaseResult::DoneFadeOut;
             }
             break;
-        case Playing:
-            phase[i] = phase[i_1] + rwh->rate[i];
+        case PlayState::Playing:
+            phase[i] = phase[i_1] + rwh->rate[i_1] * rateDirMul[i_1];
             fade[i] = 1.f;
             if (rwh->rate[i] > 0.f) { // positive rate
                 // if we're playing forwards, only loop at endpoint
                 if (phase[i] > rwh->end) { // out of loop bounds
-                    opState[i] = FadeOut;
-                    if (rwh->loopFlag) {
-                        opAction[i] = LoopPositive;
-                    } else {
-                        opAction[i] = FadeOutAndStop;
-                    }
-                } else { // in loop bounds
-                    opAction[i] = None;
-                    opState[i] = Playing;
+                    return PhaseResult::CrossLoopEnd;
                 }
             } else { // negative rate
                 if (phase[i] < rwh->start) {
-                    opState[i] = FadeOut;
-                    if (rwh->loopFlag) {
-                        opAction[i] = LoopNegative;
-                    } else {
-                        opAction[i] = FadeOutAndStop;
-                    }
-                } else { // in loop bounds
-                    opAction[i] = None;
-                    opState[i] = Playing;
+                    return PhaseResult::CrossLoopStart;
                 }
             }
             break;
-        case Stopped:
+        case PlayState::Stopped:
             phase[i] = phase[i_1];
             fade[i] = 0.f;
-            opAction[i] = None;
-            opState[i] = Stopped;
+            playState[i] = PlayState::Stopped;
+            return PhaseResult::WasStopped;
     }
-
-    return opAction[i];
+    return PhaseResult::WasPlaying;
 }
+
+//SubHead::OpAction SubHead::calcFramePosition(frame_t i_1, frame_t i) {
+//    //// dbg
+//    phase_t p_1 = phase[i_1];
+//    /////
+//    switch (playState[i_1]) {
+//        case FadeIn:
+//            phase[i] = p_1 + rwh->rate[i];
+//            fade[i] = fade[i_1] + rwh->fadeInc;
+//            if (fade[i] >= 1.f) {
+//                fade[i] = 1.f;
+//                playState[i] = Playing;
+//                opAction[i] = DoneFadeIn;
+//            } else {
+//                playState[i] = FadeIn;
+//                opAction[i] = None;
+//            }
+//            break;
+//        case FadeOut:
+//            phase[i] = phase[i_1] + rwh->rate[i];
+//            fade[i] = fade[i_1] - rwh->fadeInc;
+//            if (fade[i] <= 0.f) {
+//                fade[i] = 0.f;
+//                playState[i] = Stopped;
+//                opAction[i] = DoneFadeOut;
+//            } else { // still fading
+//                playState[i] = FadeOut;
+//                opAction[i] = None;
+//            }
+//            break;
+//        case Playing:
+//            phase[i] = phase[i_1] + rwh->rate[i];
+//            fade[i] = 1.f;
+//            if (rwh->rate[i] > 0.f) { // positive rate
+//                // if we're playing forwards, only loop at endpoint
+//                if (phase[i] > rwh->end) { // out of loop bounds
+//                    playState[i] = FadeOut;
+//                    if (rwh->loopFlag) {
+//                        opAction[i] = LoopPositive;
+//                    } else {
+//                        opAction[i] = FadeOutAndStop;
+//                    }
+//                } else { // in loop bounds
+//                    opAction[i] = None;
+//                    playState[i] = Playing;
+//                }
+//            } else { // negative rate
+//                if (phase[i] < rwh->start) {
+//                    playState[i] = FadeOut;
+//                    if (rwh->loopFlag) {
+//                        opAction[i] = LoopNegative;
+//                    } else {
+//                        opAction[i] = FadeOutAndStop;
+//                    }
+//                } else { // in loop bounds
+//                    opAction[i] = None;
+//                    playState[i] = Playing;
+//                }
+//            }
+//            break;
+//        case Stopped:
+//            phase[i] = phase[i_1];
+//            fade[i] = 0.f;
+//            opAction[i] = None;
+//            playState[i] = Stopped;
+//    }
+//
+//    return opAction[i];
+//}
 
 
 static float calcPreFadeCurve(float fade) {
@@ -160,18 +193,18 @@ static float calcRecFadeCurve(float fade) {
 }
 
 void SubHead::calcFrameLevels(frame_t i) {
-    switch (opState[i]) {
-        case Stopped:
+    switch (playState[i]) {
+        case PlayState::Stopped:
             pre[i] = 1.f;
             rec[i] = 0.f;
             return;
-        case Playing:
+        case PlayState::Playing:
             pre[i] = rwh->pre[i];
             rec[i] = rwh->rec[i];
             applyRateDeadzone(i);
             break;
-        case FadeIn:
-        case FadeOut:
+        case PlayState::FadeIn:
+        case PlayState::FadeOut:
             pre[i] = rwh->pre[i] + ((1.f - rwh->pre[i]) * calcPreFadeCurve(fade[i]));
             rec[i] = rwh->rec[i] * calcRecFadeCurve(fade[i]);
             applyRateDeadzone(i);
@@ -182,11 +215,11 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     resamp.setRate(dspkit::abs<rate_t>(rwh->rate[i]));
     // push to resampler, even if stopped; avoids possible glitch when restarting
     int nsubframes = resamp.processFrame(input);
-    if (opState[i] == Stopped) {
+    if (playState[i] == PlayState::Stopped) {
         // if we're stopped, don't touch the buffer at all.
         return;
     }
-    if (opAction[i] == OpAction::StartFadeIn) {
+    if (playState[i] == PlayState::FadeIn && playState[i_1] != PlayState::FadeIn) {
         // if we start a fadein on this frame, previous write index is not meaningful;
         // assume current write index has already been updated (in requestPosition())
         ;;
@@ -194,7 +227,7 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
         // otherwise, propagate last write position
         wrIdx[i] = wrIdx[i_1];
     }
-    if (rwh->dir[i] != rwh->dir[i_1]) {
+    if (rateDirMul[i] != rateDirMul[i_1]) {
         // if rate sign was just flipped, we need to re-apply the record offset!
         syncWrIdx(i);
     }
@@ -204,7 +237,7 @@ void SubHead::performFrameWrite(frame_t i_1, frame_t i, const float input) {
     for (int sfr = 0; sfr < nsubframes; ++sfr) {
         // for each frame produced by the resampler for this input frame,
         // mix, store, and advance the write index
-        w = wrapBufIndex(w + rwh->dir[i]);
+        w = wrapBufIndex(w + rateSign[i]);
         y = (buf[w] * pre[i]) + (src[sfr] * rec[i]);
         buf[w] = y;
     }

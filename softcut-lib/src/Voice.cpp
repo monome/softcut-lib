@@ -68,7 +68,8 @@ void Voice::processInputFilter(float *src, float *dst, size_t numFrames) {
     float fc, fcMod;
     for (size_t fr = 0; fr < numFrames; ++fr) {
         fcMod = dspkit::abs<phase_t>(rwh.getRateBuffer(fr));
-        // fc = preFilterFcMod * fcMod * preFilterFcBase + (1 - preFilterFcMod) * preFilterFcBase;		// refactored:
+        // fc = preFilterFcMod * fcMod * preFilterFcBase + (1 - preFilterFcMod) * preFilterFcBase;
+        // refactored:
         fc = preFilterFcBase * (preFilterFcMod * (fcMod - 1) + 1);
         preFilter.setCutoffPitch(fc);
         dst[fr] = preFilter.processSample(src[fr]);
@@ -79,11 +80,11 @@ void Voice::updatePositions(size_t numFrames) {
     for (size_t fr = 0; fr < numFrames; ++fr) {
         rwh.setRate(fr, rateRamp.getNextValue());
     }
-    const Voice *target = followTarget.load();
+    const Voice *target = followTarget;
     if (target == nullptr) {
         rwh.updateSubheadPositions(numFrames);
     } else {
-        rwh.copySubheadPosition(target->rwh, numFrames);
+        rwh.copySubheadPositions(target->rwh, numFrames);
     }
 }
 
@@ -93,7 +94,7 @@ void Voice::performReads(float *out, size_t numFrames) {
         rwh.performSubheadReads(out, numFrames);
     }
 
-    const Voice *target = readDuckTarget.load();
+    const Voice *target = readDuckTarget;
     if (target != nullptr) {
         if (target->getRecFlag()) {
             rwh.computeReadDuckLevels(&(target->rwh), numFrames);
@@ -127,7 +128,7 @@ void Voice::performWrites(float *in, size_t numFrames) {
 
         rwh.updateSubheadWriteLevels(numFrames);
 
-        const Voice *target = writeDuckTarget.load();
+        const Voice *target = writeDuckTarget;
         if (target != nullptr) {
             if (target->getRecFlag()) {
                 rwh.computeWriteDuckLevels(&(target->rwh), numFrames);
@@ -140,10 +141,7 @@ void Voice::performWrites(float *in, size_t numFrames) {
 }
 
 void Voice::syncPosition(const Voice &target, float offset) {
-    phase_t newPhase = target.rwh.getActivePhase() + offset;
-//    // NB: relying on position change function to perform phase wrapping if needed
-//    rwh.enqueuePositionChange(newPhase);
-    /// ehh, FIXME
+    // FIXME: this should set a flag to sync phases at top of process block
 }
 
 
@@ -277,7 +275,6 @@ void Voice::setBuffer(float *b, size_t nf) {
     rwh.setBuffer(buf, bufFrames);
 }
 
-
 //-------------------------------------------------------------
 //--- record parameters
 void Voice::setRecOffset(float d) {
@@ -299,7 +296,7 @@ void Voice::setRateSlewShape(int shape) {
 
 
 //-------------------------------------------------------------
-//--- phase update parameteres
+//--- phase update parameters
 void Voice::setPhaseQuant(float x) {
     phaseQuant = x;
 }
@@ -325,15 +322,15 @@ void Voice::setPreFilterQ(float x) {
 }
 
 void Voice::setReadDuckTarget(Voice *v) {
-    readDuckTarget.store(v);
+    readDuckTarget = v;
 }
 
 void Voice::setWriteDuckTarget(Voice *v) {
-    writeDuckTarget.store(v);
+    writeDuckTarget = v;
 }
 
 void Voice::setFollowTarget(Voice *v) {
-    followTarget.store(v);
+    followTarget = v;
 }
 
 void Voice::processOutputFilter(float *buf, size_t numFrames) {

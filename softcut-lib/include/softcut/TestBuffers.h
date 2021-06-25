@@ -74,8 +74,8 @@ namespace softcut {
             appendToBuffer(Dir, rwh.dir.data(), numFrames);
             appendToBuffer(Rec, rwh.rec.data(), numFrames);
             appendToBuffer(Pre, rwh.pre.data(), numFrames);
-            appendToBuffer(State0, rwh.head[0].opState.data(), numFrames);
-            appendToBuffer(State1, rwh.head[1].opState.data(), numFrames);
+            appendToBuffer(State0, rwh.head[0].playState.data(), numFrames);
+            appendToBuffer(State1, rwh.head[1].playState.data(), numFrames);
             appendToBuffer(Action0, rwh.head[0].opAction.data(), numFrames);
             appendToBuffer(Action1, rwh.head[1].opAction.data(), numFrames);
             appendToBuffer(Phase0, rwh.head[0].phase.data(), numFrames);
