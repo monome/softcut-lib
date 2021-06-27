@@ -34,6 +34,7 @@ namespace softcut_jack_osc {
             SET_CUT_VOICE_LOOP_START,
             SET_CUT_VOICE_LOOP_END,
             SET_CUT_VOICE_LOOP_ENABLED,
+            SET_CUT_VOICE_LOOP_MODE,
             SET_CUT_VOICE_POSITION,
 
             SET_CUT_VOICE_FADE_TIME,

@@ -65,6 +65,7 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
             incrementPhase(i_1, i);
             // TODO: might be cool to have fade time that varies by play/loop state
             fade[i] = fade[i_1] + rwh->fadeInc;
+
             if (fade[i] >= 1.f) {
                 fade[i] = 1.f;
                 return PhaseResult::DoneFadeIn;
@@ -74,6 +75,7 @@ SubHead::PhaseResult SubHead::updatePhase(frame_t i_1, frame_t i) {
         case PlayState::FadeOut:
             incrementPhase(i_1, i);
             fade[i] = fade[i_1] - rwh->fadeInc;
+
             if (fade[i] <= 0.f) {
                 fade[i] = 0.f;
                 return PhaseResult::DoneFadeOut;

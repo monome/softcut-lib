@@ -174,6 +174,11 @@ void OscInterface::addServerMethods() {
         Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_LOOP_ENABLED, argv[0]->i, argv[1]->f);
     });
 
+    addServerMethod("/set/param/cut/loop_mode", "if", [](lo_arg **argv, int argc) {
+        if (argc < 2) { return; }
+        Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_LOOP_MODE, argv[0]->i, argv[1]->f);
+    });
+
     addServerMethod("/set/param/cut/fade_time", "if", [](lo_arg **argv, int argc) {
         if (argc < 2) { return; }
         Commands::softcutCommands.post(Commands::Id::SET_CUT_VOICE_FADE_TIME, argv[0]->i, argv[1]->f);
