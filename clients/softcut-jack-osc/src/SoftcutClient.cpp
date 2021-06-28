@@ -15,6 +15,16 @@ static inline void clamp(size_t &x, const size_t a) {
     if (x > a) { x = a; }
 }
 
+static inline softcut::LoopMode argToLoopMode(float val) {
+    if (val >= 2) {
+        return softcut::LoopPingPong;
+    } else if (val >= 1) {
+        return softcut::LoopForward;
+    } else {
+        return softcut::LoopNone;
+    }
+}
+
 SoftcutClient::SoftcutClient() : JackClient<2, 2>("softcut") {
     for (unsigned int i = 0; i < NumVoices; ++i) {
         cut.voice((int)i)->setBuffer(buf[i & 1], BufFrames);
@@ -111,6 +121,9 @@ void SoftcutClient::handleCommand(Commands::CommandPacket *p) {
             break;
         case Commands::Id::SET_CUT_VOICE_LOOP_ENABLED:
             cut.voice(p->idx_0)->setLoopFlag(p->value > 0.f);
+            break;
+        case Commands::Id::SET_CUT_VOICE_LOOP_MODE:
+            cut.voice(p->idx_0)->setLoopMode(argToLoopMode(p->value));
             break;
         case Commands::Id::SET_CUT_VOICE_FADE_TIME:
             cut.voice(p->idx_0)->setFadeTime(p->value);

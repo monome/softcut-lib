@@ -44,6 +44,8 @@ namespace softcut {
 
         void setLoopFlag(bool val);
 
+        void setLoopMode(LoopMode loopMode);
+
         void setFadeTime(float sec);
 
         void setRecLevel(float amp);

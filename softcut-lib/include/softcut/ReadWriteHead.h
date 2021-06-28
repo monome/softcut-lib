@@ -60,7 +60,7 @@ namespace softcut {
         phase_t end{0};
 
         float fadeInc{0};       // linear fade increment per sample
-        bool loopFlag{false};       // set to loop, unset for 1-shot
+        LoopMode loopMode{LoopNone};
         int recOffsetSamples{-8}; // record offset from write head
 
         //--- buffered state variables
@@ -128,6 +128,8 @@ namespace softcut {
         void setFadeTime(float secs);
 
         void setLoopFlag(bool val);
+
+        void setLoopMode(LoopMode loopMode);
 
         //-- set buffered state for single frame
         void setRate(size_t idx, rate_t x);

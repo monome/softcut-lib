@@ -66,7 +66,12 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
                 k = h > 0 ? 0 : 1;
                 assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
                        && (res[k] != SubHead::PhaseResult::CrossLoopStart));
-                head[k].setPosition(fr, start); // TODO: process ping-pong direction
+                if (loopMode == LoopPingPong) {
+                    head[k].setPosition(fr, end);
+                    head[k].rateDirMul[fr] *= -1;
+                } else {
+                    head[k].setPosition(fr, start);
+                }
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 breakout = true;
                 break;
@@ -75,7 +80,13 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
                 k = h > 0 ? 0 : 1;
                 assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
                        && (res[k] != SubHead::PhaseResult::CrossLoopStart));
-                head[k].setPosition(fr, end); // TODO: process ping-pong direction
+
+                if (loopMode == LoopPingPong) {
+                    head[k].setPosition(fr, start);
+                    head[k].rateDirMul[fr] *= -1;
+                } else {
+                    head[k].setPosition(fr, end);
+                }
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 breakout = true;
                 break;
@@ -101,6 +112,7 @@ void ReadWriteHead::updateSubheadState(size_t numFrames) {
                         performPositionChange(h, fr, requestedPosition, res);
                         requestedPosition = -1.0;
                         didChangePosition = true;
+                        head[h].rateDirMul[fr_1] = 1;
                         break;
                     }
                 }
@@ -250,7 +262,11 @@ void ReadWriteHead::setFadeTime(float secs) {
 }
 
 void ReadWriteHead::setLoopFlag(bool val) {
-    this->loopFlag = val;
+    setLoopMode(val ? LoopForward : LoopNone);
+}
+
+void ReadWriteHead::setLoopMode(LoopMode loopMode) {
+    this->loopMode = loopMode;
 }
 
 void ReadWriteHead::setRate(size_t i, rate_t x) {
@@ -282,7 +298,7 @@ double ReadWriteHead::getRateBuffer(size_t i) {
 void ReadWriteHead::copySubheadPositions(const ReadWriteHead &src, size_t numFrames) {
     lastFrameIdx = src.lastFrameIdx;
     fadeInc = src.fadeInc;
-    loopFlag = src.loopFlag;
+    loopMode = src.loopMode;
     recOffsetSamples = src.recOffsetSamples;
     start = src.start;
     end = src.end;
