@@ -66,15 +66,13 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
                 k = h > 0 ? 0 : 1;
                 assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
                        && (res[k] != SubHead::PhaseResult::CrossLoopStart));
-
                 if (loopMode == LoopPingPong) {
-                    head[k].setPosition(fr, start);
+                    head[k].setPosition(fr, end);
                     head[k].rateDirMul[fr] *= -1;
-                    head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 } else {
                     head[k].setPosition(fr, start);
-                    head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 }
+                head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 breakout = true;
                 break;
             case SubHead::PhaseResult::CrossLoopStart:
@@ -84,13 +82,12 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
                        && (res[k] != SubHead::PhaseResult::CrossLoopStart));
 
                 if (loopMode == LoopPingPong) {
-                    head[k].setPosition(fr, end);
+                    head[k].setPosition(fr, start);
                     head[k].rateDirMul[fr] *= -1;
-                    head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 } else {
                     head[k].setPosition(fr, end);
-                    head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 }
+                head[k].playState[fr] = SubHead::PlayState::FadeIn;
                 breakout = true;
                 break;
             default:
