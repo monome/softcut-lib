@@ -115,6 +115,7 @@ void ReadWriteHead::updateSubheadState(size_t numFrames) {
                         performPositionChange(h, fr, requestedPosition, res);
                         requestedPosition = -1.0;
                         didChangePosition = true;
+                        head[h].rateDirMul[fr_1] = 1;
                         break;
                     }
                 }
