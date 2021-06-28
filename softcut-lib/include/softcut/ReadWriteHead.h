@@ -60,7 +60,7 @@ namespace softcut {
         phase_t end{0};
 
         float fadeInc{0};       // linear fade increment per sample
-        LoopMode loopMode;
+        LoopMode loopMode{LoopNone};
         int recOffsetSamples{-8}; // record offset from write head
 
         //--- buffered state variables
