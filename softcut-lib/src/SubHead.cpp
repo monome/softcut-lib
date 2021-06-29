@@ -47,7 +47,8 @@ void SubHead::setPosition(frame_t i, phase_t position) {
 
 void SubHead::syncWrIdx(frame_t i) {
     frame_t off = rwh->recOffsetSamples;
-    off *= rateSign[i];
+    //off *= rateSign[i];
+    off *= static_cast<frame_t>(rateDirMul[i] * rwh->rate[i]);
     auto f = static_cast<frame_t>(phase[i] + off);
     wrIdx[i] = wrapBufIndex(f);
 }

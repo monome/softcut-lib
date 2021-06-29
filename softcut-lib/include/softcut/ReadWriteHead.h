@@ -30,7 +30,7 @@ namespace softcut {
         phase_t requestedPosition = -1.0;
         frame_t lastFrameIdx; // last used index into processing block
 
-       void handlePhaseResult(frame_t fr, const SubHead::PhaseResult *res);
+       void handlePhaseResult(frame_t fr_1, frame_t fr, const SubHead::PhaseResult *res);
 //       void setLoop(int headIdx, frame_t fr, phase_t pos);
         // attempt to perform any pending position change requests
         // return the index of the subhead that just became active,
