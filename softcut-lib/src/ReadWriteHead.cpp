@@ -74,6 +74,8 @@ void ReadWriteHead::handlePhaseResult(frame_t fr_1, frame_t fr, const SubHead::P
                     }
                     head[k].setPosition(fr, end);
                 } else {
+                    // FIXME: maybe there is a better way than writing this every sample.
+                    head[k].rateDirMul[fr] = 1.0;
                     head[k].setPosition(fr, start);
                 }
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
@@ -93,6 +95,8 @@ void ReadWriteHead::handlePhaseResult(frame_t fr_1, frame_t fr, const SubHead::P
                     }
                     head[k].setPosition(fr, start);
                 } else {
+                    // FIXME: maybe there is a better way than writing this every sample.
+                    head[k].rateDirMul[fr] = 1.0;
                     head[k].setPosition(fr, end);
                 }
                 head[k].playState[fr] = SubHead::PlayState::FadeIn;
