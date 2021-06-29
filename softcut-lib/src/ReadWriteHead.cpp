@@ -37,7 +37,7 @@ void ReadWriteHead::init() {
     fadeInc = 1.f;
 }
 
-void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *res) {
+void ReadWriteHead::handlePhaseResult(frame_t fr_1, frame_t fr, const SubHead::PhaseResult *res) {
     bool breakout = false;
     for (int h = 0; h < 2; ++h) {
         if (breakout) { break; }
@@ -64,11 +64,15 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
             case SubHead::PhaseResult::CrossLoopEnd:
                 head[h].playState[fr] = SubHead::PlayState::FadeOut;
                 k = h > 0 ? 0 : 1;
-                assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
-                       && (res[k] != SubHead::PhaseResult::CrossLoopStart));
                 if (loopMode == LoopPingPong) {
+                    if (rate[fr_1] >= 0) {
+                        assert(head[h].rateDirMul[fr_1] > 0);
+                        head[k].rateDirMul[fr] = -1.0;
+                    } else {
+                        assert(head[h].rateDirMul[fr_1] <= 0);
+                        head[k].rateDirMul[fr] = 1.0;
+                    }
                     head[k].setPosition(fr, end);
-                    head[k].rateDirMul[fr] *= -1;
                 } else {
                     head[k].setPosition(fr, start);
                 }
@@ -78,12 +82,16 @@ void ReadWriteHead::handlePhaseResult(frame_t fr, const SubHead::PhaseResult *re
             case SubHead::PhaseResult::CrossLoopStart:
                 head[h].playState[fr] = SubHead::PlayState::FadeOut;
                 k = h > 0 ? 0 : 1;
-                assert((res[k] != SubHead::PhaseResult::CrossLoopEnd)
-                       && (res[k] != SubHead::PhaseResult::CrossLoopStart));
-
                 if (loopMode == LoopPingPong) {
+
+                    if (rate[fr_1] >= 0) {
+                        assert(head[h].rateDirMul[fr_1] <= 0);
+                        head[k].rateDirMul[fr] = 1.0;
+                    } else {
+                        assert(head[h].rateDirMul[fr_1] >= 0);
+                        head[k].rateDirMul[fr] = -1.0;
+                    }
                     head[k].setPosition(fr, start);
-                    head[k].rateDirMul[fr] *= -1;
                 } else {
                     head[k].setPosition(fr, end);
                 }
@@ -117,10 +125,10 @@ void ReadWriteHead::updateSubheadState(size_t numFrames) {
                     }
                 }
                 if (!didChangePosition) {
-                    handlePhaseResult(fr, res);
+                    handlePhaseResult(fr_1, fr, res);
                 }
             } else {
-                handlePhaseResult(fr, res);
+                handlePhaseResult(fr_1, fr, res);
             }
             fr_1 = fr++;
         }
@@ -130,7 +138,7 @@ void ReadWriteHead::updateSubheadState(size_t numFrames) {
             for (int h = 0; h < 2; ++h) {
                 res[h] = head[h].updatePhase(fr_1, fr);
             }
-            handlePhaseResult(fr, res);
+            handlePhaseResult(fr_1, fr, res);
             fr_1 = fr++;
         }
     }
