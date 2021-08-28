@@ -9,5 +9,7 @@ namespace softcut {
     typedef float sample_t;
     typedef double phase_t;
     typedef double rate_t;
+
+    typedef enum { LoopNone, LoopForward, LoopPingPong } LoopMode;
 }
 #endif //Softcut_TYPES_H

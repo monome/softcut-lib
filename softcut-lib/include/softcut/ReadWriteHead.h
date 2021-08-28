@@ -4,8 +4,6 @@
 
 #ifndef SOFTCUT_READWRITEHEAD_H
 #define SOFTCUT_READWRITEHEAD_H
-
-#include <atomic>
 #include <cstdint>
 
 #include "dsp-kit/Smoother.hpp"
@@ -24,25 +22,24 @@ namespace softcut {
 
         friend class TestBuffers;
 
-        template<typename T>
-        using StateBuffer = SubHead::StateBuffer<T>;
         using frame_t = SubHead::frame_t;
 
     private:
         // set by the OSC server thread.
         // if non-negative, an explicit position change request is pending
-        std::atomic<phase_t> requestedPosition = -1.0;
-        size_t frameIdx; // last used index into processing block
+        phase_t requestedPosition = -1.0;
+        frame_t lastFrameIdx; // last used index into processing block
 
+       void handlePhaseResult(frame_t fr_1, frame_t fr, const SubHead::PhaseResult *res);
+//       void setLoop(int headIdx, frame_t fr, phase_t pos);
         // attempt to perform any pending position change requests
         // return the index of the subhead that just became active,
         // or -1 if nothing happened
-        int checkPositionRequest(size_t fr_1, size_t fr);
-
-        void jumpToPosition(int newHeadIdx, size_t fr, phase_t pos);
-
-        void loopToPosition(int oldHeadIdx, size_t fr, phase_t pos);
-
+//        int checkPositionRequest(size_t fr_1, size_t fr);
+        void performPositionChange(int headIdx, frame_t fr, phase_t pos, const SubHead::PhaseResult *res);
+//
+        void updateActiveState(frame_t fr);
+//        void loopToPosition(int oldHeadIdx, size_t fr_1, size_t fr, phase_t pos);
 
         static sample_t mixFade(sample_t x, sample_t y, float a, float b) {
             // we don't actually want equal power since we are summing!
@@ -52,7 +49,6 @@ namespace softcut {
         static float computeReadDuckLevel(const SubHead *a, const SubHead *b, size_t frame);
 
         static float computeWriteDuckLevel(const SubHead *a, const SubHead *b, size_t frame);
-
 
     protected:
         SubHead head[2];         // sub-processors
@@ -64,18 +60,18 @@ namespace softcut {
         phase_t end{0};
 
         float fadeInc{0};       // linear fade increment per sample
-        bool loopFlag{false};       // set to loop, unset for 1-shot
+        LoopMode loopMode{LoopNone};
         int recOffsetSamples{-8}; // record offset from write head
 
         //--- buffered state variables
         // rate, in per-sample position increment (1 == normal)
         SubHead::StateBuffer<rate_t> rate{1.f};
-        SubHead::StateBuffer<int> dir{1};
+        //SubHead::StateBuffer<int> rateDirMul{1};
         // preserve and record levels, pre-fade
         SubHead::StateBuffer<float> pre{0.f};
         SubHead::StateBuffer<float> rec{0.f};
 
-        // bitfield of active subhead
+        // index of logically-active subhead
         SubHead::StateBuffer<int> active{-1};
 
         // ducking levels. 0 == no ducking, 1 == full ducking
@@ -105,9 +101,9 @@ namespace softcut {
 
         void performSubheadReads(float *output, size_t numFrames);
 
-        void updateSubheadPositions(size_t numFrames);
+        void updateSubheadState(size_t numFrames);
 
-        void copySubheadPositions(const ReadWriteHead &other, size_t numFrames);
+        void copySubheadPositions(const ReadWriteHead &src, size_t numFrames);
 
         void updateSubheadWriteLevels(size_t numFrames);
 
@@ -133,6 +129,8 @@ namespace softcut {
 
         void setLoopFlag(bool val);
 
+        void setLoopMode(LoopMode loopMode);
+
         //-- set buffered state for single frame
         void setRate(size_t idx, rate_t x);
 
@@ -142,11 +140,11 @@ namespace softcut {
 
         void setRecOffsetSamples(int d);
 
-        phase_t getActivePhase() const;
+        [[nodiscard]] phase_t getActivePhase() const;
 
         static constexpr size_t maxBlockSize = SubHead::maxBlockSize;
 
-        float getRateBuffer(size_t i);
+        double getRateBuffer(size_t i);
     };
 
 

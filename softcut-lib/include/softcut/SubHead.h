@@ -25,8 +25,6 @@
 namespace softcut {
     class ReadWriteHead;
 
-    // FIXME: template would be nicer
-    //template <size_t blockSizeExpected>
     class SubHead {
         friend class ReadWriteHead;
 
@@ -38,16 +36,23 @@ namespace softcut {
         SubHead();
 
     public:
-        // operational state and action descriptors
-        typedef enum {
-            Stopped = 0, FadeIn = 1, Playing = 2, FadeOut = 3
-        } OpState;
-        typedef enum {
-            None = 0,
-            StartFadeIn = 1, DoneFadeIn = 2,
-            LoopPositive = 3, LoopNegative = 4, FadeOutAndStop = 5,
-            DoneFadeOut = 6
-        } OpAction;
+        enum class PlayState {
+            Stopped // stopped, fade down
+            , Playing // moving, fade up
+            , FadeIn  // moving, fading in
+            , FadeOut  // moving, fading out
+        };
+
+        enum class PhaseResult {
+            Stopped
+            , Playing
+            , FadeIn
+            , FadeOut
+            , DoneFadeIn
+            , DoneFadeOut
+            , CrossLoopEnd
+            , CrossLoopStart
+        };
 
         using frame_t = long int;
         static constexpr frame_t maxBlockSize = 1024;
@@ -57,11 +62,15 @@ namespace softcut {
     protected:
         ReadWriteHead *rwh{};
         //--- buffered state variables, owned:
+        // rate direction multiplier
+        SubHead::StateBuffer<int> rateDirMul{1};
+        // final rate sign
+        SubHead::StateBuffer<int> rateSign{1};
         // current state of operation
-        StateBuffer<OpState> opState{Stopped};
-        // last action performed
-        StateBuffer<OpAction> opAction{None};
-        // current "logical" buffer position, in units of time
+        StateBuffer<PlayState> playState{PlayState::Stopped};
+//        // last action performed
+//        StateBuffer<OpAction> opAction{None};
+        // current "logical" buffer position, in fractional samples
         StateBuffer<phase_t> phase{0.0};
         // last write index in buffer
         StateBuffer<frame_t> wrIdx{0};
@@ -75,8 +84,7 @@ namespace softcut {
     protected:
         void setPosition(frame_t i, phase_t position);
 
-        // update phase, opState, and opAction
-        OpAction calcFramePosition(frame_t i_1, frame_t i);
+        PhaseResult updatePhase(frame_t fr_1, frame_t i);
 
         // update frame level data
         void calcFrameLevels(frame_t i);
@@ -89,9 +97,9 @@ namespace softcut {
 
         void setBuffer(float *b, frame_t fr);
 
-        frame_t wrapBufIndex(frame_t x) const;
+        [[nodiscard]] frame_t wrapBufIndex(frame_t x) const;
 
-        phase_t wrapPhaseToBuffer(phase_t p) const;
+        [[nodiscard]] phase_t wrapPhaseToBuffer(phase_t p) const;
 
     private:
         Resampler resamp;   // resampler
@@ -103,6 +111,8 @@ namespace softcut {
         void applyRateDeadzone(frame_t i);
 
         void syncWrIdx(frame_t i);
+
+        void incrementPhase(frame_t fr_1, frame_t fr);
     };
 }
 

@@ -20,8 +20,8 @@ namespace softcut {
             return 0.5f * (cosf(M_PI * unitphase) + 1.f);
         };
 
-        static float fastCosFadeOut(float unitphase) {
-            return  cosf(M_PI_2 * (unitphase + 1)) + 1.f;
+        static float cosFadeOut(float unitphase) {
+            return cosf(M_PI_2 * (unitphase + 1)) + 1.f;
         }
     };
 }
