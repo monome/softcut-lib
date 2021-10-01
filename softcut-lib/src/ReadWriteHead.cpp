@@ -212,3 +212,7 @@ void ReadWriteHead::stop() {
     head[0].setState(State::Stopped);
     head[1].setState(State::Stopped);
 }
+
+void ReadWriteHead::run() {
+    head[active].setState(State::Playing);
+}
