@@ -100,6 +100,9 @@ namespace softcut {
 
         void reset();
 
+	// immediately put both subheads in a stopped state
+	void stop();
+
     private:
         void updatePreSvfFc();
 

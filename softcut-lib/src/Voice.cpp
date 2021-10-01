@@ -272,3 +272,7 @@ float Voice::getActivePosition() {
 float Voice::getSavedPosition() {
     return static_cast<float>(rawPhase.load(std::memory_order_relaxed) / sampleRate);
 }
+
+void Voice::stop() {
+    sch.stop();
+}

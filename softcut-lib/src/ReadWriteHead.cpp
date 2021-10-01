@@ -207,3 +207,8 @@ void ReadWriteHead::setRecOffsetSamples(int d) {
     head[0].setRecOffsetSamples(d);
     head[1].setRecOffsetSamples(d);
 }
+
+void ReadWriteHead::stop() {
+    head[0].setState(State::Stopped);
+    head[1].setState(State::Stopped);
+}
