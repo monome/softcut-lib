@@ -134,11 +134,28 @@ void Voice::setPreLevel(float amp) {
 }
 
 void Voice::setRecFlag(bool val) {
+    if (recFlag) {
+	if (!(val || playFlag)) {
+	    sch.stop();
+	}
+    } else {
+	if (val && !playFlag) {
+	    sch.run();
+	}
+    }
     recFlag = val;
 }
 
-
 void Voice::setPlayFlag(bool val) {
+    if (playFlag) {
+	if (!(val || recFlag)) {
+	    sch.stop();
+	}
+    } else {
+	if (val && !recFlag) {
+	    sch.run();
+	}
+    }
     playFlag = val;
 }
 

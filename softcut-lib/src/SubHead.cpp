@@ -189,6 +189,9 @@ void SubHead::setState(State state) {
     if (state_ == Stopped) {
 	fade_ = 0.f;
     }
+    if (state == Playing) {
+	fade_ = 1.f;
+    }
 }
 
 void SubHead::setRecOffsetSamples(int d) {
