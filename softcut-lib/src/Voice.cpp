@@ -233,7 +233,7 @@ void Voice::setPostFilterDry(float x) {
     svfPostDryLevel = x;
 }
 
-void Voice::setRecOnce(bool val) {
+void Voice::setRecOnceFlag(bool val) {
     sch.setRecOnceFlag(val);
 }
 

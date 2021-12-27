@@ -82,6 +82,9 @@ namespace softcut {
         float pre;      // pre-record level
         float rec;      // record level
         bool recOnceFlag; // set to record once
+        bool recOnceActive;
+        bool recOnceDone;
+        int recOnceHead;
 
         rate_t rate;    // current rate
         TestBuffers testBuf;

@@ -40,6 +40,8 @@ namespace softcut {
 
         void setRecFlag(bool val);
 
+        void setRecOnceFlag(bool val);
+
         void setPlayFlag(bool val);
 
         void setPreFilterFc(float);
@@ -86,8 +88,6 @@ namespace softcut {
         void setPhaseQuant(float x);
 
         void setPhaseOffset(float x);
-
-        void setRecOnce(bool val);
 
         phase_t getQuantPhase();
 
