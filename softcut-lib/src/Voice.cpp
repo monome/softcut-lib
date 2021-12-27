@@ -49,7 +49,6 @@ void Voice::reset() {
 
     recFlag = false;
     playFlag = false;
-    recOnceFlag = false;
 
     sch.init(&fadeCurves);
 }
@@ -285,10 +284,6 @@ bool Voice::getPlayFlag() {
 
 bool Voice::getRecFlag() {
     return recFlag;
-}
-
-bool Voice::getRecOnceFlag() {
-    return recOnceFlag;
 }
 
 float Voice::getActivePosition() {

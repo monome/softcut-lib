@@ -95,8 +95,6 @@ namespace softcut {
 
         bool getRecFlag();
 
-        bool getRecOnceFlag();
-
 	float getActivePosition();
 
 	// use this from non-audio threads
