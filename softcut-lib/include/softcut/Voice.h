@@ -87,11 +87,15 @@ namespace softcut {
 
         void setPhaseOffset(float x);
 
+        void setRecOnce(bool val);
+
         phase_t getQuantPhase();
 
         bool getPlayFlag();
 
         bool getRecFlag();
+
+        bool getRecOnceFlag();
 
 	float getActivePosition();
 
@@ -150,6 +154,7 @@ namespace softcut {
 
         bool playFlag;
         bool recFlag;
+        bool recOnceFlag;
 
     };
 }

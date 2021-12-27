@@ -49,6 +49,7 @@ void Voice::reset() {
 
     recFlag = false;
     playFlag = false;
+    recOnceFlag = false;
 
     sch.init(&fadeCurves);
 }
@@ -163,6 +164,10 @@ void Voice::setLoopFlag(bool val) {
     sch.setLoopFlag(val);
 }
 
+void Voice::setLoopFlag(bool val) {
+    sch.setLoopFlag(val);
+}
+
 // input filter
 void Voice::setPreFilterFc(float x) {
     svfPreFcBase = x;
@@ -233,6 +238,10 @@ void Voice::setPostFilterDry(float x) {
     svfPostDryLevel = x;
 }
 
+void Voice::setRecOnce(bool val) {
+    recOnceFlag = val;
+}
+
 void Voice::setBuffer(float *b, unsigned int nf) {
     buf = b;
     bufFrames = nf;
@@ -280,6 +289,10 @@ bool Voice::getPlayFlag() {
 
 bool Voice::getRecFlag() {
     return recFlag;
+}
+
+bool Voice::getRecOnceFlag() {
+    return recOnceFlag;
 }
 
 float Voice::getActivePosition() {
