@@ -235,7 +235,7 @@ void Voice::setPostFilterDry(float x) {
 }
 
 void Voice::setRecOnce(bool val) {
-    recOnceFlag = val;
+    sch.setRecOnceFlag(val);
 }
 
 void Voice::setBuffer(float *b, unsigned int nf) {

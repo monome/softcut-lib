@@ -168,6 +168,10 @@ void ReadWriteHead::setLoopFlag(bool val) {
     loopFlag = val;
 }
 
+void ReadWriteHead::setRecOnceFlag(bool val) {
+    recOnceFlag = val;
+}
+
 void ReadWriteHead::setSampleRate(float sr_) {
     sr = sr_;
     head[0].setSampleRate(sr);

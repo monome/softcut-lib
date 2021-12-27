@@ -154,7 +154,6 @@ namespace softcut {
 
         bool playFlag;
         bool recFlag;
-        bool recOnceFlag;
 
     };
 }
