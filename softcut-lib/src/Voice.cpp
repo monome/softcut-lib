@@ -164,10 +164,6 @@ void Voice::setLoopFlag(bool val) {
     sch.setLoopFlag(val);
 }
 
-void Voice::setLoopFlag(bool val) {
-    sch.setLoopFlag(val);
-}
-
 // input filter
 void Voice::setPreFilterFc(float x) {
     svfPreFcBase = x;
