@@ -33,7 +33,7 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 
     BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
 
-    if (recOnceDone || (recOnceHead > -1)) {
+    if (recOnceFlag || recOnceDone || (recOnceHead > -1)) {
         if (recOnceHead > -1) {
             head[recOnceHead].poke(in, pre, rec);
         }
@@ -56,7 +56,7 @@ void ReadWriteHead::processSampleNoRead(sample_t in, sample_t *out) {
 
     BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
 
-    if (recOnceDone || (recOnceHead > -1)) {
+    if (recOnceFlag || recOnceDone || (recOnceHead > -1)) {
         if (recOnceHead > -1) {
             head[recOnceHead].poke(in, pre, rec);
         }
