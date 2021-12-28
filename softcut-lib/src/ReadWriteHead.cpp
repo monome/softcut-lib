@@ -200,6 +200,10 @@ bool ReadWriteHead::getRecOnceDone() {
   return recOnceDone;
 }
 
+bool ReadWriteHead::getRecOnceActive() {
+  return (recOnceDone || recOnceFlag || recOnceHead>-1);
+}
+
 void ReadWriteHead::setSampleRate(float sr_) {
     sr = sr_;
     head[0].setSampleRate(sr);

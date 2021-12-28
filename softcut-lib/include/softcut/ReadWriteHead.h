@@ -35,6 +35,7 @@ namespace softcut {
         void setLoopFlag(bool val);
         void setRecOnceFlag(bool val);
         bool getRecOnceDone();
+        bool getRecOnceActive();
 
 	// set amplitudes
         void setRec(float x);

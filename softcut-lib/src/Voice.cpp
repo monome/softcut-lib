@@ -97,7 +97,7 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
         if (sch.getRecOnceDone()) {
             // record once is finished, turn off recording flag
             // and reset the recording subheads
-            setRecFlag(false);
+	    recFlag = false;
             sch.setRecOnceFlag(false);
         }
     }
@@ -153,6 +153,12 @@ void Voice::setRecFlag(bool val) {
 	}
     }
     recFlag = val;
+    if (!val) {
+	// turn off rec once if active
+        if (sch.getRecOnceActive()) {
+	    setLoopFlag(false);
+	}
+    }
 }
 
 void Voice::setPlayFlag(bool val) {
