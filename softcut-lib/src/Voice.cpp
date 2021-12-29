@@ -92,6 +92,15 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
 
     
     rawPhase.store(sch.getActivePhase(), std::memory_order_relaxed);
+
+    if(recFlag) {
+        if (sch.getRecOnceDone()) {
+            // record once is finished, turn off recording flag
+            // and reset the recording subheads
+	    recFlag = false;
+            sch.setRecOnceFlag(false);
+        }
+    }
 }
 
 void Voice::setSampleRate(float hz) {
@@ -144,6 +153,12 @@ void Voice::setRecFlag(bool val) {
 	}
     }
     recFlag = val;
+    if (!val) {
+	// turn off rec once if active
+        if (sch.getRecOnceActive()) {
+	    setLoopFlag(false);
+	}
+    }
 }
 
 void Voice::setPlayFlag(bool val) {
@@ -231,6 +246,13 @@ void Voice::setPostFilterBr(float x) {
 void Voice::setPostFilterDry(float x) {
     // FIXME
     svfPostDryLevel = x;
+}
+
+void Voice::setRecOnceFlag(bool val) {
+    sch.setRecOnceFlag(val);
+    if (val) {
+        setRecFlag(true);
+    }
 }
 
 void Voice::setBuffer(float *b, unsigned int nf) {

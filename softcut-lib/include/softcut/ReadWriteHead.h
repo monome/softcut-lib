@@ -33,6 +33,9 @@ namespace softcut {
         void setLoopEndSeconds(float x);
         void setFadeTime(float secs);
         void setLoopFlag(bool val);
+        void setRecOnceFlag(bool val);
+        bool getRecOnceDone();
+        bool getRecOnceActive();
 
 	// set amplitudes
         void setRec(float x);
@@ -80,6 +83,9 @@ namespace softcut {
         bool loopFlag;      // set to loop, unset for 1-shot
         float pre;      // pre-record level
         float rec;      // record level
+        bool recOnceFlag; // set to record one full loop
+        bool recOnceDone; // triggers done to tell voice to unset rec flag
+        int recOnceHead; // keeps track of which subhead is writing
 
         rate_t rate;    // current rate
         TestBuffers testBuf;
