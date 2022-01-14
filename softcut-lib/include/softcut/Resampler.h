@@ -17,7 +17,7 @@
 
 // uncomment to use linear interpolation. honestly can't hear a huge difference?
 // FIXME: should be template param i guess
-#define RESAMPLER_INTERPOLATE_LINEAR
+//#define RESAMPLER_INTERPOLATE_LINEAR
 
 namespace softcut {
 
