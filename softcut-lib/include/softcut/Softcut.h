@@ -181,6 +181,10 @@ namespace softcut {
             scv[follow].cutToPos(scv[lead].getActivePosition() + offset);
         }
 
+        void setInterpolation(int id, int interpolationMode) {
+            scv[id].setInterpolation(interpolationMode)
+        }
+
         void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
             scv[id].setBuffer(buf, bufFrames);
         }

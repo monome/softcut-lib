@@ -25,6 +25,13 @@ namespace softcut {
     public:
         void init(FadeCurves *fc);
         void setSampleRate(float sr);
+    
+        enum {
+            INTERPOLATE_ZERO_NO_RESAMPLE = 0,
+            INTERPOLATE_ZERO = 1,
+            INTERPOLATE_LINEAR = 2,
+            INTERPOLATE_CUBIC = 4
+        }
 
     private:
         sample_t peek4();
@@ -51,6 +58,8 @@ namespace softcut {
         void setState(State state);
         void setPhase(phase_t phase);
 
+        void setInterpolation(int mode);
+
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // **NB** buffer size must be a power of two!!!!
         void setBuffer(sample_t *buf, unsigned int frames);
@@ -65,6 +74,8 @@ namespace softcut {
         unsigned int wrIdx_; // write index
         unsigned int bufFrames_;
         unsigned int bufMask_;
+
+        int interpolationMode_;
 
         State state_;
         rate_t rate_;

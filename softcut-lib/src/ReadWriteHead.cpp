@@ -222,6 +222,11 @@ void ReadWriteHead::setPre(float x) {
     pre = x;
 }
 
+void ReadWriteHead::setInterpolation(int mode) {
+    head[0].setInterpolation(mode);
+    head[1].setInterpolation(mode);
+}
+
 phase_t ReadWriteHead::getActivePhase() {
   return head[active].phase();
 }

@@ -89,6 +89,8 @@ namespace softcut {
 
         void setPhaseOffset(float x);
 
+        void setInterpolation(int mode);
+
         phase_t getQuantPhase();
 
         bool getPlayFlag();

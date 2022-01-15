@@ -307,6 +307,11 @@ void OscInterface::addServerMethods() {
         if (argc < 2) { return; }
         Commands::softcutCommands.post(Commands::Id::SET_CUT_POST_FILTER_DRY, argv[0]->i, argv[1]->f);
     });
+    
+    addServerMethod("/set/param/cut/interpolation", "ii", [](lo_arg **argv, int argc) {
+        if (argc < 2) { return; }
+        Commands::softcutCommands.post(Commands::Id::SET_CUT_INTERPOLATION, argv[0]->i, argv[1]->i);
+    });
 
     addServerMethod("/set/param/cut/voice_sync", "iif", [](lo_arg **argv, int argc) {
         if (argc < 3) { return; }

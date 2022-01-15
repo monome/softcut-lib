@@ -20,6 +20,7 @@ void SubHead::init(FadeCurves *fc) {
     resamp_.setPhase(0);
     inc_dir_ = 1;
     recOffset_ = -8;
+    interpolationMode_ = INTERPOLATE_CUBIC;
 }
 
 Action SubHead::updatePhase(phase_t start, phase_t end, bool loop) {
@@ -164,6 +165,11 @@ void SubHead::setPhase(phase_t phase) {
     // NB: not resetting the resampler here:
     // - it's ok to keep history of input when changing positions.
     // - resamp output doesn't need clearing b/c we write/read from beginning on each sample anyway
+}
+
+void SubHead::setInterpolation(int mode) {
+    interpolationMode_ = mode;
+    resamp_.setInterpolationMode(mode);
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

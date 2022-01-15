@@ -282,6 +282,10 @@ void Voice::setPhaseOffset(float x) {
     phaseOffset = x * sampleRate;
 }
 
+void Voice::setInterpolation(int mode) {
+    sch.setInterpolation(mode);
+}
+
 
 phase_t Voice::getQuantPhase() {
     return quantPhase.load(std::memory_order_relaxed);

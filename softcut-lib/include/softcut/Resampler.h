@@ -30,9 +30,16 @@ namespace softcut {
             IN_BUF_MASK = 3,
             OUT_BUF_FRAMES = 64 // limits resampling ratio
         };
+        
+        enum {
+            INTERPOLATE_ZERO_NO_RESAMPLE = 0,
+            INTERPOLATE_ZERO = 1,
+            INTERPOLATE_LINEAR = 2,
+            INTERPOLATE_CUBIC = 4
+        }
 
         // constructor
-        Resampler() : rate_(1.0), phi_(1.0), phase_(0.0)
+        Resampler() : rate_(1.0), phi_(1.0), phase_(0.0), mode_(INTERPOLATE_CUBIC)
 #ifdef RESAMPLER_INTERPOLATE_LINEAR
 #else
                 ,inBufIdx_(0)
@@ -46,6 +53,10 @@ namespace softcut {
             } else {
                 return writeDown();
             }
+        }
+
+        void setInterpolationMode(int mode) {
+            mode_ = mode
         }
 
         void setRate(rate_t r) {
@@ -62,7 +73,7 @@ namespace softcut {
 
 #ifdef RESAMPLER_INTERPOLATE_LINEAR
             x_ = 0.f;
-#else
+
             for (sample_t &i : inBuf_) { i = 0.f; }
             for (sample_t &i : outBuf_) { i = 0.f; }
             inBufIdx_ = 0;
@@ -81,6 +92,8 @@ namespace softcut {
         // last input value
         sample_t x_1_;
 #else
+        int mode_;
+
         // input ringbuffer
         sample_t inBuf_[IN_BUF_FRAMES];
         unsigned int inBufIdx_;
@@ -111,10 +124,24 @@ namespace softcut {
             i1 = (inBufIdx_ + 2) & IN_BUF_MASK;
             i2 = (inBufIdx_ + 3) & IN_BUF_MASK;
             i3 = inBufIdx_;
-            return static_cast<sample_t>(Interpolate::hermite<phase_t>(f, inBuf_[i0],
-                                                                       inBuf_[i1],
-                                                                       inBuf_[i2],
-                                                                       inBuf_[i3]));
+            
+            //FIXME: maybe move this switch to writeUp / wrideDown for fewer calls?
+            switch(mode_) {
+                case INTERPOLATE_ZERO_NO_RESAMPLE:
+                case INTERPOLATE_ZERO:
+                    return inBuf_[i3];
+                case INTERPOLATE_LINEAR:
+                    return inBuf_[i2] + (inBuf_[i3] - inBuf_[i2]) * f;
+                case INTERPOLATE_CUBIC:
+                default:
+                    return static_cast<sample_t>(Interpolate::hermite<phase_t>(
+                        f, 
+                        inBuf_[i0],
+                        inBuf_[i1],
+                        inBuf_[i2],
+                        inBuf_[i3]
+                    ));
+            }
 #endif
         }
 
