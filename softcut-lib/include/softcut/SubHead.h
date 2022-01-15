@@ -37,6 +37,9 @@ namespace softcut {
         sample_t peek4();
         unsigned int wrapBufIndex(int x);
 
+        void pokeResampling(int nframes);
+        void pokeNoResampling(sample_t in);
+
     protected:
         static constexpr int blockSize = 2048;
         sample_t peek();

@@ -109,6 +109,28 @@ void SubHead::poke(float in, float pre, float rec) {
     preFade_ = pre + (1.f-pre) * fadeCurves->getPreFadeValue(fade_);
     recFade_ = rec * fadeCurves->getRecFadeValue(fade_);
 
+    switch(interpolationMode_) {
+        case INTERPOLATE_ZERO_NO_RESAMPLE:
+            pokeNoResampling(in);
+            break;
+        case INTERPOLATE_ZERO:
+        case INTERPOLATE_LINEAR:
+        case INTERPOLATE_CUBIC:
+        default:
+            pokeResampling(nframes);
+    }
+}
+#endif
+
+void SubHead::pokeNoResampling(float in) {
+    sample_t* p = &buf_[
+        wrapBufIndex(static_cast<int>(phase_) + (inc_dir_ * recOffset_))
+    ];
+    *p *= preFade_;
+    *p += (clip_.processSample(in) * recFade_);
+}
+
+void SubHead::pokeResampling(int nframes) {
     sample_t y; // write value
     const sample_t* src = resamp_.output();
 
@@ -127,7 +149,6 @@ void SubHead::poke(float in, float pre, float rec) {
         wrIdx_ = wrapBufIndex(wrIdx_ + inc_dir_);
     }
 }
-#endif
 
 float SubHead::peek() {
     return peek4();
