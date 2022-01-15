@@ -42,7 +42,7 @@ namespace softcut {
         void setPre(float x);
 
     // set interpolation
-        void setInterpolation(int mode)
+        void setInterpolation(int mode);
 
 	// enqueue a position change with crossfade
         void cutToPos(float seconds);

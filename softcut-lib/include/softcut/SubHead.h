@@ -31,7 +31,7 @@ namespace softcut {
             INTERPOLATE_ZERO = 1,
             INTERPOLATE_LINEAR = 2,
             INTERPOLATE_CUBIC = 4
-        }
+        };
 
     private:
         sample_t peek4();

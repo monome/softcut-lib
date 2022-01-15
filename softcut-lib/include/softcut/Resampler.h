@@ -36,7 +36,7 @@ namespace softcut {
             INTERPOLATE_ZERO = 1,
             INTERPOLATE_LINEAR = 2,
             INTERPOLATE_CUBIC = 4
-        }
+        };
 
         // constructor
         Resampler() : rate_(1.0), phi_(1.0), phase_(0.0), mode_(INTERPOLATE_CUBIC)
@@ -56,7 +56,7 @@ namespace softcut {
         }
 
         void setInterpolationMode(int mode) {
-            mode_ = mode
+            mode_ = mode;
         }
 
         void setRate(rate_t r) {

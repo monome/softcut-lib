@@ -182,7 +182,7 @@ namespace softcut {
         }
 
         void setInterpolation(int id, int interpolationMode) {
-            scv[id].setInterpolation(interpolationMode)
+            scv[id].setInterpolation(interpolationMode);
         }
 
         void setVoiceBuffer(int id, float *buf, size_t bufFrames) {
