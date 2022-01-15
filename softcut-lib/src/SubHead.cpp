@@ -151,7 +151,34 @@ void SubHead::pokeResampling(int nframes) {
 }
 
 float SubHead::peek() {
-    return peek4();
+    switch(interpolationMode_) {
+        case INTERPOLATE_ZERO_NO_RESAMPLE:
+        case INTERPOLATE_ZERO:
+            return peek1();
+        case INTERPOLATE_LINEAR:
+            return peek2();
+        case INTERPOLATE_CUBIC:
+        default:
+            return peek4();
+    }
+}
+
+float SubHead::peek1() {
+    int phase1 = static_cast<int>(phase_);
+    float y1 = buf_[wrapBufIndex(phase1)];
+
+    return y1;
+}
+
+float SubHead::peek2() {
+    int phase1 = static_cast<int>(phase_);
+    int phase0 = phase1 - 1;
+    
+    float y0 = buf_[wrapBufIndex(phase0)];
+    float y1 = buf_[wrapBufIndex(phase1)];
+
+    auto x = static_cast<float>(phase_ - (float)phase1);
+    return y0 + (y1 - y0) * x;
 }
 
 float SubHead::peek4() {

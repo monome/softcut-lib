@@ -35,6 +35,8 @@ namespace softcut {
 
     private:
         sample_t peek4();
+        sample_t peek2();
+        sample_t peek1();
         unsigned int wrapBufIndex(int x);
 
         void pokeResampling(int nframes);
