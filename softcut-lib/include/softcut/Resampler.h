@@ -113,9 +113,9 @@ namespace softcut {
 #endif
         }
 
-        // interpolate the most recent input samples
+        // cubic interpolation of the most recent input samples
         // @param f in [0, 1]
-        sample_t interpolate(phase_t f){
+        sample_t interpolateCubic(phase_t f){
 #ifdef RESAMPLER_INTERPOLATE_LINEAR
             return x_1_ + (x_ - x_1_) * f;
 #else
@@ -125,26 +125,31 @@ namespace softcut {
             i2 = (inBufIdx_ + 3) & IN_BUF_MASK;
             i3 = inBufIdx_;
             
-            //FIXME: maybe move this switch to writeUp / wrideDown for fewer calls?
-            switch(mode_) {
-                case INTERPOLATE_ZERO_NO_RESAMPLE:
-                case INTERPOLATE_ZERO:
-                    return inBuf_[i3];
-                case INTERPOLATE_LINEAR:
-                    return inBuf_[i2] + (inBuf_[i3] - inBuf_[i2]) * f;
-                case INTERPOLATE_CUBIC:
-                default:
-                    return static_cast<sample_t>(Interpolate::hermite<phase_t>(
-                        f, 
-                        inBuf_[i0],
-                        inBuf_[i1],
-                        inBuf_[i2],
-                        inBuf_[i3]
-                    ));
-            }
+            return static_cast<sample_t>(Interpolate::hermite<phase_t>(
+                f, 
+                inBuf_[i0],
+                inBuf_[i1],
+                inBuf_[i2],
+                inBuf_[i3]
+            ));
 #endif
         }
 
+        // linear interpolation of the most recent input samples
+        // @param f in [0, 1]
+        sample_t interpolateLinear(phase_t f){
+            unsigned int i0, i1;
+            i0 = (inBufIdx_ + 3) & IN_BUF_MASK;
+            i1 = inBufIdx_;
+            
+            return inBuf_[i0] + (inBuf_[i1] - inBuf_[i0]) * f;
+        }
+
+        // return the most recent input sample, no interpolation
+        // @param f in [0, 1]
+        sample_t interpolateZero(phase_t f){
+            return inBuf_[inBufIdx_];
+        }
 
         // write, upsampling
         // return frames written (>= 1)
@@ -159,15 +164,42 @@ namespace softcut {
             phase_t f = 1.0 - phase_;
             // normalized (divided by rate);
             f = f * phi_;
-            // write the first output frame
             unsigned int i=0;
-            outBuf_[i] = interpolate(f);
-            while(i < nf) {
-                // distance between output frames in this normalized space is 1/rate
-                f += phi_;
-                outBuf_[i] = interpolate(f);
-                i++;
+
+            switch(mode_) {
+                case INTERPOLATE_ZERO_NO_RESAMPLE:
+                case INTERPOLATE_ZERO:
+                    // write the first output frame
+                    outBuf_[i] = interpolateZero(f);
+                    while(i < nf) {
+                        // distance between output frames in this normalized space is 1/rate
+                        f += phi_;
+                        outBuf_[i] = interpolateZero(f);
+                        i++;
+                    }
+                    break;
+                case INTERPOLATE_LINEAR:
+                    // write the first output frame
+                    outBuf_[i] = interpolateLinear(f);
+                    while(i < nf) {
+                        // distance between output frames in this normalized space is 1/rate
+                        f += phi_;
+                        outBuf_[i] = interpolateLinear(f);
+                        i++;
+                    }
+                    break;
+                case INTERPOLATE_CUBIC:
+                default:
+                    // write the first output frame
+                    outBuf_[i] = interpolateCubic(f);
+                    while(i < nf) {
+                        // distance between output frames in this normalized space is 1/rate
+                        f += phi_;
+                        outBuf_[i] = interpolateCubic(f);
+                        i++;
+                    }
             }
+
             // store the remainder of the updated, un-normalized output phase
             phase_ = p - static_cast<phase_t>(nf);
             return nf;
@@ -188,7 +220,20 @@ namespace softcut {
             if (nf > 0) {
                 phase_t f = 1.0 - phase_;
                 f *= phi_;
-                outBuf_[0] = interpolate(f);
+
+                switch(mode_) {
+                    case INTERPOLATE_ZERO_NO_RESAMPLE:
+                    case INTERPOLATE_ZERO:
+                        outBuf_[0] = interpolateZero(f);
+                        break;
+                    case INTERPOLATE_LINEAR:
+                        outBuf_[0] = interpolateLinear(f);
+                        break;
+                    case INTERPOLATE_CUBIC:
+                    default:
+                        outBuf_[0] = interpolateCubic(f);
+                }
+
                 phase_ = p - static_cast<phase_t>(nf);
             } else {
                 phase_ = p;
