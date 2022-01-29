@@ -156,7 +156,7 @@ void Voice::setRecFlag(bool val) {
     if (!val) {
 	// turn off rec once if active
         if (sch.getRecOnceActive()) {
-            sch.setRecOnceFlag(false);
+	    setLoopFlag(false);
 	}
     }
 }
