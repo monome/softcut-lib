@@ -6,19 +6,21 @@
 #define Softcut_SOFTCLIP_H
 
 #include <cmath>
-#include <boost/math/special_functions/sign.hpp>
 
 namespace softcut {
 
     // two-stage quadratic soft clipper with variable gain
     // nice odd harmonics, kinda carbon-mic sound
     class SoftClip {
+
     private:
 
         float t; // threshold (beginning of knee)
         float g;  // gain multiplier
         float a;  // parabolic coefficient
         float b;  // parabolic offset ( = max level)
+
+        static inline float fsign(float f){ return f > 0.f? 1.f : -1.f; }
 
         // update quad multiplier from current settings
         void calcCoeffs() {
@@ -42,7 +44,7 @@ namespace softcut {
 
         float processSample(float x) {
             float ax = fabs(x);
-            const float sx = static_cast<float>(boost::math::sign(x));
+            const float sx = fsign(x);
 
             if (ax > 1.f) {
                 ax = 1.f;
