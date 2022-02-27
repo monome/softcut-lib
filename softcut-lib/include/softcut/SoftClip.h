@@ -7,6 +7,8 @@
 
 #include <cmath>
 
+#include "softcut/Utilities.h"
+
 namespace softcut {
 
     // two-stage quadratic soft clipper with variable gain
@@ -19,11 +21,6 @@ namespace softcut {
         float g;  // gain multiplier
         float a;  // parabolic coefficient
         float b;  // parabolic offset ( = max level)
-
-        static inline float fsign(float f) {
-            return f > 0.f? 1.f : -1.f; 
-        }
-
         // update quad multiplier from current settings
         void calcCoeffs() {
             // match derivative at knee point

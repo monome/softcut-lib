@@ -5,7 +5,7 @@
 #ifndef SoftcutHEAD_RESAMPLER_H
 #define SoftcutHEAD_RESAMPLER_H
 
-#include <cmy_assert>
+#include <cassert>
 #include <cmath>
 #include <iostream>
 

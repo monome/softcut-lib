@@ -6,7 +6,6 @@
 #include <cmath>
 #include <limits>
 
-
 #include "softcut/Interpolate.h"
 #include "softcut/Resampler.h"
 

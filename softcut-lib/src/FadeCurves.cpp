@@ -2,9 +2,11 @@
 // Created by ezra on 11/15/18.
 //
 
+#include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <cstring>
+
+#include <algorithm>
 
 #include "softcut/Interpolate.h"
 #include "softcut/FadeCurves.h"
