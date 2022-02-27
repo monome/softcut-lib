@@ -20,7 +20,9 @@ namespace softcut {
         float a;  // parabolic coefficient
         float b;  // parabolic offset ( = max level)
 
-        static inline float fsign(float f){ return f > 0.f? 1.f : -1.f; }
+        static inline float fsign(float f) {
+            return f > 0.f? 1.f : -1.f; 
+        }
 
         // update quad multiplier from current settings
         void calcCoeffs() {
