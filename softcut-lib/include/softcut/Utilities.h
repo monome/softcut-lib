@@ -20,6 +20,10 @@ namespace softcut {
     }
 #endif
 
+    static inline float fsign(float x) { 
+        return x > 0.f ? 1.f : -1.f;
+    }
+
     // convert a time-to-convergence to a pole coefficient
     // "ref" argument defines the amount of convergence
     // target ratio is e^ref.

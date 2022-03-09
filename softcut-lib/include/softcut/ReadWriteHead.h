@@ -33,9 +33,12 @@ namespace softcut {
         void setLoopEndSeconds(float x);
         void setFadeTime(float secs);
         void setLoopFlag(bool val);
+<<<<<<< HEAD
         void setRecOnceFlag(bool val);
         bool getRecOnceDone();
         bool getRecOnceActive();
+=======
+>>>>>>> norns-latest
 
 	// set amplitudes
         void setRec(float x);
