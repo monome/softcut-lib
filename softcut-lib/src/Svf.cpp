@@ -3,12 +3,25 @@
 //
 
 #include <math.h>
+
 #include "softcut/Svf.h"
 
 Svf::Svf() = default;
 
+static float zap(float x) {
+    if (x < -1.f) return -1.f;
+    if (x > 1.f) return 1.f;
+    if (std::isnan(x)) { return 0.f; }
+    if (std::isinf(x)) { return x < 0 ? -1.f : 1.f; }
+    return x;
+}
+
 float Svf::getNextSample(float x) {
+#if 0
     svf_update(&svf, x);
+#else
+    svf_update(&svf, zap(x));
+#endif
     return svf.lp * lpMix + svf.hp * hpMix + svf.bp * bpMix + svf.br * brMix;
 }
 
@@ -67,7 +80,11 @@ void Svf::svf_set_sr(t_svf* svf, float sr) {
 }
 
 void Svf::svf_set_fc(t_svf* svf, float fc) {
-    svf->fc = (fc > svf->sr / 2) ? svf->sr / 2 : fc;
+    // FIXME: these should properly be coupled to SR
+    static const float maxFc = 16000.f;
+    static const float minFc = 20.f;
+    svf->fc = (fc < minFc) ? minFc : fc;
+    svf->fc = (fc > maxFc) ? maxFc : fc;
     svf_calc_coeffs(svf);
 }
 
