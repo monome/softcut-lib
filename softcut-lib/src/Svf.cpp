@@ -2,26 +2,69 @@
 // Created by ezra on 11/8/18.
 //
 
+#include <iostream>
 #include <math.h>
+
+
 #include "softcut/Svf.h"
 
 Svf::Svf() = default;
 
+void Svf::init() {
+    clearState();
+}
+
+void Svf::clearState() {
+    v0z = 0;
+    v1 = 0;
+    v2 = 0;
+}
+
+void Svf::setSampleRate(float aSr) {
+    sr = aSr;
+    pi_sr = M_PI/sr;
+    normFcMin = 10*pi_sr;
+    normFcMax = 0.4;
+    calcCoeffs();
+}
+
+void Svf::setFc(float aFc) {
+    fc = aFc > normFcMax ? normFcMax : aFc;
+    calcCoeffs();
+}
+
+void Svf::setRq(float aRq) {
+    rq = aRq;
+    calcCoeffs();
+}
+
+void Svf::calcCoeffs() {
+    g = static_cast<float>(tan(fc * pi_sr));
+    g1 = g / (1.f + g * (g + rq));
+    g2 = 2.f * (g + rq) * g1;
+    g3 = g * g1;
+    g4 = 2.f * g1;  
+}
+
+void Svf::update(float in) {
+    // update
+    v0 = in;
+    v1z = v1;
+    v2z = v2;
+    v3 = v0 + v0z - 2.f * v2z;
+    v1 += g1 * v3 - g2 * v1z;
+    v2 += g3 * v3 + g4 * v1z;
+    v0z = v0;
+    // output
+    lp = v2;
+    bp = v1;
+    hp = v0 - rq * v1 - v2;
+    br = v0 - rq * v1;
+}
+
 float Svf::getNextSample(float x) {
-    svf_update(&svf, x);
-    return svf.lp * lpMix + svf.hp * hpMix + svf.bp * bpMix + svf.br * brMix;
-}
-
-void Svf::setSampleRate(float sr) {
-    svf_set_sr(&svf, sr);
-}
-
-void Svf::setFc(float fc) {
-    svf_set_fc(&svf, fc);
-}
-
-void Svf::setRq(float rq) {
-    svf_set_rq(&svf, rq);
+    update(x);
+    return (lp * lpMix) + (hp * hpMix) + (bp * bpMix) + (br * brMix);
 }
 
 void Svf::setLpMix(float mix) {
@@ -37,61 +80,9 @@ void Svf::setBpMix(float mix) {
 }
 
 void Svf::setBrMix(float mix) {
-        brMix = mix;
-}
-
-/////////////////
-// C implementation
-
-void Svf::svf_calc_coeffs(t_svf* svf) {
-    svf->g = static_cast<float>(tan(M_PI * svf->fc / svf->sr));
-    svf->g1 = svf->g / (1.f + svf->g * (svf->g + svf->rq));
-    svf->g2 = 2.f * (svf->g + svf->rq) * svf->g1;
-    svf->g3 = svf->g * svf->g1;
-    svf->g4 = 2.f * svf->g1;
-}
-
-void Svf::svf_init(t_svf* svf) {
-    svf_clear_state(svf);
-}
-
-void Svf::svf_clear_state(t_svf* svf) {
-    svf->v0z = 0;
-    svf->v1 = 0;
-    svf->v2 = 0;
-}
-
-void Svf::svf_set_sr(t_svf* svf, float sr) {
-    svf->sr = sr;
-    svf_calc_coeffs(svf);
-}
-
-void Svf::svf_set_fc(t_svf* svf, float fc) {
-    svf->fc = (fc > svf->sr / 2) ? svf->sr / 2 : fc;
-    svf_calc_coeffs(svf);
-}
-
-void Svf::svf_set_rq(t_svf* svf, float rq) {
-    svf->rq = rq;
-    svf_calc_coeffs(svf);
-}
-
-void Svf::svf_update(t_svf* svf, float in) {
-    // update
-    svf->v0 = in;
-    svf->v1z = svf->v1;
-    svf->v2z = svf->v2;
-    svf->v3 = svf->v0 + svf->v0z - 2.f * svf->v2z;
-    svf->v1 += svf->g1 * svf->v3 - svf->g2 * svf->v1z;
-    svf->v2 += svf->g3 * svf->v3 + svf->g4 * svf->v1z;
-    svf->v0z = svf->v0;
-    // output
-    svf->lp = svf->v2;
-    svf->bp = svf->v1;
-    svf->hp = svf->v0 - svf->rq * svf->v1 - svf->v2;
-    svf->br = svf->v0 - svf->rq * svf->v1;
+    brMix = mix;
 }
 
 float Svf::getFc() {
-    return svf.fc;
+    return fc;
 }
