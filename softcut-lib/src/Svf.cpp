@@ -8,20 +8,20 @@
 Svf::Svf() = default;
 
 float Svf::getNextSample(float x) {
-    svf_update(&svf, x);
-    return svf.lp * lpMix + svf.hp * hpMix + svf.bp * bpMix + svf.br * brMix;
+    update(x);
+    return lp * lpMix + hp * hpMix + bp * bpMix + br * brMix;
 }
 
 void Svf::setSampleRate(float sr) {
-    svf_set_sr(&svf, sr);
+    setSr(sr);
 }
 
 void Svf::setFc(float fc) {
-    svf_set_fc(&svf, fc);
+    setFc(fc);
 }
 
 void Svf::setRq(float rq) {
-    svf_set_rq(&svf, rq);
+    setRq(rq);
 }
 
 void Svf::setLpMix(float mix) {
@@ -43,55 +43,69 @@ void Svf::setBrMix(float mix) {
 /////////////////
 // C implementation
 
-void Svf::svf_calc_coeffs(t_svf* svf) {
-    svf->g = static_cast<float>(tan(M_PI * svf->fc / svf->sr));
-    svf->g1 = svf->g / (1.f + svf->g * (svf->g + svf->rq));
-    svf->g2 = 2.f * (svf->g + svf->rq) * svf->g1;
-    svf->g3 = svf->g * svf->g1;
-    svf->g4 = 2.f * svf->g1;
+void Svf::calcCoeffs() {
+    //g = static_cast<float>(tan(M_PI * fc / sr));
+    g = warpApprox(fc/sr);
+    g1 = g / (1.f + g * (g + rq));
+    g2 = 2.f * (g + rq) * g1;
+    g3 = g * g1;
+    g4 = 2.f * g1;  
 }
 
-void Svf::svf_init(t_svf* svf) {
-    svf_clear_state(svf);
+void Svf::init() {
+    clearState();
 }
 
-void Svf::svf_clear_state(t_svf* svf) {
-    svf->v0z = 0;
-    svf->v1 = 0;
-    svf->v2 = 0;
+void Svf::clearState() {
+    v0z = 0;
+    v1 = 0;
+    v2 = 0;
 }
 
-void Svf::svf_set_sr(t_svf* svf, float sr) {
-    svf->sr = sr;
-    svf_calc_coeffs(svf);
+void Svf::setSr(float sr) {
+    sr = sr;
+    calcCoeffs();
 }
 
-void Svf::svf_set_fc(t_svf* svf, float fc) {
-    svf->fc = (fc > svf->sr / 2) ? svf->sr / 2 : fc;
-    svf_calc_coeffs(svf);
+void Svf::setFc(float fc) {
+    fc = (fc > sr / 2) ? sr / 2 : fc;
+    calcCoeffs();
 }
 
-void Svf::svf_set_rq(t_svf* svf, float rq) {
-    svf->rq = rq;
-    svf_calc_coeffs(svf);
+void Svf::setRq(float rq) {
+    rq = rq;
+    calcCoeffs();
 }
 
-void Svf::svf_update(t_svf* svf, float in) {
+void Svf::update(float in) {
     // update
-    svf->v0 = in;
-    svf->v1z = svf->v1;
-    svf->v2z = svf->v2;
-    svf->v3 = svf->v0 + svf->v0z - 2.f * svf->v2z;
-    svf->v1 += svf->g1 * svf->v3 - svf->g2 * svf->v1z;
-    svf->v2 += svf->g3 * svf->v3 + svf->g4 * svf->v1z;
-    svf->v0z = svf->v0;
+    v0 = in;
+    v1z = v1;
+    v2z = v2;
+    v3 = v0 + v0z - 2.f * v2z;
+    v1 += g1 * v3 - g2 * v1z;
+    v2 += g3 * v3 + g4 * v1z;
+    v0z = v0;
     // output
-    svf->lp = svf->v2;
-    svf->bp = svf->v1;
-    svf->hp = svf->v0 - svf->rq * svf->v1 - svf->v2;
-    svf->br = svf->v0 - svf->rq * svf->v1;
+    lp = v2;
+    bp = v1;
+    hp = v0 - rq * v1 - v2;
+    br = v0 - rq * v1;
 }
 
 float Svf::getFc() {
-    return svf.fc;
+    return fc;
 }
+
+// 5th-degree polynomial approximation of tan(pi*theta),
+// for normalized freq in ~[1/4800, 1/3]
+float Svf::warpApprox(float x) {
+    static const float a0 = -0.0001414077269146219;
+    static const float a1 = 3.1951048374176025;
+    static const float a2 = -2.1814463138580322;
+    static const float a3 = 38.69891357421875;
+    static const float a4 = -146.58091735839844;
+    static const float a5 = 311.98516845703125;
+    return a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*(a5)))));
+}
+    
