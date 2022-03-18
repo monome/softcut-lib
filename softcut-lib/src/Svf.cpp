@@ -12,10 +12,6 @@ float Svf::getNextSample(float x) {
     return lp * lpMix + hp * hpMix + bp * bpMix + br * brMix;
 }
 
-void Svf::setSampleRate(float sr) {
-    setSr(sr);
-}
-
 void Svf::setFc(float fc) {
     setFc(fc);
 }
@@ -44,8 +40,7 @@ void Svf::setBrMix(float mix) {
 // C implementation
 
 void Svf::calcCoeffs() {
-    //g = static_cast<float>(tan(M_PI * fc / sr));
-    g = warpApprox(fc/sr);
+    g = static_cast<float>(tan(fc * pi_sr));
     g1 = g / (1.f + g * (g + rq));
     g2 = 2.f * (g + rq) * g1;
     g3 = g * g1;
@@ -62,18 +57,21 @@ void Svf::clearState() {
     v2 = 0;
 }
 
-void Svf::setSr(float sr) {
-    sr = sr;
+void Svf::setSampleRate(float aSr) {
+    sr = aSr;
+    pi_sr = M_PI/sr;
+    normFcMin = 10*pi_sr;
+    normFcMax = 0.4;
     calcCoeffs();
 }
 
-void Svf::setFc(float fc) {
-    fc = (fc > sr / 2) ? sr / 2 : fc;
+void Svf::setFc(float aFc) {
+    fc = aFc > normFcMax ? normFcMax : aFc;
     calcCoeffs();
 }
 
-void Svf::setRq(float rq) {
-    rq = rq;
+void Svf::setRq(float aRq) {
+    rq = aRq;
     calcCoeffs();
 }
 
@@ -96,16 +94,3 @@ void Svf::update(float in) {
 float Svf::getFc() {
     return fc;
 }
-
-// 5th-degree polynomial approximation of tan(pi*theta),
-// for normalized freq in ~[1/4800, 1/3]
-float Svf::warpApprox(float x) {
-    static const float a0 = -0.0001414077269146219;
-    static const float a1 = 3.1951048374176025;
-    static const float a2 = -2.1814463138580322;
-    static const float a3 = 38.69891357421875;
-    static const float a4 = -146.58091735839844;
-    static const float a5 = 311.98516845703125;
-    return a0 + x*(a1 + x*(a2 + x*(a3 + x*(a4 + x*(a5)))));
-}
-    
