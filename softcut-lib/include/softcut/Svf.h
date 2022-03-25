@@ -30,8 +30,8 @@ private:
     float hpMix;
     float bpMix;
     float brMix;
-    float normFcMin;
-    float normFcMax;
+    float fcMin;
+    float fcMax;
     float pi_sr;
 
     // sample rate

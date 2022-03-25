@@ -60,13 +60,13 @@ void Svf::clearState() {
 void Svf::setSampleRate(float aSr) {
     sr = aSr;
     pi_sr = M_PI/sr;
-    normFcMin = 10*pi_sr;
-    normFcMax = 0.4;
+    fcMin = 10.f;
+    fcMax = 0.4 * sr;
     calcCoeffs();
 }
 
 void Svf::setFc(float aFc) {
-    fc = aFc > normFcMax ? normFcMax : aFc;
+    fc = aFc > fcMax ? fcMax : aFc;
     calcCoeffs();
 }
 
