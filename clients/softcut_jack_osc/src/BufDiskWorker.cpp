@@ -188,11 +188,9 @@ void BufDiskWorker::readBufferMono(const std::string &path, BufDesc &buf,
 	int res = file.seek(frSrc, SF_SEEK_SET);
 	if (res == -1) {	    
 	    std::cerr << "error seeking to frame: " << frSrc << "; aborting read" << std::endl;
-	    return;
+	    goto cleanup;
 	}
         file.readf(ioBuf, ioBufFrames);
-	// FIXME? SEEK_CUR gives weird results, i must be using it wrong
-	//int res = file.seek(ioBufFrames, SF_SEEK_CUR);
         for (int fr=0; fr<ioBufFrames; ++fr) {
             buf.data[frDst] = ioBuf[fr * numSrcChan + chanSrc];
             frDst++;
@@ -200,19 +198,20 @@ void BufDiskWorker::readBufferMono(const std::string &path, BufDesc &buf,
 	frSrc += ioBufFrames;
     }
     for (size_t i=0; i<rem; ++i) {
-	int res = file.seek(frSrc, SF_SEEK_CUR);
+	int res = file.seek(frSrc, SF_SEEK_SET);
 
 	if (res == -1) {
 	    std::cerr << "error seeking to frame: " << frSrc << "; aborting read" << std::endl;
-	    return;
+	    goto cleanup;
 	}
         file.read(ioBuf, numSrcChan);
         buf.data[frDst] = ioBuf[chanSrc];
 	frDst++;
 	frSrc++;
     }
+    std::cout << "SoftCutClient::readBufferMono(): done; read " << frDur << " frames" << std::endl;
+cleanup:
     delete[] ioBuf;
-    // std::cout << "SoftCutClient::readBufferMono(): done; read " << frDur << " frames" << std::endl;
 }
 
 void BufDiskWorker::readBufferStereo(const std::string &path, BufDesc &buf0, BufDesc &buf1,

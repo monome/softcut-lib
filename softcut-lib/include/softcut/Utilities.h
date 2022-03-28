@@ -221,8 +221,6 @@ namespace softcut {
         }
 
         float process(float x) {
-            // FIXME: zapgremlins is weirdly slow (at least on x86)
-            //x0 = zapgremlins(y);
             x0 = smooth1pole(x, x0, x > x0 ? bR : bF);
             return x0;
         }
@@ -237,8 +235,6 @@ namespace softcut {
             bF = tau2pole(tF, sampleRate);
         }
     };
-
-    
 
     // simple lookup table class
     template<typename T>
