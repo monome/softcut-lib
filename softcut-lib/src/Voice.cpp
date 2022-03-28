@@ -71,10 +71,10 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
                 this->sch.processSampleNoRead(in, out);
             };
         } else {
-            // FIXME? do nothing, i guess?
             sampleFunc = [](float in, float* out) {
                 (void)in;
-                (void)out;
+                // makes sure the output bus is zeroed
+                *out = 0.f;
             };
         }
     }
