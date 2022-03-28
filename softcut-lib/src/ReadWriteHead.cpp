@@ -25,23 +25,16 @@ void ReadWriteHead::init(FadeCurves *fc) {
     queuedCrossfadeFlag = false;
     head[0].init(fc);
     head[1].init(fc);
-
-    setRecOnceFlag(false);
 }
 
 void ReadWriteHead::processSample(sample_t in, sample_t *out) {
+
     *out = mixFade(head[0].peek(), head[1].peek(), head[0].fade(), head[1].fade());
 
     //  assert(!(head[0].state_ == Playing && head[1].state_ == Playing) /*multiple active heads*/);
 
-    if (recOnceFlag || recOnceDone || (recOnceHead > -1)) {
-        if (recOnceHead > -1) {
-            head[recOnceHead].poke(in, pre, rec);
-        }
-    } else {
-        head[0].poke(in, pre, rec);
-        head[1].poke(in, pre, rec);
-    }
+    head[0].poke(in, pre, rec);
+    head[1].poke(in, pre, rec);
 
     takeAction(head[0].updatePhase(start, end, loopFlag));
     takeAction(head[1].updatePhase(start, end, loopFlag));
@@ -55,23 +48,10 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 void ReadWriteHead::processSampleNoRead(sample_t in, sample_t *out) {
     (void)out;
 
-<<<<<<< HEAD
-    BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
-
-    if (recOnceFlag || recOnceDone || (recOnceHead > -1)) {
-        if (recOnceHead > -1) {
-            head[recOnceHead].poke(in, pre, rec);
-        }
-    } else {
-        head[0].poke(in, pre, rec);
-        head[1].poke(in, pre, rec);
-    }
-=======
     // assert(!(head[0].state_ == Playing && head[1].state_ == Playing) /*multiple active heads*/);
     
     head[0].poke(in, pre, rec);
     head[1].poke(in, pre, rec);
->>>>>>> norns-latest
 
     takeAction(head[0].updatePhase(start, end, loopFlag));
     takeAction(head[1].updatePhase(start, end, loopFlag));
@@ -146,6 +126,7 @@ void ReadWriteHead::dequeueCrossfade() {
     }
 }
 
+
 void ReadWriteHead::cutToPhase(phase_t pos) {
     State s = head[active].state();
 
@@ -161,15 +142,6 @@ void ReadWriteHead::cutToPhase(phase_t pos) {
         head[active].setState(State::FadeOut);
     }
 
-    if (recOnceHead==newActive) {
-        recOnceHead = -1;
-        recOnceDone = true;
-    }
-    if (recOnceFlag) {
-        recOnceFlag = false;
-        recOnceHead = newActive;
-    }
-
     head[newActive].setState(State::FadeIn);
     head[newActive].setPhase(pos);
 
@@ -182,7 +154,6 @@ void ReadWriteHead::setFadeTime(float secs) {
     fadeTime = secs;
     calcFadeInc();
 }
-
 void ReadWriteHead::calcFadeInc() {
     fadeInc = (float) fabs(rate) / std::max(1.f, (fadeTime * sr));
     fadeInc = std::max(0.f, std::min(fadeInc, 1.f));
@@ -196,20 +167,6 @@ void ReadWriteHead::setBuffer(float *b, uint32_t bf) {
 
 void ReadWriteHead::setLoopFlag(bool val) {
     loopFlag = val;
-}
-
-void ReadWriteHead::setRecOnceFlag(bool val) {
-    recOnceFlag = val;
-    recOnceDone = false;
-    recOnceHead = -1;
-}
-
-bool ReadWriteHead::getRecOnceDone() {
-  return recOnceDone;
-}
-
-bool ReadWriteHead::getRecOnceActive() {
-  return (recOnceDone || recOnceFlag || recOnceHead>-1);
 }
 
 void ReadWriteHead::setSampleRate(float sr_) {

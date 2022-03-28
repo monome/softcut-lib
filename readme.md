@@ -24,7 +24,7 @@ this library was developed at the behest of [monome](https://monome.org), origin
 
 `./clients/` contains sample projects that use the library.
 
-`./clients/softcut_jack_osc/` is a straightforward example: a JACK application that maps OSC commands to the softcut API.
+`./clients/softcut_jack_sc/` is a straightforward example: a JACK application that maps OSC commands directly to the softcut API.
 
 ### building
 

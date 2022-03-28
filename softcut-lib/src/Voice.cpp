@@ -7,8 +7,6 @@
 #include "softcut/Voice.h"
 #include "softcut/Resampler.h"
 
-#include "Utilities.h"
-
 using namespace softcut;
 
 Voice::Voice() :
@@ -73,11 +71,10 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
                 this->sch.processSampleNoRead(in, out);
             };
         } else {
-            // shouldn't get here, except i guess we do under some race condition (?)
-            // so this sample func needs to do something sane
+            // FIXME? do nothing, i guess?
             sampleFunc = [](float in, float* out) {
                 (void)in;
-                *out = 0.f;
+                (void)out;
             };
         }
     }
@@ -94,17 +91,9 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
 	    out[i] = svfPost.getNextSample(y) + y*svfPostDryLevel;
         updateQuantPhase();
     }
+
     
     rawPhase.store(sch.getActivePhase(), std::memory_order_relaxed);
-
-    if(recFlag) {
-        if (sch.getRecOnceDone()) {
-            // record once is finished, turn off recording flag
-            // and reset the recording subheads
-	    recFlag = false;
-            sch.setRecOnceFlag(false);
-        }
-    }
 }
 
 void Voice::setSampleRate(float hz) {
@@ -157,12 +146,6 @@ void Voice::setRecFlag(bool val) {
 	}
     }
     recFlag = val;
-    if (!val) {
-	// turn off rec once if active
-        if (sch.getRecOnceActive()) {
-	    setLoopFlag(false);
-	}
-    }
 }
 
 void Voice::setPlayFlag(bool val) {
@@ -248,14 +231,8 @@ void Voice::setPostFilterBr(float x) {
 }
 
 void Voice::setPostFilterDry(float x) {
+    // FIXME
     svfPostDryLevel = x;
-}
-
-void Voice::setRecOnceFlag(bool val) {
-    sch.setRecOnceFlag(val);
-    if (val) {
-        setRecFlag(true);
-    }
 }
 
 void Voice::setBuffer(float *b, unsigned int nf) {
@@ -284,6 +261,7 @@ void Voice::setPhaseQuant(float x) {
 void Voice::setPhaseOffset(float x) {
     phaseOffset = x * sampleRate;
 }
+
 
 phase_t Voice::getQuantPhase() {
     return quantPhase.load(std::memory_order_relaxed);

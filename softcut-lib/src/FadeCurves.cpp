@@ -76,7 +76,7 @@ void FadeCurves::calcRecFade() {
             buf[i++] = y;
         }
         while (i < n) {
-            y = sinf(x) * -1.f;
+            y = sinf(x);
             buf[i++] = y;
             x += phi;
         }
@@ -85,7 +85,6 @@ void FadeCurves::calcRecFade() {
         // undefined shape. oh well
         return;
     }
-
     memcpy(recFadeBuf, buf, fadeBufSize*sizeof(float));
 }
 

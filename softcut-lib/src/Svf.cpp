@@ -2,13 +2,42 @@
 // Created by ezra on 11/8/18.
 //
 
-#include <iostream>
 #include <math.h>
-
-
 #include "softcut/Svf.h"
 
 Svf::Svf() = default;
+
+float Svf::getNextSample(float x) {
+    update(x);
+    return lp * lpMix + hp * hpMix + bp * bpMix + br * brMix;
+}
+
+void Svf::setLpMix(float mix) {
+    lpMix = mix;
+}
+
+void Svf::setHpMix(float mix) {
+    hpMix = mix;
+}
+
+void Svf::setBpMix(float mix) {
+    bpMix = mix;
+}
+
+void Svf::setBrMix(float mix) {
+        brMix = mix;
+}
+
+/////////////////
+// C implementation
+
+void Svf::calcCoeffs() {
+    g = static_cast<float>(tan(fc * pi_sr));
+    g1 = g / (1.f + g * (g + rq));
+    g2 = 2.f * (g + rq) * g1;
+    g3 = g * g1;
+    g4 = 2.f * g1;  
+}
 
 void Svf::init() {
     clearState();
@@ -23,27 +52,19 @@ void Svf::clearState() {
 void Svf::setSampleRate(float aSr) {
     sr = aSr;
     pi_sr = M_PI/sr;
-    normFcMin = 10*pi_sr;
-    normFcMax = 0.4;
+    fcMin = 10.f;
+    fcMax = 0.4 * sr;
     calcCoeffs();
 }
 
 void Svf::setFc(float aFc) {
-    fc = aFc > normFcMax ? normFcMax : aFc;
+    fc = aFc > fcMax ? fcMax : aFc;
     calcCoeffs();
 }
 
 void Svf::setRq(float aRq) {
     rq = aRq;
     calcCoeffs();
-}
-
-void Svf::calcCoeffs() {
-    g = static_cast<float>(tan(fc * pi_sr));
-    g1 = g / (1.f + g * (g + rq));
-    g2 = 2.f * (g + rq) * g1;
-    g3 = g * g1;
-    g4 = 2.f * g1;  
 }
 
 void Svf::update(float in) {
@@ -60,27 +81,6 @@ void Svf::update(float in) {
     bp = v1;
     hp = v0 - rq * v1 - v2;
     br = v0 - rq * v1;
-}
-
-float Svf::getNextSample(float x) {
-    update(x);
-    return (lp * lpMix) + (hp * hpMix) + (bp * bpMix) + (br * brMix);
-}
-
-void Svf::setLpMix(float mix) {
-    lpMix = mix;
-}
-
-void Svf::setHpMix(float mix) {
-    hpMix = mix;
-}
-
-void Svf::setBpMix(float mix) {
-    bpMix = mix;
-}
-
-void Svf::setBrMix(float mix) {
-    brMix = mix;
 }
 
 float Svf::getFc() {
