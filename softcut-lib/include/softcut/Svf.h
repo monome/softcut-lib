@@ -16,12 +16,18 @@ public:
     Svf();
     float getNextSample(float x);
     void setSampleRate(float sr);
-    void setFc(float fc);
-    void setRq(float rq);
     void setLpMix(float mix);
     void setHpMix(float mix);
     void setBpMix(float mix);
     void setBrMix(float mix);
+
+    void init();
+    void clearState();
+    void calcCoeffs();
+    void setSr(float sr);
+    void setFc(float fc);
+    void setRq(float rq);
+    void update(float in);
 
     float getFc();
 
@@ -60,13 +66,6 @@ private:
     float bp; // bandpass
     float br; // bandreject
 
-    void calcCoeffs();
-    void init();
-    void clearState();
-    void setSr(float sr);
-    void setFc(float fc);
-    void setRq(float rq);
-    void update(float in);
 
     static float warpApprox(float fc);
     

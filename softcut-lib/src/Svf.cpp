@@ -12,14 +12,6 @@ float Svf::getNextSample(float x) {
     return lp * lpMix + hp * hpMix + bp * bpMix + br * brMix;
 }
 
-void Svf::setFc(float fc) {
-    setFc(fc);
-}
-
-void Svf::setRq(float rq) {
-    setRq(rq);
-}
-
 void Svf::setLpMix(float mix) {
     lpMix = mix;
 }
