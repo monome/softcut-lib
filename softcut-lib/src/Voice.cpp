@@ -232,7 +232,6 @@ void Voice::setPostFilterBr(float x) {
 }
 
 void Voice::setPostFilterDry(float x) {
-    // FIXME
     svfPostDryLevel = x;
 }
 
@@ -262,7 +261,6 @@ void Voice::setPhaseQuant(float x) {
 void Voice::setPhaseOffset(float x) {
     phaseOffset = x * sampleRate;
 }
-
 
 phase_t Voice::getQuantPhase() {
     return quantPhase.load(std::memory_order_relaxed);

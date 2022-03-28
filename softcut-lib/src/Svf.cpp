@@ -5,23 +5,34 @@
 #include <math.h>
 #include "softcut/Svf.h"
 
+const float Svf::MAX_NORM_FC = 0.4;
+
 Svf::Svf() = default;
 
 float Svf::getNextSample(float x) {
-    svf_update(&svf, x);
-    return svf.lp * lpMix + svf.hp * hpMix + svf.bp * bpMix + svf.br * brMix;
+    update(x);
+    return lp * lpMix + hp * hpMix + bp * bpMix + br * brMix;
 }
 
 void Svf::setSampleRate(float sr) {
-    svf_set_sr(&svf, sr);
+    sr = sr;
+    pi_sr = M_PI / sr;
+    minFc = 10.f;
+    maxFc = sr * MAX_NORM_FC;
+    calcWarp();
+    calcCoeffs();
 }
 
 void Svf::setFc(float fc) {
-    svf_set_fc(&svf, fc);
+    fc = (fc > maxFc) ? maxFc : fc;
+    fc = (fc < minFc) ? minFc : fc;
+    calcWarp();
+    calcCoeffs();
 }
 
 void Svf::setRq(float rq) {
-    svf_set_rq(&svf, rq);
+    rq = rq;
+    calcCoeffs();
 }
 
 void Svf::setLpMix(float mix) {
@@ -41,61 +52,45 @@ void Svf::setBrMix(float mix) {
 }
 
 void Svf::reset() { 
-    svf_clear_state(&svf);
+    clearState();
 }
 
-/////////////////
-// C implementation
-
-void Svf::svf_calc_coeffs(t_svf* svf) {
-    svf->g = static_cast<float>(tan(M_PI * svf->fc / svf->sr));
-    svf->g1 = svf->g / (1.f + svf->g * (svf->g + svf->rq));
-    svf->g2 = 2.f * (svf->g + svf->rq) * svf->g1;
-    svf->g3 = svf->g * svf->g1;
-    svf->g4 = 2.f * svf->g1;
+void Svf::calcWarp() { 
+    // NB: wasn't actually able to beat `tan` for performance+accuracy sweet spot
+    // on raspi with aggressive optimizations
+    g = static_cast<float>(tan(M_PI * fc / sr));
 }
 
-void Svf::svf_init(t_svf* svf) {
-    svf_clear_state(svf);
+void Svf::calcCoeffs() {
+    g1 = g / (1.f + g * (g + rq));
+    g2 = 2.f * (g + rq) * g1;
+    g3 = g * g1;
+    g4 = 2.f * g1;
 }
 
-void Svf::svf_clear_state(t_svf* svf) {
-    svf->v0z = 0;
-    svf->v1 = 0;
-    svf->v2 = 0;
+void Svf::clearState() {
+    v0z = 0;
+    v1 = 0;
+    v2 = 0;
 }
 
-void Svf::svf_set_sr(t_svf* svf, float sr) {
-    svf->sr = sr;
-    svf_calc_coeffs(svf);
-}
 
-void Svf::svf_set_fc(t_svf* svf, float fc) {
-    svf->fc = (fc > svf->sr / 2) ? svf->sr / 2 : fc;
-    svf_calc_coeffs(svf);
-}
-
-void Svf::svf_set_rq(t_svf* svf, float rq) {
-    svf->rq = rq;
-    svf_calc_coeffs(svf);
-}
-
-void Svf::svf_update(t_svf* svf, float in) {
+void Svf::update(float in) {
     // update
-    svf->v0 = in;
-    svf->v1z = svf->v1;
-    svf->v2z = svf->v2;
-    svf->v3 = svf->v0 + svf->v0z - 2.f * svf->v2z;
-    svf->v1 += svf->g1 * svf->v3 - svf->g2 * svf->v1z;
-    svf->v2 += svf->g3 * svf->v3 + svf->g4 * svf->v1z;
-    svf->v0z = svf->v0;
+    v0 = in;
+    v1z = v1;
+    v2z = v2;
+    v3 = v0 + v0z - 2.f * v2z;
+    v1 += g1 * v3 - g2 * v1z;
+    v2 += g3 * v3 + g4 * v1z;
+    v0z = v0;
     // output
-    svf->lp = svf->v2;
-    svf->bp = svf->v1;
-    svf->hp = svf->v0 - svf->rq * svf->v1 - svf->v2;
-    svf->br = svf->v0 - svf->rq * svf->v1;
+    lp = v2;
+    bp = v1;
+    hp = v0 - rq * v1 - v2;
+    br = v0 - rq * v1;
 }
 
 float Svf::getFc() {
-    return svf.fc;
+    return fc;
 }
