@@ -14,8 +14,8 @@ float Svf::getNextSample(float x) {
     return lp * lpMix + hp * hpMix + bp * bpMix + br * brMix;
 }
 
-void Svf::setSampleRate(float sr) {
-    sr = sr;
+void Svf::setSampleRate(float aSr) {
+    sr = aSr;
     pi_sr = M_PI / sr;
     minFc = 10.f;
     maxFc = sr * MAX_NORM_FC;
@@ -23,15 +23,15 @@ void Svf::setSampleRate(float sr) {
     calcCoeffs();
 }
 
-void Svf::setFc(float fc) {
-    fc = (fc > maxFc) ? maxFc : fc;
+void Svf::setFc(float aFc) {
+    fc = (aFc > maxFc) ? maxFc : aFc;
     fc = (fc < minFc) ? minFc : fc;
     calcWarp();
     calcCoeffs();
 }
 
-void Svf::setRq(float rq) {
-    rq = rq;
+void Svf::setRq(float aRq) {
+    rq = aRq;
     calcCoeffs();
 }
 
@@ -58,7 +58,7 @@ void Svf::reset() {
 void Svf::calcWarp() { 
     // NB: wasn't actually able to beat `tan` for performance+accuracy sweet spot
     // on raspi with aggressive optimizations
-    g = static_cast<float>(tan(M_PI * fc / sr));
+    g = static_cast<float>(tan(fc * pi_sr));
 }
 
 void Svf::calcCoeffs() {
