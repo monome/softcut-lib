@@ -2,10 +2,11 @@
 // Created by ezra on 11/15/18.
 //
 
+#include <cassert>
 #include <cmath>
-#include <algorithm>
-#include <boost/assert.hpp>
 #include <cstring>
+
+#include <algorithm>
 
 #include "softcut/Interpolate.h"
 #include "softcut/FadeCurves.h"
@@ -81,7 +82,8 @@ void FadeCurves::calcRecFade() {
         }
         buf[n] = 1.f;
     } else {
-        BOOST_ASSERT_MSG(false, "undefined fade shape");
+        // undefined shape. oh well
+        return;
     }
     memcpy(recFadeBuf, buf, fadeBufSize*sizeof(float));
 }
@@ -108,14 +110,15 @@ void FadeCurves::calcPreFade() {
             x += phi;
         }
     } else if (recShape == Raised) {
-        BOOST_ASSERT(preShape == Raised);
+        assert(preShape == Raised);
         const float phi = fpi / ( static_cast<float>(nwp*2));
         while (i < nwp) {
             buf[i++] = cosf(x);
             x += phi;
         }
     } else {
-        BOOST_ASSERT_MSG(false, "undefined fade shape");
+        // undefined shape. oh well
+        return;
     }
     while(i<fadeBufSize) { buf[i++] = 0.f; }
     memcpy(preFadeBuf, buf, fadeBufSize*sizeof(float));

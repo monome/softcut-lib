@@ -20,6 +20,8 @@ recRamp(48000, 0.1)
 
 void Voice::reset() {
     fadeCurves.init();
+
+    svfPre.reset();
     svfPre.setLpMix(1.0);
     svfPre.setHpMix(0.0);
     svfPre.setBpMix(0.0);
@@ -29,6 +31,7 @@ void Voice::reset() {
     svfPreFcMod = 1.0;
     svfPreDryLevel = 0.0;
 
+    svfPost.reset();
     svfPost.setLpMix(0.0);
     svfPost.setHpMix(0.0);
     svfPost.setBpMix(0.0);
@@ -71,10 +74,10 @@ void Voice:: processBlockMono(const float *in, float *out, int numFrames) {
                 this->sch.processSampleNoRead(in, out);
             };
         } else {
-            // FIXME? do nothing, i guess?
             sampleFunc = [](float in, float* out) {
                 (void)in;
-                (void)out;
+                // makes sure the output bus is zeroed
+                *out = 0.f;
             };
         }
     }
@@ -134,11 +137,28 @@ void Voice::setPreLevel(float amp) {
 }
 
 void Voice::setRecFlag(bool val) {
+    if (recFlag) {
+	if (!(val || playFlag)) {
+	    sch.stop();
+	}
+    } else {
+	if (val && !playFlag) {
+	    sch.run();
+	}
+    }
     recFlag = val;
 }
 
-
 void Voice::setPlayFlag(bool val) {
+    if (playFlag) {
+	if (!(val || recFlag)) {
+	    sch.stop();
+	}
+    } else {
+	if (val && !recFlag) {
+	    sch.run();
+	}
+    }
     playFlag = val;
 }
 
@@ -212,7 +232,6 @@ void Voice::setPostFilterBr(float x) {
 }
 
 void Voice::setPostFilterDry(float x) {
-    // FIXME
     svfPostDryLevel = x;
 }
 
@@ -243,7 +262,6 @@ void Voice::setPhaseOffset(float x) {
     phaseOffset = x * sampleRate;
 }
 
-
 phase_t Voice::getQuantPhase() {
     return quantPhase.load(std::memory_order_relaxed);
 }
@@ -271,4 +289,8 @@ float Voice::getActivePosition() {
 
 float Voice::getSavedPosition() {
     return static_cast<float>(rawPhase.load(std::memory_order_relaxed) / sampleRate);
+}
+
+void Voice::stop() {
+    sch.stop();
 }

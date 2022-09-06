@@ -1,9 +1,10 @@
 //
 // Created by ezra on 12/6/17.
 //
+
+#include <cassert>
 #include <cmath>
 #include <limits>
-
 
 #include "softcut/Interpolate.h"
 #include "softcut/Resampler.h"
@@ -30,7 +31,7 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 
     *out = mixFade(head[0].peek(), head[1].peek(), head[0].fade(), head[1].fade());
 
-    BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
+    //  assert(!(head[0].state_ == Playing && head[1].state_ == Playing) /*multiple active heads*/);
 
     head[0].poke(in, pre, rec);
     head[1].poke(in, pre, rec);
@@ -47,8 +48,8 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 void ReadWriteHead::processSampleNoRead(sample_t in, sample_t *out) {
     (void)out;
 
-    BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
-
+    // assert(!(head[0].state_ == Playing && head[1].state_ == Playing) /*multiple active heads*/);
+    
     head[0].poke(in, pre, rec);
     head[1].poke(in, pre, rec);
 
@@ -64,7 +65,7 @@ void ReadWriteHead::processSampleNoWrite(sample_t in, sample_t *out) {
     (void)in;
     *out = mixFade(head[0].peek(), head[1].peek(), head[0].fade(), head[1].fade());
 
-    BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
+    // assert(!(head[0].state_ == Playing && head[1].state_ == Playing) /*multiple active heads*/);
 
     takeAction(head[0].updatePhase(start, end, loopFlag));
     takeAction(head[1].updatePhase(start, end, loopFlag));
@@ -131,8 +132,8 @@ void ReadWriteHead::cutToPhase(phase_t pos) {
 
     if(s == State::FadeIn || s == State::FadeOut) {
 	// should never enter this condition
-	// std::cerr << "badness! we performed a cut while still fading" << std::endl;
-	return;
+	    std::cerr << "badness! performed a cut while still fading" << std::endl;
+	    return;
     }
 
     // activate the inactive head
@@ -206,4 +207,13 @@ rate_t ReadWriteHead::getRate() {
 void ReadWriteHead::setRecOffsetSamples(int d) {
     head[0].setRecOffsetSamples(d);
     head[1].setRecOffsetSamples(d);
+}
+
+void ReadWriteHead::stop() {
+    head[0].setState(State::Stopped);
+    head[1].setState(State::Stopped);
+}
+
+void ReadWriteHead::run() {
+    head[active].setState(State::Playing);
 }

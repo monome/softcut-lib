@@ -26,19 +26,30 @@ namespace softcut {
         void setSampleRate(float sr);
         void setBuffer(sample_t *buf, uint32_t size);
         void setRate(rate_t x);
+
+	// set loop (region) start point in seconds
         void setLoopStartSeconds(float x);
+	// set loop (region) end point in seconds
         void setLoopEndSeconds(float x);
         void setFadeTime(float secs);
         void setLoopFlag(bool val);
+
+	// set amplitudes
         void setRec(float x);
         void setPre(float x);
+
+	// enqueue a position change with crossfade
         void cutToPos(float seconds);
+
+	// immediately put both subheads in stopped state
+	void stop();
+	// immediately start playing  from current position (no fadein)
+	void run();
 
         void setRecOffsetSamples(int d);
 
         phase_t getActivePhase();
         rate_t getRate();
-
     protected:
         friend class SubHead;
 
