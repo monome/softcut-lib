@@ -177,13 +177,13 @@ void BufDiskWorker::readBufferMono(const std::string &path, BufDesc &buf,
 
     auto numSrcChan = file.channels();
     chanSrc = std::min(numSrcChan - 1, std::max(0, chanSrc));
-    // std::cout << "reading soundfile channel " << chanSrc << std::endl;
+    std::cout << "reading soundfile channel " << chanSrc << std::endl;
     
     auto *ioBuf = new float[numSrcChan * ioBufFrames];
     size_t numBlocks = frDur / ioBufFrames;
     size_t rem = frDur - (numBlocks * ioBufFrames);
-    // std::cout << "file contains " << file.frames() << " frames" << std::endl;
-    // std::cout << "reading " << numBlocks << " blocks and " << rem << " remainder frames..." << std::endl;
+    std::cout << "file contains " << file.frames() << " frames" << std::endl;
+    std::cout << "reading " << numBlocks << " blocks and " << rem << " remainder frames..." << std::endl;
     for (size_t block = 0; block < numBlocks; ++block) {
 	int res = file.seek(frSrc, SF_SEEK_SET);
 	if (res == -1) {	    
@@ -200,7 +200,7 @@ void BufDiskWorker::readBufferMono(const std::string &path, BufDesc &buf,
 	frSrc += ioBufFrames;
     }
     for (size_t i=0; i<rem; ++i) {
-	int res = file.seek(frSrc, SF_SEEK_CUR);
+	int res = file.seek(frSrc, SF_SEEK_SET);
 
 	if (res == -1) {
 	    std::cerr << "error seeking to frame: " << frSrc << "; aborting read" << std::endl;
