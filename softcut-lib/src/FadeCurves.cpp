@@ -14,16 +14,6 @@
 using namespace softcut;
 
 static constexpr float fpi = 3.1415926535898f;
-/*
-float FadeCurves::recDelayRatio;
-float FadeCurves::preWindowRatio;
-unsigned int FadeCurves::recDelayMinFrames;
-unsigned int FadeCurves::preWindowMinFrames;
-float FadeCurves::recFadeBuf[fadeBufSize];
-float FadeCurves::preFadeBuf[fadeBufSize];
-FadeCurves::Shape FadeCurves::recShape = Linear;
-FadeCurves::Shape FadeCurves::preShape = Linear;
-*/
 
 void FadeCurves::init() {
     setPreShape(FadeCurves::Shape::Linear);
@@ -70,7 +60,7 @@ void FadeCurves::calcRecFade() {
         buf[n] = 1.f;
     } else if (recShape == Raised) {
         const float phi = fpi/(nr*2);
-        float x = fpi;
+        float x = 0.f;
         float y = 0.f;
         while (i < ndr) {
             buf[i++] = y;
