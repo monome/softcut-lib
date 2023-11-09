@@ -40,6 +40,8 @@ namespace softcut {
 
         void setRecFlag(bool val);
 
+        void setRecOnceFlag(bool val);
+
         void setPlayFlag(bool val);
 
         void setPreFilterFc(float);

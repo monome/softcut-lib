@@ -8,15 +8,16 @@
 
 - `v1.5`: current version branch. `main` should be merged into here whenever it's deemed stable enough for testing.
 
-- `v2-wip`: this branch contains "backlogged" changes intended for a v2 overhaul. involves extensive and complicated changes to the processing architecture. it's not yet working, hence the backlog, but it reopresents enough work to be worth saving. will be "salvaging" changes from here to release as v1.5.
+- `wip/v2`: this branch contains "backlogged" changes intended for a v2 overhaul. involves extensive and complicated changes to the processing architecture. it's not yet working, hence the backlog, but it reopresents enough work to be worth saving. will be "salvaging" changes from here to release as v1.5.
 
 ###  working branches:
 
-other working branches branches may exist, and should be named using a prefix and a slash. one of:
+other working branches branches may exist, and should preferably be named using a prefix and a slash. we suggest:
 
-`fix/` - for bugfixes and performance improvements. 
+`fix/` - for bugfixes and (measurable!) performance improvements.
+
 `feature/`- for new user-facing features
-`dev/` for primarily developer-facing work, like refactoring or architecture changes.
 
-if you are part of the `monome` organization, go ahead and make your development branch in the main repo.
-if you're not, make your working branch on your own fork.
+`dev/` for primarily developer-facing work, like refactoring
+
+(if you are part of the `monome` organization, you're welcome to make development branch in the monome repo instead of your personal fork.)

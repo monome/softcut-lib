@@ -69,6 +69,10 @@ namespace softcut {
             scv[voice].setRecFlag(val);
         }
 
+        void setRecOnceFlag(int voice, bool val) {
+            scv[voice].setRecOnceFlag(val);
+        }
+
         void setPlayFlag(int voice, bool val) {
             scv[voice].setPlayFlag(val);
         }

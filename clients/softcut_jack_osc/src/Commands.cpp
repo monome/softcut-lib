@@ -16,28 +16,28 @@ Commands::Commands() = default;
 
 void Commands::post(Commands::Id id, float f) {
     CommandPacket p(id, -1, f);
-    q.push(p);
+    q.enqueue(p);
 }
 
 void Commands::post(Commands::Id id, int i, float f) {
     CommandPacket p(id, i, f);
-    q.push(p);
+    q.enqueue(p);
 }
 
 void Commands::post(Commands::Id id, int i, int j) {
     CommandPacket p(id, i, j);
-    q.push(p);
+    q.enqueue(p);
 }
 
 void Commands::post(Commands::Id id, int i, int j, float f) {
     CommandPacket p(id, i, j, f);
-    q.push(p);
+    q.enqueue(p);
 }
 
 
 void Commands::handlePending(SoftcutClient *client) {
     CommandPacket p;
-    while (q.pop(p)) {
+    while (q.try_dequeue(p)) {
         client->handleCommand(&p);
     }
 }
