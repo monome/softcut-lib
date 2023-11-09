@@ -15,6 +15,7 @@
 #ifndef CRONE_BUFMANAGER_H
 #define CRONE_BUFMANAGER_H
 
+#include <array>
 #include <atomic>
 #include <thread>
 #include <mutex>

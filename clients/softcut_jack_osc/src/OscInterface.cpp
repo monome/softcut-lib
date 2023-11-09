@@ -4,6 +4,7 @@
 // Created by ezra on 11/4/18.
 //
 
+#include <string>
 #include <utility>
 #include <thread>
 //#include <boost/format.hpp>
