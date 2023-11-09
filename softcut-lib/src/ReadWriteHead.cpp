@@ -55,9 +55,8 @@ void ReadWriteHead::processSample(sample_t in, sample_t *out) {
 void ReadWriteHead::processSampleNoRead(sample_t in, sample_t *out) {
     (void)out;
 
-<<<<<<< HEAD
-    BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
-
+    //BOOST_ASSERT_MSG(!(head[0].state_ == Playing && head[1].state_ == Playing), "multiple active heads");
+    assert(!(head[0].state_ == Playing && head[1].state_ == Playing));
     if (recOnceFlag || recOnceDone || (recOnceHead > -1)) {
         if (recOnceHead > -1) {
             head[recOnceHead].poke(in, pre, rec);
@@ -66,12 +65,7 @@ void ReadWriteHead::processSampleNoRead(sample_t in, sample_t *out) {
         head[0].poke(in, pre, rec);
         head[1].poke(in, pre, rec);
     }
-=======
-    // assert(!(head[0].state_ == Playing && head[1].state_ == Playing) /*multiple active heads*/);
-    
-    head[0].poke(in, pre, rec);
-    head[1].poke(in, pre, rec);
->>>>>>> norns-latest
+
 
     takeAction(head[0].updatePhase(start, end, loopFlag));
     takeAction(head[1].updatePhase(start, end, loopFlag));

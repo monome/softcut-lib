@@ -5,8 +5,8 @@
 #ifndef CRONE_COMMANDS_H
 #define CRONE_COMMANDS_H
 
-#include <boost/lockfree/spsc_queue.hpp>
-
+//#include <boost/lockfree/spsc_queue.hpp>
+#include "readerwriterqueue/readerwriterqueue.h"
 
 namespace softcut_jack_osc {
 
@@ -64,6 +64,8 @@ namespace softcut_jack_osc {
             SET_CUT_RATE_SLEW_TIME,
             SET_CUT_VOICE_SYNC,
             SET_CUT_BUFFER,
+
+            SET_CUT_REC_ONCE,
             NUM_COMMANDS,
         } Id;
 
@@ -90,8 +92,9 @@ namespace softcut_jack_osc {
         static Commands softcutCommands;
 
     private:
-        boost::lockfree::spsc_queue <CommandPacket,
-                boost::lockfree::capacity<200> > q;
+//        boost::lockfree::spsc_queue <CommandPacket,
+//                boost::lockfree::capacity<200> > q;
+        moodycamel::ReaderWriterQueue<CommandPacket> q;
     };
 
 }
