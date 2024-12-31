@@ -33,6 +33,7 @@ this library was developed at the behest of [monome](https://monome.org), origin
 - [cmake]() version 3.7 or greater
 - C++ compiler supporting C++14 standard 
 - [boost](https://www.boost.org/)
+- [liblo](https://github.com/radarsat1/liblo)
 
 #### steps:
 
